@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="nofollow, noindex">
+<title>Plateau Diagnosis Quiz | RDHcoaching</title>
+<style>
+:root{--purple:#C46BE4;--blue:#5271FF;--gold:#AB8B00;--dark1:#0A0A0F;--dark2:#13131A;--dark3:#1A1A24;--text:#E8E8F0;--muted:#8E8EA0;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--dark1);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;padding:1.5rem;}
+.container{max-width:650px;margin:0 auto;}
+.logo{text-align:center;margin-bottom:2rem;}
+.logo-text{font-size:1.4rem;font-weight:800;letter-spacing:-0.02em;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+h1{font-size:2rem;font-weight:800;margin-bottom:1rem;line-height:1.2;}
+h1 em{font-style:normal;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.subtitle{color:var(--muted);font-size:1.05rem;margin-bottom:2.5rem;line-height:1.5;}
+.card{background:var(--dark2);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:2rem;margin-bottom:1.5rem;}
+.question{margin-bottom:2rem;}
+.question-text{font-weight:700;margin-bottom:1rem;font-size:1.05rem;color:var(--text);}
+.options{display:flex;flex-direction:column;gap:0.8rem;}
+.opt{background:var(--dark3);border:1px solid rgba(255,255,255,0.08);padding:1rem;border-radius:8px;cursor:pointer;text-align:left;transition:all 0.2s;color:var(--text);font-family:inherit;}
+.opt:hover{border-color:var(--blue);background:rgba(82,113,255,0.05);}
+.opt.selected{border-color:var(--blue);background:rgba(82,113,255,0.1);}
+.btn{width:100%;padding:1rem;background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:8px;font-size:1.05rem;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:1rem;}
+.btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(82,113,255,0.3);}
+.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+.result-box{background:var(--dark3);border:1px solid rgba(171,139,0,0.3);border-radius:10px;padding:1.5rem;margin-top:1.5rem;display:none;}
+.result-box.show{display:block;}
+.result-title{font-size:1.8rem;font-weight:800;color:var(--gold);margin-bottom:1rem;}
+.result-preview{color:var(--muted);line-height:1.7;margin-bottom:1.5rem;}
+.full-results{display:none;}
+.full-results.show{display:block;}
+.result-text{color:var(--text);line-height:1.7;margin-bottom:1rem;}
+.result-text strong{color:var(--gold);}
+.fix-section{background:rgba(82,113,255,0.08);border-left:3px solid var(--blue);padding:1rem;border-radius:6px;margin-top:1rem;}
+.fix-title{font-weight:700;color:var(--blue);margin-bottom:0.5rem;}
+.cta-box{background:linear-gradient(135deg,rgba(82,113,255,0.1),rgba(196,107,228,0.1));border:1px solid rgba(82,113,255,0.2);border-radius:10px;padding:1.5rem;margin-top:2rem;text-align:center;}
+.cta-box h3{font-size:1.3rem;margin-bottom:0.5rem;}
+.cta-box p{color:var(--muted);margin-bottom:1.2rem;}
+.btn-cta{display:inline-block;padding:0.9rem 2rem;background:white;color:var(--dark1);text-decoration:none;border-radius:8px;font-weight:700;transition:all 0.2s;}
+.btn-cta:hover{transform:translateY(-1px);box-shadow:0 6px 15px rgba(255,255,255,0.2);}
+.email-gate{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(10,10,15,0.95);backdrop-filter:blur(10px);z-index:1000;display:none;align-items:center;justify-content:center;padding:1.5rem;}
+.email-gate.show{display:flex;}
+.gate-card{background:var(--dark2);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:2.5rem;max-width:500px;width:100%;text-align:center;}
+.gate-card h2{font-size:1.8rem;margin-bottom:1rem;color:var(--text);}
+.gate-card h2 em{font-style:normal;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.gate-card p{color:var(--muted);margin-bottom:2rem;line-height:1.6;}
+.gate-card input{margin-bottom:1rem;width:100%;padding:1rem;font-size:1.1rem;background:var(--dark3);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text);}
+.gate-card input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(82,113,255,0.15);}
+.gate-card .btn{margin-top:0.5rem;}
+.success-msg{color:var(--gold);font-weight:600;margin-top:1rem;display:none;}
+.success-msg.show{display:block;}
+</style>
+</head>
+<body>
+
+<div class="email-gate" id="emailGate">
+  <div class="gate-card">
+    <h2>Unlock Your <em>Fix Protocol</em></h2>
+    <p>Enter your email to see your complete diagnosis and step-by-step fix.</p>
+    <form action="https://formspree.io/f/xwvadgzw" method="POST" id="gateForm">
+      <input type="hidden" name="tool" value="plateau-diagnosis">
+      <input type="email" name="email" id="emailInput" placeholder="your@email.com" required>
+      <button type="submit" class="btn" id="submitBtn">Show My Fix Protocol</button>
+      <p class="success-msg" id="successMsg">✓ Access granted! Loading your protocol...</p>
+    </form>
+  </div>
+</div>
+
+<div class="container">
+  <div class="logo"><div class="logo-text">RDHcoaching</div></div>
+
+  <h1>Plateau <em>Diagnosis</em> Quiz</h1>
+  <p class="subtitle">8 questions to diagnose exactly why you're stuck and what to fix first.</p>
+
+  <div class="card">
+    <div class="question">
+      <div class="question-text">1. How long have you been training consistently?</div>
+      <div class="options">
+        <button class="opt" data-q="1" data-val="beginner">Less than 1 year</button>
+        <button class="opt" data-q="1" data-val="intermediate">1-3 years</button>
+        <button class="opt" data-q="1" data-val="advanced">3+ years</button>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-text">2. Are you tracking your lifts (weight, reps, RIR) every session?</div>
+      <div class="options">
+        <button class="opt" data-q="2" data-val="yes">Yes, consistently</button>
+        <button class="opt" data-q="2" data-val="sometimes">Sometimes, but not always</button>
+        <button class="opt" data-q="2" data-val="no">No, I go off feel</button>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-text">3. How many sets per muscle group per week are you doing?</div>
+      <div class="options">
+        <button class="opt" data-q="3" data-val="low">Less than 10 sets</button>
+        <button class="opt" data-q="3" data-val="moderate">10-18 sets</button>
+        <button class="opt" data-q="3" data-val="high">18-25 sets</button>
+        <button class="opt" data-q="3" data-val="excessive">25+ sets</button>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-text">4. How close to failure are you training most sets?</div>
+      <div class="options">
+        <button class="opt" data-q="4" data-val="failure">0 RIR (true failure)</button>
+        <button class="opt" data-q="4" data-val="close">1-2 RIR</button>
+        <button class="opt" data-q="4" data-val="moderate">3-4 RIR</button>
+        <button class="opt" data-q="4" data-val="far">5+ RIR</button>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-text">5. How's your sleep quality?</div>
+      <div class="options">
+        <button class="opt" data-q="5" data-val="poor">Less than 6 hours or terrible quality</button>
+        <button class="opt" data-q="5" data-val="average">6-7 hours, decent quality</button>
+        <button class="opt" data-q="5" data-val="good">7-8 hours, good quality</button>
+        <button class="opt" data-q="5" data-val="excellent">8+ hours, excellent quality</button>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-text">6. Are you in a calorie surplus, deficit, or maintenance?</div>
+      <div class="options">
+        <button class="opt" data-q="6" data-val="surplus">Surplus (gaining weight)</button>
+        <button class="opt" data-q="6" data-val="maintenance">Maintenance (weight stable)</button>
+        <button class="opt" data-q="6" data-val="deficit">Deficit (losing weight)</button>
+        <button class="opt" data-q="6" data-val="unsure">Not sure / not tracking</button>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-text">7. How often do you deload or take planned recovery weeks?</div>
+      <div class="options">
+        <button class="opt" data-q="7" data-val="never">Never, I push hard every week</button>
+        <button class="opt" data-q="7" data-val="occasionally">Occasionally when I feel burnt out</button>
+        <button class="opt" data-q="7" data-val="planned">Every 4-6 weeks as planned</button>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-text">8. Has your strength (weight on the bar) improved in the last 8 weeks?</div>
+      <div class="options">
+        <button class="opt" data-q="8" data-val="yes">Yes, I've added weight or reps</button>
+        <button class="opt" data-q="8" data-val="some">Some lifts yes, others no</button>
+        <button class="opt" data-q="8" data-val="no">No, completely stuck</button>
+      </div>
+    </div>
+
+    <button class="btn" id="submitQuiz" disabled onclick="diagnose()">Get My Diagnosis</button>
+
+    <div class="result-box" id="resultBox">
+      <div class="result-title" id="resultTitle"></div>
+      <div class="result-preview" id="previewText"></div>
+      
+      <div id="fullResults" class="full-results">
+        <div class="result-text" id="resultText"></div>
+        <div class="fix-section">
+          <div class="fix-title">Your Fix Protocol</div>
+          <div id="fixText"></div>
+        </div>
+      </div>
+      
+      <button class="btn" onclick="showGate()" id="unlockBtn">Unlock My Fix Protocol</button>
+    </div>
+  </div>
+
+  <div class="cta-box">
+    <h3>Want a full custom protocol to break through?</h3>
+    <p>I build training plans that diagnose and fix plateau issues systematically.</p>
+    <a href="https://rdhcoaching.com/#apply" class="btn-cta">Apply for 1-to-1 Coaching</a>
+  </div>
+</div>
+
+<script>
+window.formspree = window.formspree || function () { (formspree.q = formspree.q || []).push(arguments); };
+formspree('initForm', { 
+  formElement: '#gateForm', 
+  formId: 'xwvadgzw',
+  onSuccess: function() {
+    document.getElementById('successMsg').classList.add('show');
+    setTimeout(function() {
+      document.getElementById('emailGate').classList.remove('show');
+      document.getElementById('fullResults').classList.add('show');
+      document.getElementById('unlockBtn').style.display='none';
+    }, 1000);
+  }
+});
+
+var answers = {};
+var opts = document.querySelectorAll('.opt');
+var submitQuiz = document.getElementById('submitQuiz');
+
+for (var i = 0; i < opts.length; i++) {
+  opts[i].addEventListener('click', function() {
+    var q = this.getAttribute('data-q');
+    var val = this.getAttribute('data-val');
+    var sameQ = document.querySelectorAll('.opt[data-q="' + q + '"]');
+    for (var j = 0; j < sameQ.length; j++) {
+      sameQ[j].classList.remove('selected');
+    }
+    this.classList.add('selected');
+    answers[q] = val;
+    if (Object.keys(answers).length === 8) {
+      submitQuiz.disabled = false;
+    }
+  });
+}
+
+var calculatedResults = {};
+
+function diagnose() {
+  var tracking = answers['2'];
+  var volume = answers['3'];
+  var intensity = answers['4'];
+  var sleep = answers['5'];
+  var nutrition = answers['6'];
+  var deload = answers['7'];
+  var progress = answers['8'];
+  
+  var primaryIssue = '';
+  var preview = '';
+  var diagnosis = '';
+  var fix = '';
+  
+  if (tracking === 'no') {
+    primaryIssue = 'No Progressive Overload Tracking';
+    preview = 'You can\'t improve what you don\'t measure...';
+    diagnosis = 'You can\'t improve what you don\'t measure. Without tracking weight, reps, and RIR, you have no idea if you\'re progressing. You\'re probably repeating the same workouts with no real stimulus increase.';
+    fix = 'Start logging every single set. Write down the weight, reps, and how many reps you had left (RIR). Your only goal is to beat last week\'s numbers. If you did 100kg x 8 last week, aim for 100kg x 9 or 102.5kg x 8 this week.';
+  } else if (volume === 'low' && intensity === 'far') {
+    primaryIssue = 'Low Volume + Low Intensity';
+    preview = 'You\'re not doing enough sets AND leaving too many reps in the tank...';
+    diagnosis = 'You\'re not doing enough sets AND you\'re leaving too many reps in the tank. Your muscles aren\'t getting a strong enough signal to grow. This is the classic "spinning your wheels" scenario.';
+    fix = 'Increase volume to at least 12-16 sets per muscle per week. Train every set to 1-2 RIR minimum. Your muscles need to be challenged, not just tickled.';
+  } else if (volume === 'excessive') {
+    primaryIssue = 'Junk Volume Overload';
+    preview = 'You\'re doing too much volume. More isn\'t always better...';
+    diagnosis = 'You\'re doing too much volume. More isn\'t always better. Past a certain point, you\'re just accumulating fatigue without additional growth stimulus. Your recovery can\'t keep up.';
+    fix = 'Cut your volume by 20-30%. Focus on making every set count. Train closer to failure (1-2 RIR) on fewer, higher-quality sets. Take a deload week immediately to clear fatigue.';
+  } else if (sleep === 'poor') {
+    primaryIssue = 'Recovery Deficit';
+    preview = 'You\'re not sleeping enough. No amount of perfect training will work...';
+    diagnosis = 'You\'re not sleeping enough. No amount of perfect training will work if your body doesn\'t have time to repair and grow. Sleep is when you build muscle, not in the gym.';
+    fix = 'Prioritise 7-8 hours of sleep every night. Set a bedtime alarm. Turn off screens 1 hour before bed. If you can\'t improve sleep, reduce training volume by 20% to match your recovery capacity.';
+  } else if (nutrition === 'deficit' && progress === 'no') {
+    primaryIssue = 'Building Muscle in a Deficit';
+    preview = 'You\'re trying to build muscle while losing weight...';
+    diagnosis = 'You\'re trying to build muscle while losing weight. Unless you\'re a complete beginner or returning from a long break, this won\'t work. You need energy to grow.';
+    fix = 'Move to maintenance calories for 4 weeks, then add a 200-300 calorie surplus. Track your weight weekly. Aim for 0.25-0.5kg gain per month. Muscle needs fuel.';
+  } else if (deload === 'never' && volume === 'high') {
+    primaryIssue = 'Chronic Fatigue Accumulation';
+    preview = 'You\'re pushing hard every week with no planned recovery...';
+    diagnosis = 'You\'re pushing hard every single week with no planned recovery. Fatigue is masking your strength gains. You\'re probably stronger than your lifts suggest, but fatigue is hiding it.';
+    fix = 'Take a deload week NOW. Cut volume by 50%, reduce weight by 10%, and train at 5 RIR. Then programme a deload every 4-6 weeks. You\'ll come back stronger.';
+  } else if (progress === 'no' && tracking === 'yes' && intensity === 'close') {
+    primaryIssue = 'Adaptation Plateau';
+    preview = 'You\'re doing everything right, but your body has adapted...';
+    diagnosis = 'You\'re doing everything right, but your body has adapted to the stimulus. You need a change in exercise selection, rep ranges, or training frequency to shock the system.';
+    fix = 'Swap out 2-3 main lifts for variations. If you\'ve been doing flat bench, switch to incline. If back squats, try front squats. Change rep ranges from 8-10 to 12-15 for 4 weeks. Add a training session to increase frequency.';
+  } else {
+    primaryIssue = 'General Optimization Needed';
+    preview = 'You\'re doing most things right, but small tweaks are needed...';
+    diagnosis = 'You\'re doing most things right, but there are small tweaks needed. Likely you need better consistency, slightly more intensity, or more strategic deloads.';
+    fix = 'Focus on beating last week\'s numbers every session. Train every set to 1-2 RIR. Take a deload every 5-6 weeks. Track your nutrition more carefully. Make sure you\'re in a slight surplus if building muscle.';
+  }
+  
+  calculatedResults = {diagnosis: diagnosis, fix: fix};
+  
+  document.getElementById('resultTitle').textContent = primaryIssue;
+  document.getElementById('previewText').textContent = preview;
+  document.getElementById('resultBox').classList.add('show');
+}
+
+function showGate() {
+  if (calculatedResults.diagnosis) {
+    document.getElementById('resultText').innerHTML = calculatedResults.diagnosis;
+    document.getElementById('fixText').innerHTML = calculatedResults.fix;
+    document.getElementById('emailGate').classList.add('show');
+  }
+}
+</script>
+<script src="https://unpkg.com/@formspree/ajax@1" defer></script>
+
+</body>
+</html>

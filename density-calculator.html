@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Training Density Calculator | RDHcoaching</title>
+<style>
+:root{
+  --purple:#C46BE4;
+  --blue:#5271FF;
+  --gold:#AB8B00;
+  --dark1:#0A0A0F;
+  --dark2:#13131A;
+  --dark3:#1A1A24;
+  --text:#E8E8F0;
+  --muted:#8E8EA0;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--dark1);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;padding:1.5rem;}
+.container{max-width:650px;margin:0 auto;}
+.logo{text-align:center;margin-bottom:2rem;}
+.logo-text{font-size:1.4rem;font-weight:800;letter-spacing:-0.02em;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+h1{font-size:2rem;font-weight:800;margin-bottom:1rem;line-height:1.2;}
+h1 em{font-style:normal;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.subtitle{color:var(--muted);font-size:1.05rem;margin-bottom:2.5rem;line-height:1.5;}
+.card{background:var(--dark2);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:2rem;margin-bottom:1.5rem;}
+label{display:block;font-weight:600;margin-bottom:0.5rem;font-size:0.95rem;}
+input,select{width:100%;padding:0.85rem 1rem;background:var(--dark3);border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:1.5rem;font-family:inherit;}
+input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(82,113,255,0.15);}
+.btn{width:100%;padding:1rem;background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:8px;font-size:1.05rem;font-weight:700;cursor:pointer;transition:all 0.2s;}
+.btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(82,113,255,0.3);}
+.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+.result-box{background:var(--dark3);border:1px solid rgba(171,139,0,0.3);border-radius:10px;padding:1.5rem;margin-top:1.5rem;display:none;}
+.result-box.show{display:block;}
+.result-label{font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--gold);font-weight:700;margin-bottom:0.5rem;}
+.result-value{font-size:2.5rem;font-weight:800;color:var(--gold);margin-bottom:0.5rem;}
+.result-preview{color:var(--muted);line-height:1.6;margin-bottom:1.5rem;font-size:1.05rem;}
+.blur-overlay{filter:blur(8px);pointer-events:none;user-select:none;}
+.cta-box{background:linear-gradient(135deg,rgba(82,113,255,0.1),rgba(196,107,228,0.1));border:1px solid rgba(82,113,255,0.2);border-radius:10px;padding:1.5rem;margin-top:2rem;text-align:center;}
+.cta-box h3{font-size:1.3rem;margin-bottom:0.5rem;}
+.cta-box p{color:var(--muted);margin-bottom:1.2rem;}
+.btn-cta{display:inline-block;padding:0.9rem 2rem;background:white;color:var(--dark1);text-decoration:none;border-radius:8px;font-weight:700;transition:all 0.2s;}
+.btn-cta:hover{transform:translateY(-1px);box-shadow:0 6px 15px rgba(255,255,255,0.2);}
+.email-gate{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(10,10,15,0.95);backdrop-filter:blur(10px);z-index:1000;display:none;align-items:center;justify-content:center;padding:1.5rem;}
+.email-gate.show{display:flex;}
+.gate-card{background:var(--dark2);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:2.5rem;max-width:500px;width:100%;text-align:center;}
+.gate-card h2{font-size:1.8rem;margin-bottom:1rem;color:var(--text);}
+.gate-card h2 em{font-style:normal;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.gate-card p{color:var(--muted);margin-bottom:2rem;line-height:1.6;}
+.gate-card input{margin-bottom:1rem;width:100%;padding:1rem;font-size:1.1rem;background:var(--dark3);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text);}
+.gate-card input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(82,113,255,0.15);}
+.gate-card .btn{margin-top:0.5rem;}
+.success-msg{color:var(--gold);font-weight:600;margin-top:1rem;display:none;}
+.success-msg.show{display:block;}
+.full-results{display:none;}
+.full-results.show{display:block;}
+</style>
+</head>
+<body>
+
+<div class="email-gate" id="emailGate">
+  <div class="gate-card">
+    <h2>Unlock Your <em>Full Results</em></h2>
+    <p>Enter your email to see the complete breakdown and what to fix.</p>
+    <form action="https://formspree.io/f/xwvadgzw" method="POST" id="gateForm">
+      <input type="hidden" name="tool" value="density-calculator">
+      <input type="email" name="email" id="emailInput" placeholder="your@email.com" required>
+      <button type="submit" class="btn" id="submitBtn">Show My Full Results</button>
+      <p class="success-msg" id="successMsg">✓ Access granted! Loading full breakdown...</p>
+    </form>
+  </div>
+</div>
+
+<div class="container">
+  <div class="logo">
+    <div class="logo-text">RDHcoaching</div>
+  </div>
+
+  <h1>Training <em>Density</em> Calculator</h1>
+  <p class="subtitle">Find out if you're gaining weight but looking flat because your training density is too low. This calculator reveals whether you need more volume or better execution.</p>
+
+  <div class="card">
+    <label for="sets">Total weekly sets per muscle group</label>
+    <input type="number" id="sets" min="1" max="50" placeholder="e.g. 18">
+
+    <label for="sessions">Weekly training sessions</label>
+    <input type="number" id="sessions" min="1" max="7" placeholder="e.g. 4">
+
+    <label for="reps">Average reps per set</label>
+    <input type="number" id="reps" min="1" max="50" placeholder="e.g. 10">
+
+    <label for="rir">Average RIR (Reps In Reserve)</label>
+    <select id="rir">
+      <option value="">Select...</option>
+      <option value="0">0 - True failure</option>
+      <option value="1">1 - Could do 1 more</option>
+      <option value="2">2 - Could do 2 more</option>
+      <option value="3">3 - Could do 3 more</option>
+      <option value="4">4+ - Well short of failure</option>
+    </select>
+
+    <button class="btn" onclick="calculate()">Calculate My Density</button>
+
+    <div class="result-box" id="resultBox">
+      <div class="result-label">Your Training Density</div>
+      <div class="result-value" id="densityValue">—</div>
+      <div class="result-preview" id="previewText">Your density score indicates...</div>
+      
+      <div id="fullResults" class="full-results">
+        <div style="color:var(--muted);line-height:1.6;margin-bottom:1rem;" id="densityText"></div>
+        <div style="background:rgba(82,113,255,0.08);border-left:3px solid var(--blue);padding:1rem;border-radius:6px;margin-top:1rem;" id="interpretation"></div>
+      </div>
+      
+      <button class="btn" onclick="showGate()" id="unlockBtn">Unlock Full Breakdown</button>
+    </div>
+  </div>
+
+  <div class="cta-box">
+    <h3>Want a programme built around YOUR density?</h3>
+    <p>I build custom training plans for intermediate lifters who want guaranteed results.</p>
+    <a href="https://rdhcoaching.com/#apply" class="btn-cta">Apply for 1-to-1 Coaching</a>
+  </div>
+</div>
+
+<script>
+window.formspree = window.formspree || function () { (formspree.q = formspree.q || []).push(arguments); };
+formspree('initForm', { 
+  formElement: '#gateForm', 
+  formId: 'xwvadgzw',
+  onSuccess: function() {
+    document.getElementById('successMsg').classList.add('show');
+    setTimeout(function() {
+      document.getElementById('emailGate').classList.remove('show');
+      document.getElementById('fullResults').classList.add('show');
+      document.getElementById('unlockBtn').style.display='none';
+    }, 1000);
+  }
+});
+
+var calculatedResults = {};
+
+function calculate() {
+  var sets = parseFloat(document.getElementById('sets').value);
+  var sessions = parseFloat(document.getElementById('sessions').value);
+  var reps = parseFloat(document.getElementById('reps').value);
+  var rir = parseFloat(document.getElementById('rir').value);
+  
+  if (!sets || !sessions || !reps || rir === '') {
+    alert('Please fill in all fields');
+    return;
+  }
+  
+  var effortFactor = rir === 0 ? 1.0 : rir === 1 ? 0.95 : rir === 2 ? 0.85 : rir === 3 ? 0.75 : 0.6;
+  var density = (sets * reps * effortFactor) / sessions;
+  
+  document.getElementById('densityValue').textContent = Math.round(density);
+  
+  var preview = '';
+  var text = '';
+  var interpTitle = '';
+  var interpText = '';
+  
+  if (density < 30) {
+    preview = 'Your training density is very low. You\'re likely spinning your wheels...';
+    text = 'Your training density is <strong>very low</strong>. You\'re likely gaining scale weight because you\'re eating more, but the stimulus isn\'t strong enough to force muscle growth. Your body is storing energy without being pushed to adapt.';
+    interpTitle = '⚠️ Low Density Problem';
+    interpText = 'You need to either increase volume per session, push closer to failure, or add more frequency. Right now you\'re spinning your wheels.';
+  } else if (density < 50) {
+    preview = 'Your training density is moderate. There\'s room to optimize...';
+    text = 'Your training density is <strong>moderate</strong>. You\'re probably seeing some growth, but there\'s room to optimize. If you\'re gaining weight but not seeing muscle, this is likely why.';
+    interpTitle = '📊 Room to Optimize';
+    interpText = 'Consider increasing reps per set, adding 1-2 more sets per session, or training closer to failure. Small tweaks here will unlock better results.';
+  } else if (density < 70) {
+    preview = 'Your training density is solid. If you\'re not seeing results, look elsewhere...';
+    text = 'Your training density is <strong>solid</strong>. If you\'re gaining weight and not seeing muscle, the issue is likely nutritional or recovery, not training density.';
+    interpTitle = '✓ Good Density Range';
+    interpText = 'Your training stimulus is strong. If results are stalling, look at your surplus size, sleep quality, and whether you\'re progressing load/reps over time.';
+  } else {
+    preview = 'Your training density is very high. You might be exceeding recovery...';
+    text = 'Your training density is <strong>very high</strong>. You\'re pushing hard. If you\'re not seeing results, you might be exceeding your recovery capacity or need to focus on progressive overload rather than just volume.';
+    interpTitle = '🔥 High Density Warning';
+    interpText = 'More isn\'t always better. Make sure you\'re recovering properly and that you\'re adding weight or reps to the bar. Consider a deload week if you\'ve been pushing this hard for 6+ weeks.';
+  }
+  
+  calculatedResults = {text: text, interpTitle: interpTitle, interpText: interpText};
+  
+  document.getElementById('previewText').textContent = preview;
+  document.getElementById('resultBox').classList.add('show');
+}
+
+function showGate() {
+  if (calculatedResults.text) {
+    document.getElementById('emailGate').classList.add('show');
+  }
+}
+</script>
+<script src="https://unpkg.com/@formspree/ajax@1" defer></script>
+
+</body>
+</html>

@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Around Injuries Tool | RDHCoaching</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --blue: #5271FF;
+            --purple: #C46BE4;
+            --gold: #AB8B00;
+            --dark: #09090E;
+            --card: #15151E;
+            --text: #FDFDFD;
+            --muted: #BBBBD0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 3px;
+            color: var(--blue);
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            font-size: clamp(32px, 8vw, 48px);
+            font-weight: 800;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            font-size: clamp(16px, 4vw, 18px);
+            color: var(--muted);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: clamp(25px, 5vw, 40px);
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .step-number {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--blue);
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(82, 113, 255, 0.1);
+            border-radius: 12px;
+            flex-shrink: 0;
+        }
+
+        .step-title {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .injury-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .injury-option {
+            padding: 20px;
+            background: var(--dark);
+            border: 2px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .injury-option:hover {
+            border-color: var(--blue);
+            transform: translateY(-3px);
+        }
+
+        .injury-option.selected {
+            border-color: var(--blue);
+            background: rgba(82, 113, 255, 0.1);
+        }
+
+        .injury-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .injury-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .severity-slider {
+            margin: 30px 0;
+        }
+
+        .severity-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: var(--dark);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--blue);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            background: var(--purple);
+            transform: scale(1.2);
+        }
+
+        .current-value {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--blue);
+        }
+
+        .warning-box {
+            background: rgba(171, 139, 0, 0.1);
+            border: 1px solid var(--gold);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 30px 0;
+        }
+
+        .warning-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            color: var(--gold);
+            margin-bottom: 10px;
+        }
+
+        .warning-text {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .exercise-list {
+            display: grid;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .exercise-card {
+            background: var(--dark);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .exercise-card:hover {
+            border-color: var(--blue);
+        }
+
+        .exercise-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+
+        .exercise-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .exercise-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .badge-safe {
+            background: rgba(82, 113, 255, 0.1);
+            color: var(--blue);
+        }
+
+        .exercise-description {
+            color: var(--muted);
+            font-size: 14px;
+            margin-bottom: 15px;
+            line-height: 1.7;
+        }
+
+        .exercise-modifications {
+            background: rgba(82, 113, 255, 0.05);
+            border-left: 3px solid var(--blue);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .modifications-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--blue);
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .modifications-list {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px 32px;
+            font-size: 16px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            border: none;
+            border-radius: 10px;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(82, 113, 255, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--dark);
+            border: 1px solid var(--blue);
+            color: var(--blue);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(82, 113, 255, 0.1);
+            transform: translateY(-2px);
+            box-shadow: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .injury-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">RDHCoaching</div>
+            <h1>Training Around Injuries</h1>
+            <p class="subtitle">Smart modifications to keep progressing without aggravating pain</p>
+        </div>
+
+        <div class="card" id="step1">
+            <div class="step-header">
+                <div class="step-number">1</div>
+                <div class="step-title">Where is your injury?</div>
+            </div>
+
+            <div class="injury-grid">
+                <div class="injury-option" onclick="selectInjury('shoulder')">
+                    <div class="injury-icon">💪</div>
+                    <div class="injury-name">Shoulder</div>
+                </div>
+                <div class="injury-option" onclick="selectInjury('elbow')">
+                    <div class="injury-icon">🦾</div>
+                    <div class="injury-name">Elbow</div>
+                </div>
+                <div class="injury-option" onclick="selectInjury('wrist')">
+                    <div class="injury-icon">✋</div>
+                    <div class="injury-name">Wrist</div>
+                </div>
+                <div class="injury-option" onclick="selectInjury('lower-back')">
+                    <div class="injury-icon">🏋️</div>
+                    <div class="injury-name">Lower Back</div>
+                </div>
+                <div class="injury-option" onclick="selectInjury('knee')">
+                    <div class="injury-icon">🦵</div>
+                    <div class="injury-name">Knee</div>
+                </div>
+                <div class="injury-option" onclick="selectInjury('ankle')">
+                    <div class="injury-icon">👟</div>
+                    <div class="injury-name">Ankle</div>
+                </div>
+            </div>
+
+            <button class="btn" id="continueBtn" onclick="goToStep2()" disabled>Continue to Severity</button>
+        </div>
+
+        <div class="card hidden" id="step2">
+            <div class="step-header">
+                <div class="step-number">2</div>
+                <div class="step-title">How severe is the pain?</div>
+            </div>
+
+            <div class="severity-slider">
+                <div class="severity-labels">
+                    <span>Mild discomfort</span>
+                    <span>Moderate pain</span>
+                    <span>Severe pain</span>
+                </div>
+                <input type="range" min="1" max="10" value="5" class="slider" id="severitySlider" oninput="updateSeverity()">
+                <div class="current-value" id="severityValue">5/10</div>
+            </div>
+
+            <div class="warning-box">
+                <div class="warning-title">⚠️ Medical Disclaimer</div>
+                <div class="warning-text">
+                    This tool provides training modifications, not medical advice. If pain is sharp, sudden, or getting worse, see a healthcare professional before continuing to train.
+                </div>
+            </div>
+
+            <button class="btn" onclick="generateRecommendations()">Show Safe Exercises</button>
+        </div>
+
+        <div class="card hidden" id="step3">
+            <div class="step-header">
+                <div class="step-number">3</div>
+                <div class="step-title">Your Safe Exercise Alternatives</div>
+            </div>
+
+            <div id="recommendationsContainer"></div>
+
+            <button class="btn btn-secondary" onclick="resetTool()" style="margin-top: 30px;">
+                Start Over
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let selectedInjury = null;
+        let severityLevel = 5;
+
+        const exerciseDatabase = {
+            shoulder: {
+                safe: [
+                    {
+                        name: 'Neutral Grip DB Press',
+                        description: 'Reduces external rotation stress on the shoulder joint while maintaining pressing stimulus',
+                        modifications: 'Keep elbows at 45° angle, reduce ROM if needed, lighter weight for higher reps'
+                    },
+                    {
+                        name: 'Landmine Press',
+                        description: 'Natural arc of motion that is easier on shoulder joint, great for overhead pressing without full ROM',
+                        modifications: 'Half kneeling position for stability, control the eccentric, focus on scapular positioning'
+                    },
+                    {
+                        name: 'Cable Lateral Raises',
+                        description: 'Constant tension with controllable resistance curve, less impact than dumbbells',
+                        modifications: 'Start with thumb up position, stay in pain free range, slower tempo'
+                    }
+                ]
+            },
+            'lower-back': {
+                safe: [
+                    {
+                        name: 'Trap Bar Deadlift',
+                        description: 'More upright torso angle reduces lumbar loading while maintaining hip hinge pattern',
+                        modifications: 'Elevated handles, narrow stance, focus on bracing before each rep'
+                    },
+                    {
+                        name: 'Belt Squat',
+                        description: 'Removes axial loading on the spine while training lower body',
+                        modifications: 'Control tempo, increase volume instead of loading, full ROM if pain free'
+                    },
+                    {
+                        name: 'Reverse Hyper',
+                        description: 'Traction based exercise that can reduce pressure on discs',
+                        modifications: 'Light weight, controlled reps, focus on glute contraction'
+                    },
+                    {
+                        name: 'McGill Big 3',
+                        description: 'Bird dog, side plank, and curl up for core stability without flexion/extension',
+                        modifications: 'Daily practice, quality over quantity, build up duration gradually'
+                    }
+                ]
+            },
+            knee: {
+                safe: [
+                    {
+                        name: 'Spanish Squat',
+                        description: 'Tibial restriction reduces knee translation, targeting quads with minimal joint stress',
+                        modifications: 'Start with bodyweight, increase time under tension, partial ROM if needed'
+                    },
+                    {
+                        name: 'Leg Press (High Foot Placement)',
+                        description: 'Reduces knee flexion angle while maintaining leg stimulus',
+                        modifications: 'Partial ROM, slower tempo, focus on glute/hamstring engagement'
+                    },
+                    {
+                        name: 'Terminal Knee Extensions',
+                        description: 'VMO strengthening with minimal joint compression',
+                        modifications: 'Light band tension, high rep ranges, squeeze at lockout'
+                    },
+                    {
+                        name: 'Reverse Sled Drag',
+                        description: 'Zero eccentric stress, builds quad strength and promotes blood flow',
+                        modifications: 'Light to moderate load, consistent walking pace, 10 to 15 min sessions'
+                    }
+                ]
+            },
+            elbow: {
+                safe: [
+                    {
+                        name: 'Hammer Curls',
+                        description: 'Neutral grip reduces supination stress on elbow tendons',
+                        modifications: 'Slow eccentric, avoid full lockout, lighter weight for higher volume'
+                    },
+                    {
+                        name: 'Overhead Tricep Extensions (Rope)',
+                        description: 'Rope attachment allows wrist positioning freedom',
+                        modifications: 'Keep elbows stable, partial ROM if needed, focus on contraction'
+                    },
+                    {
+                        name: 'Close Grip Floor Press',
+                        description: 'Reduced ROM limits elbow strain during pressing',
+                        modifications: 'Pause at bottom, controlled tempo, avoid bouncing'
+                    }
+                ]
+            },
+            wrist: {
+                safe: [
+                    {
+                        name: 'Neutral Grip Everything',
+                        description: 'Dumbbells, rope attachments, Swiss bar for all pressing and pulling',
+                        modifications: 'Wrist wraps for support, avoid extremes of flexion/extension'
+                    },
+                    {
+                        name: 'Fat Gripz Variations',
+                        description: 'Distributes force across larger surface area, reduces wrist stress',
+                        modifications: 'Reduce weight by 20 to 30%, focus on grip endurance'
+                    },
+                    {
+                        name: 'Wrist Mobility Drills',
+                        description: 'CARs, weight shifts, loaded stretches to maintain ROM',
+                        modifications: 'Daily practice, pain free range only, gradually expand mobility'
+                    }
+                ]
+            },
+            ankle: {
+                safe: [
+                    {
+                        name: 'Seated Calf Raises',
+                        description: 'Reduced load through ankle joint, targets soleus',
+                        modifications: 'Slow tempo, full ROM if possible, pause at stretch'
+                    },
+                    {
+                        name: 'Leg Press Calf Raises',
+                        description: 'Controlled environment for ankle work without balance demands',
+                        modifications: 'Partial ROM if needed, lighter load for volume'
+                    },
+                    {
+                        name: 'Single Leg Balance Work',
+                        description: 'Proprioception training to restore stability',
+                        modifications: 'Progress from eyes open to closed, unstable surfaces later'
+                    }
+                ]
+            }
+        };
+
+        function selectInjury(injury) {
+            selectedInjury = injury;
+            
+            document.querySelectorAll('.injury-option').forEach(el => {
+                el.classList.remove('selected');
+            });
+            event.target.closest('.injury-option').classList.add('selected');
+            
+            const btn = document.getElementById('continueBtn');
+            btn.disabled = false;
+        }
+
+        function goToStep2() {
+            if (!selectedInjury) return;
+            
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+        }
+
+        function updateSeverity() {
+            severityLevel = document.getElementById('severitySlider').value;
+            document.getElementById('severityValue').textContent = `${severityLevel}/10`;
+        }
+
+        function generateRecommendations() {
+            const exercises = exerciseDatabase[selectedInjury];
+            const container = document.getElementById('recommendationsContainer');
+            
+            container.innerHTML = '';
+
+            const safeSection = document.createElement('div');
+            safeSection.innerHTML = '<h2 style="color: var(--blue); margin-bottom: 20px; font-size: 20px;">✓ Safe Alternatives</h2>';
+            
+            exercises.safe.forEach(exercise => {
+                const card = createExerciseCard(exercise);
+                safeSection.appendChild(card);
+            });
+
+            container.appendChild(safeSection);
+
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.remove('hidden');
+        }
+
+        function createExerciseCard(exercise) {
+            const card = document.createElement('div');
+            card.className = 'exercise-card';
+            
+            card.innerHTML = `
+                <div class="exercise-header">
+                    <div class="exercise-name">${exercise.name}</div>
+                    <div class="exercise-badge badge-safe">Safe</div>
+                </div>
+                <div class="exercise-description">${exercise.description}</div>
+                <div class="exercise-modifications">
+                    <div class="modifications-title">Key Modifications</div>
+                    <div class="modifications-list">${exercise.modifications}</div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        function resetTool() {
+            selectedInjury = null;
+            severityLevel = 5;
+            
+            document.getElementById('step1').classList.remove('hidden');
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.add('hidden');
+            
+            document.querySelectorAll('.injury-option').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            const btn = document.getElementById('continueBtn');
+            btn.disabled = true;
+            
+            document.getElementById('severitySlider').value = 5;
+            document.getElementById('severityValue').textContent = '5/10';
+        }
+    </script>
+</body>
+</html>

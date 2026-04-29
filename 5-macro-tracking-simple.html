@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Macro Tracking Made Simple | RDHCoaching</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --blue: #5271FF;
+            --purple: #C46BE4;
+            --gold: #AB8B00;
+            --dark: #09090E;
+            --card: #15151E;
+            --text: #FDFDFD;
+            --muted: #BBBBD0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .hero {
+            padding: 80px 20px 60px;
+            text-align: center;
+            background: linear-gradient(180deg, var(--dark) 0%, var(--card) 100%);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 3px;
+            color: var(--blue);
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            font-size: clamp(36px, 8vw, 56px);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: clamp(16px, 4vw, 20px);
+            color: var(--muted);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .section {
+            padding: 60px 20px;
+        }
+
+        .section-alt {
+            background: var(--card);
+        }
+
+        .section-title {
+            font-size: clamp(28px, 6vw, 36px);
+            font-weight: 800;
+            margin-bottom: 30px;
+            text-align: center;
+            color: var(--text);
+        }
+
+        .intro-box {
+            background: var(--card);
+            border-left: 4px solid var(--blue);
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 40px;
+        }
+
+        .intro-text {
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--muted);
+        }
+
+        .macro-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .macro-card {
+            background: var(--dark);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .macro-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .macro-name {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--blue);
+        }
+
+        .macro-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 15px;
+        }
+
+        .macro-description {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .steps-grid {
+            display: grid;
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .step-card {
+            background: var(--dark);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .step-card:hover {
+            border-color: var(--blue);
+            transform: translateX(5px);
+        }
+
+        .step-number {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--blue);
+            line-height: 1;
+            margin-bottom: 15px;
+        }
+
+        .step-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+
+        .step-content {
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.7;
+        }
+
+        .calculator-box {
+            background: var(--dark);
+            border: 2px solid var(--blue);
+            border-radius: 16px;
+            padding: clamp(30px, 5vw, 40px);
+            margin: 40px 0;
+        }
+
+        .calc-title {
+            font-size: 24px;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--text);
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        .input-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--blue);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 15px 18px;
+            background: var(--card);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(82, 113, 255, 0.1);
+        }
+
+        select.input-field {
+            cursor: pointer;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px 32px;
+            font-size: 16px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            border: none;
+            border-radius: 10px;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(82, 113, 255, 0.3);
+        }
+
+        .results {
+            margin-top: 30px;
+            padding: 30px;
+            background: var(--card);
+            border-radius: 12px;
+            border-left: 4px solid var(--gold);
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .results h3 {
+            font-size: 22px;
+            margin-bottom: 25px;
+            color: var(--gold);
+        }
+
+        .macro-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 20px;
+        }
+
+        .macro-result {
+            text-align: center;
+        }
+
+        .result-label {
+            font-size: 12px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .result-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--blue);
+        }
+
+        .result-unit {
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .food-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .food-item {
+            background: var(--dark);
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 3px solid var(--blue);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .food-name {
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 5px;
+            font-size: 15px;
+        }
+
+        .food-serving {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .tips-box {
+            background: rgba(171, 139, 0, 0.1);
+            border: 2px solid var(--gold);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 40px 0;
+        }
+
+        .tips-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--gold);
+            margin-bottom: 20px;
+        }
+
+        .tip-item {
+            margin-bottom: 15px;
+            padding-left: 25px;
+            position: relative;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .tip-item::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-weight: 700;
+        }
+
+        @media (max-width: 768px) {
+            .macro-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .food-list {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="container">
+            <div class="logo">RDHCoaching</div>
+            <h1>Macro Tracking Made Simple</h1>
+            <p class="subtitle">Stop guessing. Start tracking. See results.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="container">
+            <div class="intro-box">
+                <p class="intro-text">
+                    You don't need a nutrition degree to track macros. You just need to understand three numbers and stick to them consistently. This guide strips away the complexity and gives you exactly what you need to start tracking today.
+                </p>
+            </div>
+
+            <h2 class="section-title">What Are Macros?</h2>
+
+            <div class="macro-grid">
+                <div class="macro-card">
+                    <div class="macro-icon">🥩</div>
+                    <div class="macro-name">Protein</div>
+                    <div class="macro-value">4 cal/g</div>
+                    <div class="macro-description">
+                        Builds muscle, keeps you full, prevents muscle loss during fat loss
+                    </div>
+                </div>
+
+                <div class="macro-card">
+                    <div class="macro-icon">🍚</div>
+                    <div class="macro-name">Carbs</div>
+                    <div class="macro-value">4 cal/g</div>
+                    <div class="macro-description">
+                        Fuels training performance, replenishes glycogen, supports recovery
+                    </div>
+                </div>
+
+                <div class="macro-card">
+                    <div class="macro-icon">🥑</div>
+                    <div class="macro-name">Fats</div>
+                    <div class="macro-value">9 cal/g</div>
+                    <div class="macro-description">
+                        Hormone production, nutrient absorption, satiety, essential functions
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section section-alt">
+        <div class="container">
+            <h2 class="section-title">The 5 Step System</h2>
+
+            <div class="steps-grid">
+                <div class="step-card">
+                    <div class="step-number">01</div>
+                    <div class="step-title">Calculate Your Targets</div>
+                    <div class="step-content">
+                        Use the calculator below to get your personalized protein, carbs, and fat targets based on your bodyweight and goal.
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-number">02</div>
+                    <div class="step-title">Download MyFitnessPal</div>
+                    <div class="step-content">
+                        Free app, barcode scanner, massive food database. Set your custom macro targets in the app settings.
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-number">03</div>
+                    <div class="step-title">Track Everything You Eat</div>
+                    <div class="step-content">
+                        Scan barcodes, search foods, log as you go. Accuracy matters more than perfection. Aim for 90% compliance.
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-number">04</div>
+                    <div class="step-title">Hit Your Protein First</div>
+                    <div class="step-content">
+                        Protein is non negotiable. Carbs and fats can flex slightly, but hit your protein target every single day.
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-number">05</div>
+                    <div class="step-title">Review & Adjust Weekly</div>
+                    <div class="step-content">
+                        Check your weekly average. Losing weight? Stay the course. Stuck? Drop 100 to 200 calories. Gaining too fast? Add 100 to 200.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="container">
+            <div class="calculator-box">
+                <div class="calc-title">Calculate Your Macros</div>
+
+                <div class="input-group">
+                    <label class="input-label" for="bodyweight">Bodyweight (kg)</label>
+                    <input type="number" id="bodyweight" class="input-field" placeholder="75" step="0.1">
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label" for="goal">Goal</label>
+                    <select id="goal" class="input-field">
+                        <option value="">Select your goal</option>
+                        <option value="cut">Fat Loss</option>
+                        <option value="maintain">Maintenance</option>
+                        <option value="bulk">Muscle Gain</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label" for="activity">Activity Level</label>
+                    <select id="activity" class="input-field">
+                        <option value="">Select activity level</option>
+                        <option value="sedentary">Sedentary (desk job, minimal training)</option>
+                        <option value="light">Light (training 3 to 4x/week)</option>
+                        <option value="moderate">Moderate (training 5 to 6x/week)</option>
+                        <option value="high">High (training 6 to 7x/week + active job)</option>
+                    </select>
+                </div>
+
+                <button class="btn" onclick="calculateMacros()">Calculate My Macros</button>
+
+                <div id="results" class="results">
+                    <h3>Your Daily Macro Targets</h3>
+                    <div class="macro-results">
+                        <div class="macro-result">
+                            <div class="result-label">Calories</div>
+                            <div class="result-value" id="caloriesResult">0</div>
+                            <div class="result-unit">kcal</div>
+                        </div>
+                        <div class="macro-result">
+                            <div class="result-label">Protein</div>
+                            <div class="result-value" id="proteinResult">0</div>
+                            <div class="result-unit">g</div>
+                        </div>
+                        <div class="macro-result">
+                            <div class="result-label">Carbs</div>
+                            <div class="result-value" id="carbsResult">0</div>
+                            <div class="result-unit">g</div>
+                        </div>
+                        <div class="macro-result">
+                            <div class="result-label">Fats</div>
+                            <div class="result-value" id="fatsResult">0</div>
+                            <div class="result-unit">g</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h2 class="section-title" style="margin-top: 60px;">Easy Protein Sources</h2>
+            
+            <div class="food-list">
+                <div class="food-item">
+                    <div class="food-name">Chicken Breast</div>
+                    <div class="food-serving">31g per 100g</div>
+                </div>
+                <div class="food-item">
+                    <div class="food-name">Lean Beef Mince</div>
+                    <div class="food-serving">26g per 100g</div>
+                </div>
+                <div class="food-item">
+                    <div class="food-name">Salmon</div>
+                    <div class="food-serving">25g per 100g</div>
+                </div>
+                <div class="food-item">
+                    <div class="food-name">Greek Yogurt</div>
+                    <div class="food-serving">10g per 100g</div>
+                </div>
+                <div class="food-item">
+                    <div class="food-name">Eggs</div>
+                    <div class="food-serving">6g per egg</div>
+                </div>
+                <div class="food-item">
+                    <div class="food-name">Whey Protein</div>
+                    <div class="food-serving">25g per scoop</div>
+                </div>
+                <div class="food-item">
+                    <div class="food-name">Cottage Cheese</div>
+                    <div class="food-serving">11g per 100g</div>
+                </div>
+                <div class="food-item">
+                    <div class="food-name">Tuna</div>
+                    <div class="food-serving">26g per 100g</div>
+                </div>
+            </div>
+
+            <div class="tips-box">
+                <div class="tips-title">Pro Tips for Success</div>
+                <div class="tip-item">Meal prep on Sundays makes weekday tracking effortless</div>
+                <div class="tip-item">Weigh food raw for accuracy (most database entries are raw weights)</div>
+                <div class="tip-item">Create custom meals in MyFitnessPal for recipes you eat often</div>
+                <div class="tip-item">Don't stress about being 5 to 10g off target. Close enough is good enough.</div>
+                <div class="tip-item">If you can't track a meal (restaurant, social event), estimate conservatively and move on</div>
+                <div class="tip-item">Track for 2 weeks minimum before judging if it's working</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function calculateMacros() {
+            const bodyweight = parseFloat(document.getElementById('bodyweight').value);
+            const goal = document.getElementById('goal').value;
+            const activity = document.getElementById('activity').value;
+
+            if (!bodyweight || !goal || !activity) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            const activityMultipliers = {
+                sedentary: 1.2,
+                light: 1.375,
+                moderate: 1.55,
+                high: 1.725
+            };
+
+            const bmr = 10 * bodyweight + 6.25 * 175 - 5 * 30 + 5;
+            let calories = bmr * activityMultipliers[activity];
+
+            if (goal === 'cut') {
+                calories *= 0.8;
+            } else if (goal === 'bulk') {
+                calories *= 1.1;
+            }
+
+            const protein = bodyweight * 2;
+            const fats = bodyweight * 0.9;
+            const remainingCalories = calories - (protein * 4) - (fats * 9);
+            const carbs = remainingCalories / 4;
+
+            document.getElementById('caloriesResult').textContent = Math.round(calories);
+            document.getElementById('proteinResult').textContent = Math.round(protein);
+            document.getElementById('carbsResult').textContent = Math.round(carbs);
+            document.getElementById('fatsResult').textContent = Math.round(fats);
+
+            document.getElementById('results').classList.add('show');
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    </script>
+</body>
+</html>

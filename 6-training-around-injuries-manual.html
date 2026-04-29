@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Around Injuries Manual | RDHCoaching</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        @media print {
+            body { background: white !important; }
+            .no-print { display: none !important; }
+        }
+
+        :root {
+            --blue: #5271FF;
+            --purple: #C46BE4;
+            --gold: #AB8B00;
+            --dark: #09090E;
+            --card: #15151E;
+            --text: #FDFDFD;
+            --muted: #BBBBD0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark);
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        .cover {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            text-align: center;
+            background: linear-gradient(135deg, var(--dark) 0%, var(--card) 100%);
+        }
+
+        .cover-content {
+            max-width: 700px;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 3px;
+            color: var(--blue);
+            margin-bottom: 40px;
+            text-transform: uppercase;
+        }
+
+        .cover-title {
+            font-size: clamp(40px, 10vw, 64px);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .cover-subtitle {
+            font-size: clamp(18px, 4vw, 24px);
+            color: var(--muted);
+            margin-bottom: 60px;
+            line-height: 1.5;
+        }
+
+        .author {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--blue);
+        }
+
+        .page {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 80px 20px;
+        }
+
+        .chapter {
+            margin-bottom: 80px;
+        }
+
+        .chapter-number {
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--blue);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: clamp(32px, 6vw, 42px);
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 30px;
+            color: var(--text);
+        }
+
+        h2 {
+            font-size: clamp(26px, 5vw, 32px);
+            font-weight: 800;
+            line-height: 1.3;
+            margin: 50px 0 25px;
+            color: var(--text);
+        }
+
+        h3 {
+            font-size: 22px;
+            font-weight: 700;
+            margin: 35px 0 20px;
+            color: var(--text);
+        }
+
+        p {
+            margin-bottom: 20px;
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--muted);
+        }
+
+        .callout {
+            background: rgba(82, 113, 255, 0.1);
+            border-left: 4px solid var(--blue);
+            padding: 25px;
+            margin: 30px 0;
+            border-radius: 8px;
+        }
+
+        .callout-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--blue);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout p {
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+
+        .callout p:last-child {
+            margin-bottom: 0;
+        }
+
+        .principle-box {
+            background: var(--card);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 30px;
+            margin: 30px 0;
+            border-radius: 12px;
+        }
+
+        .principle-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--blue);
+            margin-bottom: 15px;
+        }
+
+        .principle-box p {
+            color: var(--muted);
+        }
+
+        ul, ol {
+            margin: 25px 0 25px 25px;
+            line-height: 1.8;
+        }
+
+        li {
+            margin-bottom: 12px;
+            font-size: 16px;
+            color: var(--muted);
+        }
+
+        li strong {
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .protocol {
+            background: var(--card);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+        }
+
+        .protocol-header {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--blue);
+        }
+
+        .week-block {
+            margin-bottom: 25px;
+        }
+
+        .week-block:last-child {
+            margin-bottom: 0;
+        }
+
+        .week-title {
+            font-weight: 700;
+            color: var(--blue);
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+
+        .week-block p {
+            margin-bottom: 0;
+            font-size: 15px;
+        }
+
+        .download-section {
+            background: var(--card);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 60px 20px;
+            text-align: center;
+            margin-top: 60px;
+            border-radius: 16px;
+        }
+
+        .download-title {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 15px;
+        }
+
+        .download-text {
+            font-size: 16px;
+            color: var(--muted);
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 16px 40px;
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            color: var(--text);
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(82, 113, 255, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .cover-title { font-size: 40px; }
+            .page { padding: 60px 20px; }
+            h1 { font-size: 32px; }
+            h2 { font-size: 26px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="cover">
+        <div class="cover-content">
+            <div class="logo">RDHCoaching</div>
+            <h1 class="cover-title">Training Around Injuries</h1>
+            <p class="cover-subtitle">A practical manual for staying consistent when your body isn't cooperating</p>
+            <div class="author">by Rhys Hughes</div>
+        </div>
+    </div>
+
+    <div class="page">
+        <div class="chapter">
+            <div class="chapter-number">Introduction</div>
+            <h1>The Reality of Training Injuries</h1>
+            
+            <p>If you train hard enough for long enough, you will get injured. Not might. Will.</p>
+
+            <p>This isn't pessimism. It's physics. You're repeatedly loading your body with external resistance. Tendons get cranky. Joints flare up. Muscles pull. It happens.</p>
+
+            <p>The difference between people who make progress and people who stall out for months isn't whether they get injured. It's what they do when the injury happens.</p>
+
+            <div class="callout">
+                <div class="callout-title">The Mental Trap</div>
+                <p>Most people think: "I'm injured, so I can't train."</p>
+                <p>The correct mindset: "I'm injured in one area, so I'll train everything else harder."</p>
+            </div>
+
+            <p>This manual is not medical advice. If you have sharp, sudden, or worsening pain, see a healthcare professional. This is about managing the chronic niggles, minor strains, and joint issues that pop up from consistent hard training.</p>
+
+            <p>The goal is simple: keep making progress while your body heals, not sitting on the sidelines watching your physique deteriorate.</p>
+        </div>
+
+        <div class="chapter">
+            <div class="chapter-number">Chapter One</div>
+            <h1>The Four Principles of Training Through Injury</h1>
+
+            <div class="principle-box">
+                <div class="principle-title">Principle 1: Pain is Information, Not a Stop Sign</div>
+                <p>Pain tells you what NOT to do, not to stop training entirely. Sharp pain during bench press? Don't bench. Train legs, back, and abs instead. Your quads don't care about your shoulder.</p>
+            </div>
+
+            <div class="principle-box">
+                <div class="principle-title">Principle 2: Modify Before You Stop</div>
+                <p>There's always a variation that works. Squats hurt your knee? Try box squats, leg press with high foot placement, or Spanish squats. The movement pattern exists, you just need to find the version your body tolerates.</p>
+            </div>
+
+            <div class="principle-box">
+                <div class="principle-title">Principle 3: Volume > Intensity During Rehab</div>
+                <p>Heavy loads stress injured tissues. Drop the weight by 30 to 40%, increase reps to 12 to 20, slow down the tempo. You can still accumulate training volume without aggravating the injury.</p>
+            </div>
+
+            <div class="principle-box">
+                <div class="principle-title">Principle 4: Blood Flow Accelerates Healing</div>
+                <p>Controlled movement brings nutrients to injured areas. Complete rest causes atrophy and stiffness. The sweet spot is pain free movement with light loading.</p>
+            </div>
+        </div>
+
+        <div class="chapter">
+            <div class="chapter-number">Chapter Two</div>
+            <h1>The Injury Assessment Framework</h1>
+
+            <h2>Step 1: Identify the Movement Pattern</h2>
+            <p>What hurts? Not the body part, the movement. Is it pushing? Pulling? Hip hinge? Knee flexion? Overhead work?</p>
+
+            <h2>Step 2: Find the Pain Free Range</h2>
+            <p>Most injuries have a pain free partial range of motion. Shoulder hurts at bottom of bench? Work the top half. Knee hurts in deep squat? Quarter squats or partial leg press still trains the quads.</p>
+
+            <h2>Step 3: Test Variations</h2>
+            <p>Systematically test alternative exercises in the same movement pattern. One will feel better than the others. That becomes your main movement until healing completes.</p>
+
+            <div class="callout">
+                <div class="callout-title">Testing Protocol</div>
+                <p><strong>Warm up:</strong> 5 to 10 minutes light cardio, joint mobility</p>
+                <p><strong>Test movement:</strong> Bodyweight first, then light resistance</p>
+                <p><strong>Criteria:</strong> If it produces sharp pain (not just discomfort), skip it</p>
+                <p><strong>Volume:</strong> 2 to 3 sets of 10 reps max during testing</p>
+            </div>
+
+            <h2>Step 4: Monitor Daily</h2>
+            <p>How does the injury feel the next morning? If it's worse, you overdid it. If it's the same or better, you found the right dose.</p>
+        </div>
+
+        <div class="chapter">
+            <div class="chapter-number">Chapter Three</div>
+            <h1>Injury Specific Protocols</h1>
+
+            <h2>Lower Back Issues</h2>
+            <p>Most lower back pain comes from two sources: poor bracing or excessive spinal flexion under load.</p>
+
+            <div class="protocol">
+                <div class="protocol-header">4 Week Lower Back Rehab Protocol</div>
+                
+                <div class="week-block">
+                    <div class="week-title">Week 1: Foundation</div>
+                    <p>McGill Big 3 daily (bird dog, side plank, curl up). No loaded spinal flexion. Bodyweight glute bridges and dead bugs. Focus: re establish neutral spine awareness.</p>
+                </div>
+
+                <div class="week-block">
+                    <div class="week-title">Week 2: Light Loading</div>
+                    <p>Add trap bar deadlifts from elevated handles (reduces range). Goblet squats. Reverse hypers if available. All movements 3x15 with light weight. Focus: pain free hip hinge pattern.</p>
+                </div>
+
+                <div class="week-block">
+                    <div class="week-title">Week 3: Progressive Loading</div>
+                    <p>Increase trap bar deadlift weight by 10%. Add belt squats or safety bar squats. Romanian deadlifts with strict form. 4x12 rep scheme. Focus: load tolerance.</p>
+                </div>
+
+                <div class="week-block">
+                    <div class="week-title">Week 4: Return to Training</div>
+                    <p>Test conventional deadlift with 50% of pre injury max. If pain free, progress 5 to 10% weekly. If painful, extend week 3 for another 2 weeks before retesting.</p>
+                </div>
+            </div>
+
+            <h2>Shoulder Pain</h2>
+            <p>Shoulder injuries usually stem from poor scapular positioning, excessive internal rotation, or impingement from overhead work.</p>
+
+            <div class="protocol">
+                <div class="protocol-header">4 Week Shoulder Rehab Protocol</div>
+                
+                <div class="week-block">
+                    <div class="week-title">Week 1: Mobility & Activation</div>
+                    <p>Band pull aparts 3x20 daily. Wall slides for scapular control. Face pulls 4x15. No pressing. Focus: restore shoulder blade movement.</p>
+                </div>
+
+                <div class="week-block">
+                    <div class="week-title">Week 2: Neutral Grip Work</div>
+                    <p>Neutral grip dumbbell press (elbows at 45°). Landmine press. Cable lateral raises thumb up position. 3x15 all movements. Focus: pain free pressing with reduced external rotation.</p>
+                </div>
+
+                <div class="week-block">
+                    <div class="week-title">Week 3: Increase ROM</div>
+                    <p>Progress to fuller range on presses if pain allows. Add incline variations. Slowly increase weight by 5 to 10%. 4x12 rep scheme. Focus: progressive overload without flare up.</p>
+                </div>
+
+                <div class="week-block">
+                    <div class="week-title">Week 4: Return to Barbell</div>
+                    <p>Test barbell bench with 60% pre injury max. Wider grip may still aggravate, stick to close/medium grip initially. Add back overhead work only if pain free.</p>
+                </div>
+            </div>
+
+            <h2>Knee Problems</h2>
+            <p>Knee pain during squats or lunges usually indicates patellofemoral issues or quad tendinopathy.</p>
+
+            <div class="protocol">
+                <div class="protocol-header">4 Week Knee Rehab Protocol</div>
+                
+                <div class="week-block">
+                    <div class="week-title">Week 1: Isometrics & Blood Flow</div>
+                    <p>Wall sits 3x30 to 60 seconds. Terminal knee extensions with band 3x20. Reverse sled drags 10 minutes daily. Focus: pain free quad contraction.</p>
+                </div>
+
+                <div class="week-block">
+                    <div class="week-title">Week 2: Controlled Eccentrics</div>
+                    <p>Spanish squats 3x15. Slow eccentric leg press (3 to 5 second down) with high foot placement. Single leg step downs. Focus: quad strength with minimal joint compression.</p>
+                </div>
+
+                <div class="week-block">
+                    <div class="week-title">Week 3: Progressive Loading</div>
+                    <p>Leg press with gradually lower foot placement. Box squats to parallel. Increase load 10% weekly. 4x10 rep scheme. Focus: build tolerance to knee flexion.</p>
+                </div>
+
+                <div class="week-block">
+                    <div class="week-title">Week 4: Return to Squatting</div>
+                    <p>Test goblet squat to full depth. If pain free, progress to safety bar or front squat. Barbell back squat comes last. Start with 50% pre injury weight.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="chapter">
+            <div class="chapter-number">Chapter Four</div>
+            <h1>The Alternative Exercise Database</h1>
+
+            <h2>When Bench Press Hurts</h2>
+            <ul>
+                <li><strong>Neutral grip dumbbell press:</strong> Reduces external rotation stress</li>
+                <li><strong>Landmine press:</strong> Natural arc, shoulder friendly</li>
+                <li><strong>Floor press:</strong> Reduced ROM limits stretch at bottom</li>
+                <li><strong>Cable flyes:</strong> Constant tension, controllable resistance</li>
+                <li><strong>Push ups with hands elevated:</strong> Bodyweight variation, adjustable ROM</li>
+            </ul>
+
+            <h2>When Squats Hurt</h2>
+            <ul>
+                <li><strong>Leg press (high foot placement):</strong> Reduces knee flexion angle</li>
+                <li><strong>Box squats:</strong> Controlled depth, removes bottom position</li>
+                <li><strong>Belt squats:</strong> Removes axial spine loading</li>
+                <li><strong>Spanish squats:</strong> Tibial restriction, quad focused, low joint stress</li>
+                <li><strong>Step ups:</strong> Unilateral, less overall load needed</li>
+            </ul>
+
+            <h2>When Deadlifts Hurt</h2>
+            <ul>
+                <li><strong>Trap bar deadlift:</strong> More upright torso, less lumbar stress</li>
+                <li><strong>Romanian deadlifts:</strong> Reduced ROM, hamstring emphasis</li>
+                <li><strong>Rack pulls:</strong> Pull from elevated position, removes bottom</li>
+                <li><strong>Reverse hypers:</strong> Decompression effect, glute/hamstring work</li>
+                <li><strong>Cable pull throughs:</strong> Hip hinge pattern, zero spinal compression</li>
+            </ul>
+
+            <h2>When Overhead Press Hurts</h2>
+            <ul>
+                <li><strong>Landmine press:</strong> Natural pressing arc, less shoulder strain</li>
+                <li><strong>Z press:</strong> Seated, forces strict mechanics</li>
+                <li><strong>Incline press variations:</strong> Partial overhead angle</li>
+                <li><strong>Pike push ups:</strong> Bodyweight overhead work</li>
+                <li><strong>Lateral raises (cable):</strong> Delt work without pressing</li>
+            </ul>
+        </div>
+
+        <div class="chapter">
+            <div class="chapter-number">Chapter Five</div>
+            <h1>Nutrition & Recovery During Injury</h1>
+
+            <p>Injuries are catabolic. Your body is diverting resources to healing. Don't compound the problem by undereating.</p>
+
+            <h2>Protein: Non Negotiable</h2>
+            <p>Increase protein to 2.2 to 2.5g per kg bodyweight. Muscle protein synthesis stays elevated around injured tissues. Give your body the building blocks it needs.</p>
+
+            <h2>Don't Cut Calories Aggressively</h2>
+            <p>Even if your training volume drops, maintain calories at maintenance or slightly below. Healing requires energy. A 10% deficit max.</p>
+
+            <h2>Anti Inflammatory Nutrition</h2>
+            <ul>
+                <li>Omega 3s: Fish oil, salmon, mackerel</li>
+                <li>Turmeric/curcumin: 500mg daily with black pepper for absorption</li>
+                <li>Tart cherry juice: Reduces inflammation and muscle soreness</li>
+                <li>Adequate vegetables: Micronutrients support tissue repair</li>
+            </ul>
+
+            <h2>Sleep is When You Heal</h2>
+            <p>7 to 9 hours minimum. Growth hormone peaks during deep sleep. This is when tissue repair happens. If you're injured and not sleeping well, healing will crawl.</p>
+
+            <div class="callout">
+                <div class="callout-title">Recovery Stack</div>
+                <p><strong>Morning:</strong> Fish oil (2 to 3g EPA/DHA), vitamin D (2000 to 4000 IU)</p>
+                <p><strong>Post training:</strong> Protein shake (25 to 30g), tart cherry juice</p>
+                <p><strong>Evening:</strong> Magnesium glycinate (400mg), turmeric/curcumin (500mg)</p>
+            </div>
+        </div>
+
+        <div class="chapter">
+            <div class="chapter-number">Final Thoughts</div>
+            <h1>Consistency Beats Perfection</h1>
+
+            <p>The best training program is the one you can execute consistently. When you're injured, that means modifying intelligently, not stopping completely.</p>
+
+            <p>Every week you spend sitting on the sidelines is a week of lost progress. Your uninjured body parts don't need rest, they need stimulus. Your injured area needs movement, just not the movement that caused the problem.</p>
+
+            <p>Use this manual as a framework, not a rigid prescription. Test movements. Monitor feedback. Adjust based on how your body responds.</p>
+
+            <p>And when in doubt, ask yourself: "Can I do SOMETHING productive today, even if I can't do everything I planned?"</p>
+
+            <p>The answer is almost always yes.</p>
+
+            <div class="callout">
+                <div class="callout-title">Remember</div>
+                <p>Injuries are temporary setbacks. Quitting is permanent.</p>
+                <p>Your physique in 12 months depends on what you do today, not what you wish you could do.</p>
+                <p>Train smart. Stay consistent. Keep progressing.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="download-section">
+        <div class="download-title">Want Personalized Injury Management?</div>
+        <p class="download-text">Book a free discovery call and let's build a training plan around your specific situation</p>
+        <button class="btn no-print" onclick="window.print()">📥 Download This Manual</button>
+    </div>
+</body>
+</html>

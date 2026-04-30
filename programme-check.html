@@ -360,61 +360,60 @@ window.buildProgramme=function(){
   var hasShoulder=injuries.indexOf('shoulder')>-1;
   var hasBack=injuries.indexOf('back')>-1;
 
-  // Rep schemes — varied properly by goal and level
+  // Rep schemes — top set + back-off approach
   var scheme;
   if(goal==='strength'){
     scheme={
-      mainCompound:'5x3 @87-90% 1RM',
-      backoff:'2x5 @70% (speed focus)',
-      accessory:'4x6-8',
-      iso:'3x10-12',
+      mainCompound:'1x5-7 (top set) + 2x8-10 (back-off)',
+      accessory:'3x8-10',
+      iso:'3x12-15',
       rest:'3-5 min compounds | 90s accessories'
     };
   } else if(goal==='mixed'){
     if(level==='beginner'){
-      scheme={mainCompound:'3x5',backoff:'2x8',accessory:'3x10-12',iso:'3x12-15',rest:'2-3 min compounds | 60-90s accessories'};
+      scheme={mainCompound:'1x5-7 + 2x8-10',accessory:'3x8-10',iso:'3x12-15',rest:'2-3 min compounds | 60-90s accessories'};
     } else if(level==='intermediate'){
-      scheme={mainCompound:'4x6 + 1 backoff x15 @60%',backoff:'3x8-10',accessory:'3x10-12',iso:'3x12-15',rest:'2-3 min compounds | 60-90s accessories'};
+      scheme={mainCompound:'1x5-7 + 2x8-10',accessory:'3x8-12',iso:'3x12-15',rest:'2-3 min compounds | 60-90s accessories'};
     } else {
-      scheme={mainCompound:'5x3 heavy + 2x8 backoff',backoff:'3x6-8',accessory:'4x8-12',iso:'3x12-15',rest:'3-4 min compounds | 90s accessories'};
+      scheme={mainCompound:'1x5-7 + 2x8-10 (+ rest-pause final set)',accessory:'3x8-12',iso:'3x12-15',rest:'3-4 min compounds | 90s accessories'};
     }
   } else if(goal==='hypertrophy'){
     if(level==='beginner'){
-      scheme={mainCompound:'3x8-10',backoff:'2x12-15',accessory:'3x12-15',iso:'3x15-20',rest:'90-120s compounds | 60s accessories'};
+      scheme={mainCompound:'1x8-10 + 2x10-12',accessory:'3x10-12',iso:'3x12-15',rest:'90-120s compounds | 60s accessories'};
     } else if(level==='intermediate'){
-      scheme={mainCompound:'4x6-8 + 1 backoff x15',backoff:'3x10-12',accessory:'3x12-15',iso:'3x15-20',rest:'2 min compounds | 60s accessories'};
+      scheme={mainCompound:'1x8-10 + 2x10-12',accessory:'3x10-12',iso:'3x12-15',rest:'2 min compounds | 60s accessories'};
     } else {
-      scheme={mainCompound:'4x4-6 + 2 backoff x10-12',backoff:'4x8-10',accessory:'3x12-15',iso:'3x15-20',rest:'2-3 min compounds | 60s accessories'};
+      scheme={mainCompound:'1x8-10 + 2x10-12 (+ cluster sets option)',accessory:'3x10-12',iso:'3x12-15 (+ iso holds last set)',rest:'2-3 min compounds | 60s accessories'};
     }
   } else {
     // fat loss
-    scheme={mainCompound:'3x5',backoff:'2x10-12',accessory:'3x12-15',iso:'3x15-20',rest:'2 min compounds | 45-60s accessories'};
+    scheme={mainCompound:'1x8-10 + 2x12-15',accessory:'3x12-15',iso:'3x15-20',rest:'2 min compounds | 45-60s accessories'};
   }
 
   // Intensifiers by level
   var intensifiers=[];
   if(level==='beginner'){
     intensifiers=[
-      {name:'Progressive Overload',desc:'Log every session. When you hit the top rep range on all sets, add 2.5-5kg next session. This is the only intensifier you need at this stage.'},
-      {name:'Backoff Sets',desc:'After your heavy working sets, drop to 60% and do a set of 12-15 reps. More volume, less joint stress. Do this on your main compound each session.'},
-      {name:'Rest-Pause',desc:'On your final set, stop at technical failure, rest 10-15 seconds, then push 2-3 more reps. One per session maximum.'}
+      {name:'Progressive Overload',desc:'Log every session. When you hit the top of the rep range on your top set, add 2.5kg next session. This is the only intensifier you need right now.'},
+      {name:'Straight Sets',desc:'Standard approach. Complete all reps in one continuous set. Rest fully between sets (2-3 min for compounds, 60-90s for accessories).'},
+      {name:'Rest-Pause (Accessories Only)',desc:'On your final accessory set, stop at technical failure, rest 15 seconds, push 2-3 more reps. One exercise per session maximum.'}
     ];
   } else if(level==='intermediate'){
     intensifiers=[
-      {name:'Cluster Sets',desc:'Instead of 4x6, do 4 sets of 6 singles with 15s intra-set rest. Lets you handle heavier load for more total reps. Best on main compounds — bench, squat, row.'},
-      {name:'Backoff Sets',desc:'After 3-4 heavy sets, drop to 60% for 1 high-rep set of 12-15. Keeps volume high without grinding joints. Non-negotiable on big compound days.'},
-      {name:'Rest-Pause',desc:'Hit technical failure, rack the weight, rest 10-15s, push for 2-3 more. One rest-pause on your main accessory per session.'},
-      {name:'Drop Sets',desc:'Final set of isolation work only — drop weight by 20-25% immediately and continue to failure. 1-2 exercises per session maximum.'},
-      {name:'RPE Targeting',desc:'Main lifts: RPE 8 (2 reps left). Accessories: RPE 8-9. Isolation final sets: RPE 10 only. Prevents junk volume and keeps quality high.'}
+      {name:'Cluster Sets (Main Compounds)',desc:'Instead of 1x5-7, do 5-7 singles with 15s rest between. Lets you handle heavier load. Use on bench, squat, row when progressing top set weight.'},
+      {name:'Rest-Pause (Accessories)',desc:'Hit technical failure on final accessory set, rack the weight, rest 15s, push for 2-3 more. One exercise per session.'},
+      {name:'Straight Sets',desc:'Standard approach for most work. Complete all reps in one continuous set with full rest between.'},
+      {name:'Iso Holds (Isolation Final Sets)',desc:'On last rep of final isolation set, hold the contracted position for 10-15 seconds. Bicep curls, lateral raises, leg extensions work well.'},
+      {name:'RPE Targeting',desc:'Top sets: RPE 8 (2 reps left). Back-off sets: RPE 7. Accessories: RPE 8-9. Prevents junk volume.'}
     ];
   } else {
     intensifiers=[
-      {name:'Cluster Sets',desc:'5x3 becomes 5x(1+1+1) with 15s intra-set rest. Handle 90%+ loads for more total reps than straight sets allow. Best on squat, deadlift, bench, row.'},
-      {name:'Myorep Sets',desc:'Activation set near failure (8-12 reps), rest 3-5 deep breaths, 5 reps, rest again, repeat x4-5. Extreme muscle fibre activation. Cap at 1 exercise per session.'},
-      {name:'Mechanical Drop Sets',desc:'Extend past failure by moving to an easier lever — incline DB press to flat to floor press. Better than simple weight drops for size.'},
-      {name:'Tempo Manipulation',desc:'3-0-1-0 (3s eccentric). Increases time under tension without adding load. Use on isolation when progressive overload has stalled.'},
-      {name:'Wave Loading',desc:'Week 1: 5x3 heavy. Week 2: 4x8 medium. Week 3: 3x15 light. Rotating intensity prevents accommodation and drives both strength and hypertrophy.'},
-      {name:'Intraset Stretch Pauses',desc:'Pause 3-5 seconds in the stretched position mid-set — bottom of a fly, split squat, cable curl. Emerging evidence for superior growth at long muscle lengths.'}
+      {name:'Cluster Sets (Heavy Compounds)',desc:'5-7 singles with 15s rest. Handle 90%+ loads for more total reps than straight sets. Best on squat, deadlift, bench, row when pushing PRs.'},
+      {name:'Rest-Pause (Top Sets & Accessories)',desc:'Top set compounds: failure, 20s rest, 1-2 more. Accessories: failure, 15s rest, 2-3 more. Cap at 2 exercises per session.'},
+      {name:'Iso Holds (Isolation Work)',desc:'Last rep of final set, hold contracted position 15-20 seconds. Use on lateral raises, curls, leg extensions, face pulls.'},
+      {name:'Straight Sets',desc:'Standard continuous sets. Still the bread and butter for most accessory work.'},
+      {name:'Mechanical Drop Sets',desc:'Extend past failure by moving to easier lever — incline DB press to flat to floor press. Better than weight drops. One exercise per session.'},
+      {name:'Tempo Manipulation',desc:'3-0-1-0 (3s eccentric). Increases time under tension. Use on isolation when progressive overload stalls.'}
     ];
   }
 
@@ -425,100 +424,114 @@ window.buildProgramme=function(){
 
   function pushExs(){
     var exs=[];
+    // Main compound: top set + back-off
     if(hasShoulder){
-      exs.push(ex('Landmine Press','4',scheme.mainCompound,'Shoulder-friendly pressing pattern',''));
+      exs.push(ex('Landmine Press',scheme.mainCompound,'Top set RPE 8, back-off RPE 7',''));
     } else if(hasBar){
-      exs.push(ex(goal==='strength'?'Barbell Bench Press':'Incline Barbell Bench Press','4',scheme.mainCompound,'Primary compound — drive feet into floor',''));
+      exs.push(ex(goal==='strength'?'Barbell Bench Press':'Incline Barbell Bench Press',scheme.mainCompound,'Top set RPE 8, back-off RPE 7 — drive feet',''));
     } else {
-      exs.push(ex('Dumbbell Bench Press','4',scheme.mainCompound,'Primary compound',''));
+      exs.push(ex('Dumbbell Bench Press',scheme.mainCompound,'Top set RPE 8, back-off RPE 7',''));
     }
-    if(hasBar) exs.push(ex('Backoff Bench Press','1',scheme.backoff,'Drop to 60% — controlled eccentric','Backoff Set'));
-    if(hasMachines) exs.push(ex('Cable Fly or Pec Deck','3',scheme.iso,'Chest isolation — full stretch','Drop Set last set'));
-    else if(hasDumbs) exs.push(ex('DB Fly','3',scheme.iso,'Chest isolation',''));
-    if(hasShoulder){
-      exs.push(ex('DB Lateral Raise','4','3x12 + 1x20','Slow eccentric — avoid pressing overhead',''));
-    } else if(hasMachines){
-      exs.push(ex('Machine Shoulder Press','3',scheme.accessory,'',''));
-    } else {
-      exs.push(ex('DB Overhead Press','3',scheme.accessory,'',''));
+    // Accessory chest
+    if(hasMachines) exs.push(ex('Cable Fly or Pec Deck',scheme.accessory,'Full stretch — controlled eccentric',''));
+    else if(hasDumbs) exs.push(ex('DB Fly',scheme.accessory,'Full stretch — 3s eccentric',''));
+    // Shoulder work
+    if(!hasShoulder){
+      if(hasMachines) exs.push(ex('Machine Shoulder Press',scheme.accessory,'',''));
+      else exs.push(ex('DB Overhead Press',scheme.accessory,'',''));
     }
-    exs.push(ex('DB Lateral Raise','3',scheme.iso,'3 sec eccentric every rep','Superset into face pulls'));
-    exs.push(ex('Face Pulls or Rear Delt Fly','3',scheme.iso,'Shoulder health — never skip'));
-    if(hasMachines) exs.push(ex('Cable Tricep Pushdown','3',scheme.iso,'','Drop Set last set'));
-    else exs.push(ex('Overhead DB Tricep Extension','3',scheme.iso,'',''));
-    exs.push(ex('Close-Grip Push-Up or Dip','2','To failure','Finisher',''));
+    exs.push(ex('DB Lateral Raise',scheme.iso,'3s eccentric — consider iso hold last rep',level==='advanced'?'Iso Hold option':''));
+    exs.push(ex('Face Pulls',scheme.iso,'Retract scapula — shoulder health',''));
+    // Tricep work
+    if(hasMachines) exs.push(ex('Cable Tricep Pushdown',scheme.iso,'Full lockout — rest-pause option last set',level!=='beginner'?'Rest-Pause option':''));
+    else exs.push(ex('Overhead DB Tricep Extension',scheme.iso,'Full stretch',''));
     return exs;
   }
 
   function pullExs(){
     var exs=[];
-    if(hasBar) exs.push(ex('Barbell Row','4',scheme.mainCompound,'Drive elbows back — not up',''));
-    else if(hasMachines) exs.push(ex('Seated Cable Row','4',scheme.mainCompound,'Primary compound',''));
-    else exs.push(ex('Dumbbell Row','4',scheme.mainCompound,'Primary compound',''));
-    if(hasBar) exs.push(ex('Backoff Row','1',scheme.backoff,'60% — squeeze at top','Backoff Set'));
-    if(hasMachines) exs.push(ex('Lat Pulldown','4',scheme.accessory,'Full stretch at top',''));
-    else exs.push(ex('Pull-Up or Assisted Pull-Up','4','Max reps','',''));
-    if(hasMachines) exs.push(ex('Cable Face Pull','3',scheme.iso,'Upper arms parallel to floor',''));
-    if(hasMachines) exs.push(ex('Machine Row or Chest Supported Row','3',scheme.accessory,'Removes lower back',''));
-    exs.push(ex('Hammer Curl','3',scheme.accessory,'',''));
-    if(hasMachines) exs.push(ex('Cable Curl','3',scheme.iso,'','Drop Set last set'));
-    else exs.push(ex('Incline DB Curl','3',scheme.iso,'Great stretch',''));
+    // Main compound: top set + back-off
+    if(hasBar) exs.push(ex('Barbell Row',scheme.mainCompound,'Top set RPE 8, back-off RPE 7 — drive elbows back',''));
+    else if(hasMachines) exs.push(ex('Seated Cable Row',scheme.mainCompound,'Top set RPE 8, back-off RPE 7',''));
+    else exs.push(ex('Dumbbell Row',scheme.mainCompound,'Top set RPE 8, back-off RPE 7',''));
+    // Vertical pull
+    if(hasMachines) exs.push(ex('Lat Pulldown',scheme.accessory,'Full stretch — drive elbows down',''));
+    else exs.push(ex('Pull-Up or Assisted Pull-Up',scheme.accessory,'Full ROM — controlled negative',''));
+    // Rear delt
+    if(hasMachines) exs.push(ex('Cable Face Pull',scheme.iso,'Retract scapula — upper arms parallel',''));
+    else exs.push(ex('Reverse DB Fly',scheme.iso,'Rear delt focus — squeeze',''));
+    // Bicep work
+    exs.push(ex('Hammer Curl',scheme.accessory,'Neutral grip — controlled',''));
+    if(hasMachines) exs.push(ex('Cable Curl',scheme.iso,'Constant tension — iso hold option last rep',level==='advanced'?'Iso Hold option':''));
+    else exs.push(ex('Incline DB Curl',scheme.iso,'Full stretch at bottom',''));
     return exs;
   }
 
   function legsExs(){
     var exs=[];
+    // Main compound: top set + back-off
     if(hasKnee){
-      exs.push(ex('Romanian Deadlift','4',scheme.mainCompound,'Knee-friendly',''));
-      exs.push(ex('Leg Press (high foot placement)','4',scheme.accessory,'Reduces knee stress',''));
-      exs.push(ex('Lying Leg Curl','3',scheme.iso,'Hamstring focus',''));
+      exs.push(ex('Romanian Deadlift',scheme.mainCompound,'Top set RPE 8, back-off RPE 7 — knee-friendly',''));
+      exs.push(ex('Leg Press (high foot placement)',scheme.accessory,'Glute/hamstring focus — reduces knee stress',''));
     } else if(hasBar){
-      exs.push(ex('Barbell Squat','4',scheme.mainCompound,'Brace hard — knees track toes',''));
-      exs.push(ex('Backoff Squat','1',scheme.backoff,'60% — fast and controlled','Backoff Set'));
-      exs.push(ex('Romanian Deadlift','3',scheme.accessory,'Hinge at hips — soft knees',''));
-      exs.push(ex('Leg Press','3',scheme.accessory,'','Drop Set last set'));
+      exs.push(ex('Barbell Squat',scheme.mainCompound,'Top set RPE 8, back-off RPE 7 — brace hard',level==='advanced'?'Cluster Set option':''));
+      exs.push(ex('Romanian Deadlift',scheme.accessory,'Hinge at hips — soft knees',''));
     } else {
-      exs.push(ex('Goblet Squat','4',scheme.mainCompound,'',''));
-      exs.push(ex('Romanian Deadlift','3',scheme.accessory,'',''));
-      exs.push(ex('Bulgarian Split Squat','3','3x10 per leg','',''));
+      exs.push(ex('Goblet Squat',scheme.mainCompound,'Top set RPE 8, back-off RPE 7',''));
+      exs.push(ex('Romanian Deadlift',scheme.accessory,'Hinge at hips',''));
     }
-    if(hasBack){
-      exs.push(ex('Lying Leg Curl','3',scheme.iso,'Safer than standing',''));
-    } else if(hasMachines){
-      exs.push(ex('Leg Curl','3',scheme.iso,'',''));
-    }
-    if(hasMachines) exs.push(ex('Leg Extension','3',scheme.iso,'Quad isolation',''));
-    exs.push(ex('Calf Raise','4','15-20 reps','2s up, 2s down',''));
+    // Leg press or lunge
+    if(!hasKnee && hasMachines) exs.push(ex('Leg Press',scheme.accessory,'Control eccentric — full ROM',''));
+    else if(!hasKnee) exs.push(ex('Bulgarian Split Squat',scheme.accessory,'per leg — balance and control',''));
+    // Hamstring isolation
+    if(hasMachines) exs.push(ex('Leg Curl',scheme.iso,'Full contraction — squeeze',''));
+    // Quad isolation
+    if(hasMachines) exs.push(ex('Leg Extension',scheme.iso,'Quad isolation — iso hold option last rep',level==='advanced'?'Iso Hold option':''));
+    // Calves
+    exs.push(ex('Calf Raise','3x15-20','2s up, 2s down — full stretch',''));
     return exs;
   }
 
   function upperExs(){
     var exs=[];
-    var p=pushExs(); var pu=pullExs();
-    exs.push(p[0]); if(p[1]&&p[1].intensifier) exs.push(p[1]);
-    exs.push(pu[0]); if(pu[1]&&pu[1].intensifier) exs.push(pu[1]);
-    if(hasMachines) exs.push(ex('Lat Pulldown','3',scheme.accessory,'',''));
-    if(!hasShoulder) exs.push(ex('DB Shoulder Press','3',scheme.accessory,'',''));
-    exs.push(ex('DB Lateral Raise','3',scheme.iso,'',''));
-    exs.push(ex('Bicep Curl','3',scheme.accessory,'',''));
-    exs.push(ex('Tricep Pushdown or Dip','3',scheme.accessory,'',''));
+    // Main push compound
+    if(hasShoulder){
+      exs.push(ex('Landmine Press',scheme.mainCompound,'Top set RPE 8, back-off RPE 7',''));
+    } else if(hasBar){
+      exs.push(ex('Barbell Bench Press',scheme.mainCompound,'Top set RPE 8, back-off RPE 7',''));
+    } else {
+      exs.push(ex('Dumbbell Bench Press',scheme.mainCompound,'Top set RPE 8, back-off RPE 7',''));
+    }
+    // Main pull compound
+    if(hasBar) exs.push(ex('Barbell Row',scheme.mainCompound,'Top set RPE 8, back-off RPE 7',''));
+    else if(hasMachines) exs.push(ex('Seated Cable Row',scheme.mainCompound,'Top set RPE 8, back-off RPE 7',''));
+    else exs.push(ex('Dumbbell Row',scheme.mainCompound,'Top set RPE 8, back-off RPE 7',''));
+    // Vertical pull
+    if(hasMachines) exs.push(ex('Lat Pulldown',scheme.accessory,'Full stretch',''));
+    else exs.push(ex('Pull-Up',scheme.accessory,'Full ROM',''));
+    // Shoulders
+    if(!hasShoulder) exs.push(ex('DB Shoulder Press',scheme.accessory,'',''));
+    exs.push(ex('DB Lateral Raise',scheme.iso,'Controlled eccentric',''));
+    // Arms
+    exs.push(ex('Bicep Curl',scheme.accessory,'',''));
+    exs.push(ex('Tricep Pushdown or Dip',scheme.accessory,'',''));
     return exs;
   }
 
   function fullBodyExs(session){
     var a=[
-      [hasBar?ex('Barbell Squat','3',scheme.mainCompound,''):ex('Goblet Squat','3',scheme.mainCompound,''),
-       hasBar?ex('Barbell Row','3',scheme.mainCompound,''):ex('DB Row','3',scheme.mainCompound,''),
-       hasShoulder?ex('Landmine Press','3',scheme.accessory,''):ex('DB Bench Press','3',scheme.accessory,''),
-       ex('Romanian Deadlift','3',scheme.accessory,''),
-       ex('Bicep Curl','2',scheme.iso,''),
-       ex('Tricep Extension','2',scheme.iso,'')],
-      [ex('Leg Press','3',scheme.mainCompound,''),
-       hasMachines?ex('Lat Pulldown','3',scheme.mainCompound,''):ex('Pull-Up','3','Max reps',''),
-       ex('DB Shoulder Press','3',scheme.accessory,''),
-       ex('Leg Curl','3',scheme.accessory,''),
-       ex('DB Lateral Raise','2',scheme.iso,''),
-       ex('Calf Raise','2','15-20','')]
+      [hasBar?ex('Barbell Squat',scheme.mainCompound,'Top set RPE 8, back-off RPE 7'):ex('Goblet Squat',scheme.mainCompound,'Top set RPE 8, back-off RPE 7'),
+       hasBar?ex('Barbell Row',scheme.mainCompound,'Top set RPE 8, back-off RPE 7'):ex('DB Row',scheme.mainCompound,'Top set RPE 8, back-off RPE 7'),
+       hasShoulder?ex('Landmine Press',scheme.accessory,''):ex('DB Bench Press',scheme.accessory,''),
+       ex('Romanian Deadlift',scheme.accessory,''),
+       ex('Bicep Curl',scheme.iso,''),
+       ex('Tricep Extension',scheme.iso,'')],
+      [ex('Leg Press',scheme.mainCompound,'Top set RPE 8, back-off RPE 7'),
+       hasMachines?ex('Lat Pulldown',scheme.mainCompound,'Top set RPE 8, back-off RPE 7'):ex('Pull-Up',scheme.accessory,'Max reps'),
+       ex('DB Shoulder Press',scheme.accessory,''),
+       ex('Leg Curl',scheme.accessory,''),
+       ex('DB Lateral Raise',scheme.iso,''),
+       ex('Calf Raise','3x15-20','')]
     ];
     return a[session%2];
   }

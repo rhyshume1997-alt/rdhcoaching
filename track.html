@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#272D26" />
+<meta name="robots" content="noindex, nofollow, noarchive" />
+<title>Your Progress · Rsquared Bootcamp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Antonio:wght@400;500;600&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-base: #272D26;
+    --bg-card: #2F352E;
+    --bg-card-2: #363C35;
+    --bg-elev: #3D4339;
+    --line: rgba(231, 192, 95, 0.15);
+    --line-strong: rgba(231, 192, 95, 0.3);
+    --text-primary: #F5F0E5;
+    --text-secondary: #B8AC93;
+    --text-tertiary: #8C8268;
+    --gold-light: #E7C05F;
+    --gold-mid: #C49B45;
+    --gold-dark: #917438;
+    --brown-dark: #4C4126;
+    --success: #C5D17A;
+    --warn: #E0945C;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg-base);
+    color: var(--text-primary);
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  .display { font-family: 'Antonio', sans-serif; letter-spacing: 0.5px; text-transform: uppercase; }
+
+  .wrap { max-width: 540px; margin: 0 auto; padding: 24px 20px 80px; }
+
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 0.5px solid var(--line); }
+  .brand { font-family: 'Antonio', sans-serif; font-size: 22px; color: var(--gold-light); margin: 0; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 500; }
+  .brand-sub { font-size: 12px; color: var(--text-tertiary); margin: 4px 0 0; letter-spacing: 0.5px; }
+  .client-tag { background: var(--brown-dark); color: var(--gold-light); font-size: 11px; padding: 5px 10px; border-radius: 999px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.8px; }
+
+  .greeting { margin-bottom: 24px; }
+  .greeting h1 { font-family: 'Antonio', sans-serif; font-size: 32px; font-weight: 500; margin: 0 0 4px; letter-spacing: 1px; text-transform: uppercase; }
+  .greeting p { color: var(--text-secondary); margin: 0; font-size: 14px; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 24px; }
+  .stat { background: var(--bg-card); border: 0.5px solid var(--line); border-radius: var(--radius-md); padding: 14px 12px; }
+  .stat-label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 6px; }
+  .stat-value { font-family: 'Antonio', sans-serif; font-size: 22px; font-weight: 500; color: var(--text-primary); margin: 0; }
+  .stat-value.gold { color: var(--gold-light); }
+  .stat-meta { font-size: 11px; color: var(--text-tertiary); margin: 4px 0 0; }
+
+  .section { background: var(--bg-card); border: 0.5px solid var(--line); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 14px; }
+  .section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .section-title { font-family: 'Antonio', sans-serif; font-size: 16px; font-weight: 500; margin: 0; letter-spacing: 1px; text-transform: uppercase; color: var(--text-primary); }
+  .section-link { color: var(--gold-light); font-size: 12px; text-decoration: none; cursor: pointer; }
+
+  .input-row { display: flex; gap: 8px; }
+  .input-row input { flex: 1; }
+
+  input[type="number"], input[type="text"], textarea, select {
+    background: var(--bg-elev);
+    border: 0.5px solid var(--line);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: 'Manrope', sans-serif;
+    font-size: 15px;
+    padding: 12px 14px;
+    width: 100%;
+    transition: border-color 0.15s ease;
+  }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--gold-mid); }
+  input::placeholder, textarea::placeholder { color: var(--text-tertiary); }
+  textarea { min-height: 90px; resize: vertical; font-family: 'Manrope', sans-serif; }
+
+  .btn {
+    background: var(--gold-mid);
+    color: var(--bg-base);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 12px 20px;
+    font-family: 'Antonio', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .btn:hover { background: var(--gold-light); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--gold-light);
+    border: 0.5px solid var(--line-strong);
+  }
+  .btn-ghost:hover { background: var(--brown-dark); color: var(--gold-light); }
+  .btn-row { display: flex; gap: 8px; margin-top: 12px; }
+  .btn-row .btn { flex: 1; }
+
+  .chart { margin-top: 16px; height: 140px; width: 100%; }
+  .chart-empty { text-align: center; color: var(--text-tertiary); font-size: 13px; padding: 30px 0; }
+
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+  .field-meta { font-size: 11px; color: var(--text-tertiary); margin: 4px 0 0; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--gold-mid); color: var(--bg-base); padding: 12px 20px; border-radius: var(--radius-md); font-weight: 500; font-size: 14px; transition: transform 0.3s ease; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .name-prompt { background: var(--bg-card); border: 0.5px solid var(--line); border-radius: var(--radius-lg); padding: 32px 24px; text-align: center; margin: 60px auto; max-width: 380px; }
+  .name-prompt h2 { font-family: 'Antonio', sans-serif; font-size: 24px; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-light); }
+  .name-prompt p { color: var(--text-secondary); margin: 0 0 24px; font-size: 14px; }
+
+  .history-list { max-height: 300px; overflow-y: auto; }
+  .history-item { padding: 10px 0; border-bottom: 0.5px solid var(--line); display: flex; justify-content: space-between; font-size: 13px; }
+  .history-item:last-child { border-bottom: none; }
+  .history-date { color: var(--text-tertiary); }
+
+  .footer { text-align: center; margin-top: 32px; color: var(--text-tertiary); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+  .footer a { color: var(--gold-mid); text-decoration: none; }
+
+  @media (max-width: 380px) {
+    .stats { grid-template-columns: 1fr 1fr; }
+    .stats .stat:last-child { grid-column: span 2; }
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+<div id="name-screen" class="name-prompt" style="display:none;">
+  <h2>Welcome</h2>
+  <p>Enter your name to start tracking your progress. This stays on your phone, your coaches see your check-ins on their dashboard.</p>
+  <input type="text" id="name-input" placeholder="Your full name" />
+  <div style="height: 12px;"></div>
+  <button class="btn" style="width:100%;" onclick="setName()">Get Started</button>
+</div>
+
+<div id="tracker-screen" class="wrap" style="display:none;">
+
+  <div class="header">
+    <div>
+      <p class="brand">Rsquared Bootcamp</p>
+      <p class="brand-sub">Your progress</p>
+    </div>
+    <span class="client-tag" id="client-name-tag">Client</span>
+  </div>
+
+  <div class="greeting">
+    <h1 id="greeting-name">Welcome back</h1>
+    <p>Log your weight, measurements, and how training felt this week.</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <p class="stat-label">Latest weight</p>
+      <p class="stat-value" id="stat-weight">—</p>
+    </div>
+    <div class="stat">
+      <p class="stat-label">Total change</p>
+      <p class="stat-value gold" id="stat-change">—</p>
+      <p class="stat-meta" id="stat-change-meta"></p>
+    </div>
+    <div class="stat">
+      <p class="stat-label">Entries</p>
+      <p class="stat-value" id="stat-entries">0</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <h3 class="section-title">Weight</h3>
+      <a class="section-link" onclick="toggleHistory()">History</a>
+    </div>
+    <div class="input-row">
+      <input type="number" step="0.1" placeholder="Today in kg" id="weight-input" />
+      <button class="btn" onclick="addWeight()">Log</button>
+    </div>
+    <svg class="chart" id="weight-chart" viewBox="0 0 600 140" preserveAspectRatio="none"></svg>
+    <div id="weight-history" class="history-list" style="display:none;"></div>
+  </div>
+
+  <div class="section">
+    <h3 class="section-title" style="margin-bottom: 16px;">Measurements (cm)</h3>
+    <div class="grid-2">
+      <div class="field">
+        <label>Chest</label>
+        <input type="number" step="0.1" id="m-chest" placeholder="e.g. 102" />
+        <p class="field-meta" id="last-chest"></p>
+      </div>
+      <div class="field">
+        <label>Waist</label>
+        <input type="number" step="0.1" id="m-waist" placeholder="e.g. 86" />
+        <p class="field-meta" id="last-waist"></p>
+      </div>
+      <div class="field">
+        <label>Hips</label>
+        <input type="number" step="0.1" id="m-hips" placeholder="e.g. 98" />
+        <p class="field-meta" id="last-hips"></p>
+      </div>
+      <div class="field">
+        <label>Arms</label>
+        <input type="number" step="0.1" id="m-arms" placeholder="e.g. 36" />
+        <p class="field-meta" id="last-arms"></p>
+      </div>
+      <div class="field">
+        <label>Thighs</label>
+        <input type="number" step="0.1" id="m-thighs" placeholder="e.g. 58" />
+        <p class="field-meta" id="last-thighs"></p>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="saveMeasurements()">Save Measurements</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3 class="section-title" style="margin-bottom: 16px;">Notes</h3>
+    <textarea id="notes-input" placeholder="How did training feel? Sleep? Stress? Anything to flag?"></textarea>
+    <div class="btn-row">
+      <button class="btn" onclick="submitWeek()">Submit Weekly Update</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>Rsquared Bootcamp · <a href="#" onclick="resetClient()">Switch Client</a></p>
+  </div>
+
+</div>
+
+<div id="toast" class="toast">Saved</div>
+
+</div>
+
+<script>
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz3ALKk6sD9szKpVBap-oniAAZlZfLCzhlSm1nsj4i9xhb9KQhKDZcPKtYc_M2k-8srsQ/exec';
+
+let state = {
+  client: null,
+  weights: [],
+  measurements: { chest: null, waist: null, hips: null, arms: null, thighs: null },
+  measurementHistory: []
+};
+
+function $(id) { return document.getElementById(id); }
+
+function init() {
+  const params = new URLSearchParams(window.location.search);
+  const urlClient = params.get('client');
+  const stored = localStorage.getItem('rsq-client');
+
+  if (urlClient) {
+    state.client = decodeURIComponent(urlClient).replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    localStorage.setItem('rsq-client', state.client);
+  } else if (stored) {
+    state.client = stored;
+  }
+
+  if (!state.client) {
+    $('name-screen').style.display = 'block';
+    return;
+  }
+
+  loadData();
+  showTracker();
+}
+
+function setName() {
+  const val = $('name-input').value.trim();
+  if (!val) return;
+  state.client = val;
+  localStorage.setItem('rsq-client', val);
+  loadData();
+  $('name-screen').style.display = 'none';
+  showTracker();
+}
+
+function loadData() {
+  const key = 'rsq-data-' + state.client.toLowerCase().replace(/\s+/g, '-');
+  const saved = localStorage.getItem(key);
+  if (saved) {
+    const parsed = JSON.parse(saved);
+    state.weights = parsed.weights || [];
+    state.measurements = parsed.measurements || state.measurements;
+    state.measurementHistory = parsed.measurementHistory || [];
+  }
+}
+
+function saveData() {
+  const key = 'rsq-data-' + state.client.toLowerCase().replace(/\s+/g, '-');
+  localStorage.setItem(key, JSON.stringify({
+    weights: state.weights,
+    measurements: state.measurements,
+    measurementHistory: state.measurementHistory
+  }));
+}
+
+function showTracker() {
+  $('tracker-screen').style.display = 'block';
+  const firstName = state.client.split(' ')[0];
+  $('greeting-name').textContent = 'Hello, ' + firstName;
+  $('client-name-tag').textContent = state.client;
+  renderStats();
+  renderChart();
+  renderMeasurements();
+  renderHistory();
+}
+
+function renderStats() {
+  if (state.weights.length === 0) {
+    $('stat-weight').textContent = '—';
+    $('stat-change').textContent = '—';
+    $('stat-entries').textContent = '0';
+    return;
+  }
+  const latest = state.weights[state.weights.length - 1].kg;
+  const first = state.weights[0].kg;
+  const change = latest - first;
+  $('stat-weight').textContent = latest.toFixed(1) + ' kg';
+  const sign = change > 0 ? '+' : '';
+  $('stat-change').textContent = sign + change.toFixed(1) + ' kg';
+  const weeks = state.weights.length - 1;
+  $('stat-change-meta').textContent = weeks > 0 ? 'over ' + weeks + ' ' + (weeks === 1 ? 'entry' : 'entries') : 'starting point';
+  $('stat-entries').textContent = state.weights.length;
+}
+
+function renderChart() {
+  const svg = $('weight-chart');
+  const data = state.weights;
+  if (data.length < 2) {
+    svg.innerHTML = '<text x="300" y="75" text-anchor="middle" fill="#8C8268" font-family="Manrope" font-size="13">Log at least 2 weights to see your trend</text>';
+    return;
+  }
+  const w = 600, h = 140, pad = 16;
+  const min = Math.min(...data.map(d => d.kg)) - 0.5;
+  const max = Math.max(...data.map(d => d.kg)) + 0.5;
+  const xStep = (w - pad * 2) / (data.length - 1);
+
+  const points = data.map((d, i) => {
+    const x = pad + i * xStep;
+    const y = h - pad - ((d.kg - min) / (max - min)) * (h - pad * 2);
+    return [x, y];
+  });
+
+  const path = points.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+  const area = path + ' L' + points[points.length-1][0].toFixed(1) + ',' + (h-pad) + ' L' + points[0][0].toFixed(1) + ',' + (h-pad) + ' Z';
+
+  svg.innerHTML =
+    '<defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#E7C05F" stop-opacity="0.3"/><stop offset="100%" stop-color="#E7C05F" stop-opacity="0"/></linearGradient></defs>' +
+    '<path d="' + area + '" fill="url(#g1)" />' +
+    '<path d="' + path + '" fill="none" stroke="#E7C05F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />' +
+    points.map(p => '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="3.5" fill="#E7C05F" stroke="#272D26" stroke-width="2" />').join('');
+}
+
+function renderMeasurements() {
+  ['chest', 'waist', 'hips', 'arms', 'thighs'].forEach(part => {
+    const el = $('last-' + part);
+    if (state.measurements[part]) {
+      el.textContent = 'Last: ' + state.measurements[part].toFixed(1) + ' cm';
+    } else {
+      el.textContent = '';
+    }
+  });
+}
+
+function renderHistory() {
+  const list = $('weight-history');
+  if (state.weights.length === 0) {
+    list.innerHTML = '<p style="color:var(--text-tertiary);font-size:13px;text-align:center;padding:20px 0;">No entries yet</p>';
+    return;
+  }
+  list.innerHTML = [...state.weights].reverse().map(w => {
+    return '<div class="history-item"><span>' + w.kg.toFixed(1) + ' kg</span><span class="history-date">' + formatDate(w.date) + '</span></div>';
+  }).join('');
+}
+
+function toggleHistory() {
+  const el = $('weight-history');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function formatDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+
+function addWeight() {
+  const input = $('weight-input');
+  const val = parseFloat(input.value);
+  if (!val || isNaN(val)) return;
+  state.weights.push({ date: new Date().toISOString(), kg: val });
+  input.value = '';
+  saveData();
+  renderStats();
+  renderChart();
+  renderHistory();
+  showToast('Weight logged');
+  postToCoach({ type: 'weight', kg: val });
+}
+
+function saveMeasurements() {
+  const parts = ['chest', 'waist', 'hips', 'arms', 'thighs'];
+  const updates = {};
+  let any = false;
+  parts.forEach(p => {
+    const v = parseFloat($('m-' + p).value);
+    if (!isNaN(v) && v > 0) {
+      state.measurements[p] = v;
+      updates[p] = v;
+      $('m-' + p).value = '';
+      any = true;
+    }
+  });
+  if (!any) return;
+  state.measurementHistory.push({ date: new Date().toISOString(), ...updates });
+  saveData();
+  renderMeasurements();
+  showToast('Measurements saved');
+  postToCoach({ type: 'measurements', measurements: updates });
+}
+
+function submitWeek() {
+  const notes = $('notes-input').value.trim();
+  const summary = {
+    type: 'weekly',
+    weight: state.weights[state.weights.length - 1] || null,
+    measurements: state.measurements,
+    notes: notes
+  };
+  postToCoach(summary);
+  $('notes-input').value = '';
+  showToast('Sent to your coach');
+}
+
+function postToCoach(payload) {
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('REPLACE') === 0) return;
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    body: JSON.stringify({
+      client: state.client,
+      timestamp: new Date().toISOString(),
+      ...payload
+    })
+  }).catch(() => {});
+}
+
+function showToast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function resetClient() {
+  if (!confirm('Switch client? Your data stays saved on this device but you will need to enter your name again.')) return;
+  localStorage.removeItem('rsq-client');
+  location.reload();
+}
+
+init();
+</script>
+
+</body>
+</html>

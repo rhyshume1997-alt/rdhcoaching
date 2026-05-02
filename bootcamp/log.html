@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#272D26" />
+<meta name="robots" content="noindex, nofollow, noarchive" />
+<title>Session Log · Rsquared Bootcamp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Antonio:wght@400;500;600&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-base: #272D26;
+    --bg-card: #2F352E;
+    --bg-elev: #3D4339;
+    --bg-input: #232822;
+    --line: rgba(231, 192, 95, 0.15);
+    --line-strong: rgba(231, 192, 95, 0.3);
+    --text-primary: #F5F0E5;
+    --text-secondary: #B8AC93;
+    --text-tertiary: #8C8268;
+    --gold-light: #E7C05F;
+    --gold-mid: #C49B45;
+    --gold-dark: #917438;
+    --brown-dark: #4C4126;
+    --success: #C5D17A;
+    --warn: #E0945C;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg-base);
+    color: var(--text-primary);
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    overscroll-behavior: contain;
+  }
+
+  .display { font-family: 'Antonio', sans-serif; letter-spacing: 0.5px; text-transform: uppercase; }
+
+  .wrap { max-width: 540px; margin: 0 auto; padding: 20px 16px 100px; }
+
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 0.5px solid var(--line); }
+  .brand { font-family: 'Antonio', sans-serif; font-size: 20px; color: var(--gold-light); margin: 0; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 500; }
+  .brand-sub { font-size: 11px; color: var(--text-tertiary); margin: 4px 0 0; letter-spacing: 0.5px; text-transform: uppercase; }
+  .client-tag { background: var(--brown-dark); color: var(--gold-light); font-size: 10px; padding: 5px 9px; border-radius: 999px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.8px; }
+
+  .session-picker { margin-bottom: 16px; }
+  .session-picker-label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px; margin: 0 0 8px; }
+  .session-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .tab { background: var(--bg-card); border: 0.5px solid var(--line); color: var(--text-secondary); padding: 10px 6px; border-radius: var(--radius-sm); font-family: 'Antonio', sans-serif; font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; cursor: pointer; transition: all 0.15s; text-align: center; }
+  .tab:active { transform: scale(0.97); }
+  .tab.active { background: var(--brown-dark); color: var(--gold-light); border-color: var(--gold-mid); }
+  .tab-day { display: block; font-size: 9px; color: var(--text-tertiary); margin-top: 3px; letter-spacing: 0.3px; font-family: 'Manrope', sans-serif; text-transform: none; }
+  .tab.active .tab-day { color: var(--gold-mid); }
+
+  .session-meta { display: flex; gap: 8px; align-items: center; margin: 14px 0 18px; padding: 12px 14px; background: var(--bg-card); border: 0.5px solid var(--line); border-radius: var(--radius-md); }
+  .session-name { font-family: 'Antonio', sans-serif; font-size: 16px; letter-spacing: 1px; text-transform: uppercase; margin: 0; flex: 1; color: var(--gold-light); }
+  .session-date { font-size: 11px; color: var(--text-tertiary); }
+
+  .exercise { background: var(--bg-card); border: 0.5px solid var(--line); border-radius: var(--radius-lg); margin-bottom: 12px; overflow: hidden; }
+  .ex-head { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+  .ex-name { font-family: 'Antonio', sans-serif; font-size: 15px; letter-spacing: 0.8px; text-transform: uppercase; margin: 0; flex: 1; min-width: 0; }
+  .ex-target { font-size: 11px; color: var(--text-tertiary); margin-top: 3px; letter-spacing: 0.3px; }
+  .ex-toggle { color: var(--gold-light); font-family: 'Antonio', sans-serif; font-size: 12px; padding: 6px 10px; background: var(--bg-elev); border-radius: var(--radius-sm); border: 0.5px solid var(--line); letter-spacing: 1px; flex-shrink: 0; }
+  .ex-toggle.done { background: var(--brown-dark); color: var(--gold-light); border-color: var(--gold-mid); }
+
+  .last-bar { padding: 8px 16px; background: rgba(76, 65, 38, 0.25); border-top: 0.5px solid var(--line); display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  .last-label { font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.8px; flex-shrink: 0; }
+  .last-data { font-size: 13px; color: var(--gold-light); font-family: 'Antonio', sans-serif; letter-spacing: 0.5px; flex: 1; }
+  .last-data.empty { color: var(--text-tertiary); font-family: 'Manrope', sans-serif; font-size: 12px; text-transform: none; letter-spacing: 0; font-style: italic; }
+  .last-copy { font-size: 10px; color: var(--gold-light); padding: 4px 8px; border: 0.5px solid var(--line-strong); border-radius: var(--radius-sm); flex-shrink: 0; letter-spacing: 0.5px; text-transform: uppercase; font-family: 'Antonio', sans-serif; }
+
+  .ex-body { padding: 14px 16px 16px; border-top: 0.5px solid var(--line); display: none; }
+  .ex-body.open { display: block; }
+
+  .set-row { display: grid; grid-template-columns: 30px 1fr 1fr; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .set-num { font-family: 'Antonio', sans-serif; font-size: 13px; color: var(--text-tertiary); letter-spacing: 0.5px; text-align: center; }
+  .set-label { font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.8px; margin: 0 0 4px; }
+  .set-input { background: var(--bg-input); border: 0.5px solid var(--line); border-radius: var(--radius-sm); color: var(--text-primary); font-family: 'Antonio', sans-serif; font-size: 18px; padding: 10px 12px; width: 100%; text-align: center; font-weight: 500; -webkit-appearance: none; -moz-appearance: textfield; }
+  .set-input::-webkit-outer-spin-button, .set-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .set-input:focus { outline: none; border-color: var(--gold-mid); background: var(--bg-elev); }
+  .set-input.filled { color: var(--gold-light); border-color: rgba(231, 192, 95, 0.4); }
+
+  .set-headers { display: grid; grid-template-columns: 30px 1fr 1fr; gap: 8px; margin-bottom: 6px; }
+  .set-headers div:nth-child(2), .set-headers div:nth-child(3) { text-align: center; }
+
+  .ex-note { margin-top: 10px; }
+  .ex-note textarea { width: 100%; background: var(--bg-input); border: 0.5px solid var(--line); border-radius: var(--radius-sm); color: var(--text-primary); font-family: 'Manrope', sans-serif; font-size: 13px; padding: 10px 12px; resize: vertical; min-height: 50px; }
+  .ex-note textarea:focus { outline: none; border-color: var(--gold-mid); }
+
+  .progress-bar { height: 3px; background: var(--bg-input); border-radius: 999px; overflow: hidden; margin-bottom: 18px; }
+  .progress-fill { height: 100%; background: var(--gold-mid); width: 0%; transition: width 0.3s ease; }
+
+  .progress-label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: flex; justify-content: space-between; }
+  .progress-label .gold { color: var(--gold-light); font-family: 'Antonio', sans-serif; }
+
+  .submit-bar { position: fixed; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, var(--bg-base) 60%, rgba(39, 45, 38, 0)); padding: 20px 16px 24px; pointer-events: none; }
+  .submit-bar-inner { max-width: 540px; margin: 0 auto; pointer-events: auto; }
+  .btn-finish { background: var(--gold-mid); color: var(--bg-base); border: none; border-radius: var(--radius-md); padding: 16px 20px; font-family: 'Antonio', sans-serif; font-size: 14px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; width: 100%; box-shadow: 0 8px 30px rgba(0,0,0,0.4); transition: all 0.15s; }
+  .btn-finish:hover { background: var(--gold-light); }
+  .btn-finish:disabled { opacity: 0.5; }
+
+  .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--gold-mid); color: var(--bg-base); padding: 12px 20px; border-radius: var(--radius-md); font-weight: 500; font-size: 14px; transition: transform 0.3s ease; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .name-prompt { background: var(--bg-card); border: 0.5px solid var(--line); border-radius: var(--radius-lg); padding: 32px 24px; text-align: center; margin: 60px auto; max-width: 380px; }
+  .name-prompt h2 { font-family: 'Antonio', sans-serif; font-size: 24px; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-light); }
+  .name-prompt p { color: var(--text-secondary); margin: 0 0 24px; font-size: 14px; }
+  .name-prompt input { background: var(--bg-elev); border: 0.5px solid var(--line); color: var(--text-primary); font-family: 'Manrope', sans-serif; font-size: 15px; padding: 12px 16px; border-radius: var(--radius-sm); width: 100%; box-sizing: border-box; }
+  .btn-primary { background: var(--gold-mid); color: var(--bg-base); border: none; border-radius: var(--radius-sm); padding: 12px 20px; font-family: 'Antonio', sans-serif; font-size: 13px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; width: 100%; }
+
+  .footer-nav { text-align: center; margin-top: 24px; padding-bottom: 80px; }
+  .footer-nav a { color: var(--gold-mid); text-decoration: none; font-size: 12px; margin: 0 12px; letter-spacing: 0.5px; }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--text-tertiary); }
+  .empty-state p { margin: 8px 0; }
+
+  @media (max-width: 360px) {
+    .session-tabs { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div id="name-screen" class="name-prompt" style="display:none;">
+  <h2>Welcome</h2>
+  <p>Enter your name to start logging your sessions.</p>
+  <input type="text" id="name-input" placeholder="Your full name" />
+  <div style="height: 12px;"></div>
+  <button class="btn-primary" onclick="setName()">Get Started</button>
+</div>
+
+<div id="app" class="wrap" style="display:none;">
+
+  <div class="header">
+    <div>
+      <p class="brand">Rsquared Bootcamp</p>
+      <p class="brand-sub">Session log</p>
+    </div>
+    <span class="client-tag" id="client-name-tag">Client</span>
+  </div>
+
+  <div class="session-picker">
+    <p class="session-picker-label">Today's session</p>
+    <div class="session-tabs" id="session-tabs"></div>
+  </div>
+
+  <div class="session-meta" id="session-meta">
+    <div>
+      <p class="session-name" id="session-name">—</p>
+    </div>
+    <div class="session-date" id="session-date"></div>
+  </div>
+
+  <div class="progress-label">
+    <span>Sets logged</span>
+    <span class="gold" id="progress-text">0 / 0</span>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-fill" id="progress-fill"></div>
+  </div>
+
+  <div id="exercises"></div>
+
+  <div class="footer-nav">
+    <a href="track.html">Weekly tracker</a>
+    <a href="macros.html">Macros</a>
+  </div>
+
+</div>
+
+<div class="submit-bar" id="submit-bar" style="display:none;">
+  <div class="submit-bar-inner">
+    <button class="btn-finish" id="btn-finish" onclick="finishSession()">Finish &amp; Save Session</button>
+  </div>
+</div>
+
+<div id="toast" class="toast">Saved</div>
+
+<script>
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz3ALKk6sD9szKpVBap-oniAAZlZfLCzhlSm1nsj4i9xhb9KQhKDZcPKtYc_M2k-8srsQ/exec';
+
+// Programme: 6 sessions across 3 blocks. Pulled from the master programme doc.
+const PROGRAMME = {
+  'A-upper': {
+    name: 'Block A · Upper',
+    block: 'A', day: 'Upper',
+    exercises: [
+      { id: 'a1', name: 'DB Bench Press', sets: 4, target: '4 x 6 · RPE 7-8' },
+      { id: 'a2', name: 'BB Bent Row / Heavy DB Row', sets: 4, target: '4 x 8 · superset A1' },
+      { id: 'b1', name: 'DB Standing Shoulder Press', sets: 3, target: '3 x 10 · 60s rest' },
+      { id: 'b2', name: 'Renegade Row (light DBs)', sets: 3, target: '3 x 8/side · superset B1' },
+      { id: 'c1', name: 'DB Hammer Curl', sets: 3, target: '3 x 10' },
+      { id: 'c2', name: 'DB Floor Skull Crusher', sets: 3, target: '3 x 12 · superset C1' },
+      { id: 'd', name: 'Rower / SkiErg relay', sets: 5, target: '200m / 200m x 5 · partner relay' }
+    ]
+  },
+  'A-lower': {
+    name: 'Block A · Lower',
+    block: 'A', day: 'Lower',
+    exercises: [
+      { id: 'a1', name: 'BB Back Squat', sets: 4, target: '4 x 6 · RPE 7-8 · 2min rest' },
+      { id: 'a2', name: 'KB Swing', sets: 4, target: '4 x 12 · superset A1' },
+      { id: 'b1', name: 'BB or DB Romanian Deadlift', sets: 3, target: '3 x 10 · 90s rest' },
+      { id: 'b2', name: 'DB Reverse Lunge', sets: 3, target: '3 x 8/side · superset B1' },
+      { id: 'c1', name: 'Bulgarian Split Squat (step box)', sets: 3, target: '3 x 10/side' },
+      { id: 'c2', name: 'Plank or Hollow Hold', sets: 3, target: '3 x 45s · superset C1' },
+      { id: 'd', name: 'Bike intervals', sets: 8, target: '30s on / 30s off x 8' }
+    ]
+  },
+  'B-upper': {
+    name: 'Block B · Upper',
+    block: 'B', day: 'Upper',
+    exercises: [
+      { id: 'a1', name: 'DB Incline Bench Press', sets: 4, target: '4 x 10 · RPE 7-8 · 60s rest' },
+      { id: 'a2', name: 'DB Single Arm Row', sets: 4, target: '4 x 10/side · superset A1' },
+      { id: 'b1', name: 'DB Lateral Raise', sets: 3, target: '3 x 12' },
+      { id: 'b2', name: 'DB Bent Over Reverse Fly', sets: 3, target: '3 x 12 · superset B1' },
+      { id: 'c1', name: 'BB Bicep Curl', sets: 3, target: '3 x 12' },
+      { id: 'c2', name: 'DB Tricep Kickback', sets: 3, target: '3 x 12 · superset C1' },
+      { id: 'd', name: 'SkiErg intervals', sets: 8, target: '20s on / 40s off x 8' }
+    ]
+  },
+  'B-lower': {
+    name: 'Block B · Lower',
+    block: 'B', day: 'Lower',
+    exercises: [
+      { id: 'a1', name: 'Goblet Squat (heavy KB or DB)', sets: 4, target: '4 x 10 · RPE 8 · 60s rest' },
+      { id: 'a2', name: 'Hip Thrust (BB or DB on hips)', sets: 4, target: '4 x 12 · superset A1' },
+      { id: 'b1', name: 'DB Walking Lunge', sets: 3, target: '3 x 10/side' },
+      { id: 'b2', name: 'Single Leg Glute Bridge', sets: 3, target: '3 x 12/side · superset B1' },
+      { id: 'c1', name: 'Step Up (loaded, step box)', sets: 3, target: '3 x 10/side' },
+      { id: 'c2', name: 'Side Plank', sets: 3, target: '3 x 30s/side · superset C1' },
+      { id: 'd', name: 'Rower for calories', sets: 6, target: '10 cals x 6 · 1min rest' }
+    ]
+  },
+  'C-upper': {
+    name: 'Block C · Upper',
+    block: 'C', day: 'Upper',
+    exercises: [
+      { id: 'a', name: 'DB Bench Press', sets: 5, target: '5 x 8 · 75s rest' },
+      { id: 'b', name: 'EMOM 12 (push press / row / plank)', sets: 4, target: 'Min1: 8 push press · Min2: 10 row · Min3: 30s plank' },
+      { id: 'c', name: 'AMRAP 8 (curl / press / KB swing)', sets: 1, target: '5 curl + 8 tricep + 10 swing · score = rounds' },
+      { id: 'd', name: 'SkiErg 250m intervals', sets: 4, target: '250m x 4 · 60s rest' }
+    ]
+  },
+  'C-lower': {
+    name: 'Block C · Lower',
+    block: 'C', day: 'Lower',
+    exercises: [
+      { id: 'a', name: 'BB Back Squat', sets: 5, target: '5 x 8 · 90s rest' },
+      { id: 'b', name: 'EMOM 12 (swings / goblet squats / wall sit)', sets: 4, target: 'Min1: 8 swings · Min2: 10 goblet · Min3: 30s wall sit' },
+      { id: 'c', name: 'AMRAP 8 (step up / RDL / row)', sets: 1, target: '10 step up + 12 RDL + 10 cal row · score = rounds' },
+      { id: 'd', name: 'Bike for calories', sets: 5, target: '12 cals x 5 · 60s rest' }
+    ]
+  }
+};
+
+const SESSIONS_ORDER = ['A-upper', 'A-lower', 'B-upper', 'B-lower', 'C-upper', 'C-lower'];
+
+let state = {
+  client: null,
+  currentSession: 'A-upper',
+  todayLog: {},
+  history: []
+};
+
+function $(id) { return document.getElementById(id); }
+
+function init() {
+  const params = new URLSearchParams(window.location.search);
+  const urlClient = params.get('client');
+  const stored = localStorage.getItem('rsq-client');
+
+  if (urlClient) {
+    state.client = decodeURIComponent(urlClient).replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    localStorage.setItem('rsq-client', state.client);
+  } else if (stored) {
+    state.client = stored;
+  }
+
+  if (!state.client) {
+    $('name-screen').style.display = 'block';
+    return;
+  }
+
+  loadHistory();
+  pickDefaultSession();
+  showApp();
+}
+
+function setName() {
+  const val = $('name-input').value.trim();
+  if (!val) return;
+  state.client = val;
+  localStorage.setItem('rsq-client', val);
+  loadHistory();
+  pickDefaultSession();
+  $('name-screen').style.display = 'none';
+  showApp();
+}
+
+function loadHistory() {
+  const key = 'rsq-sessions-' + state.client.toLowerCase().replace(/\s+/g, '-');
+  const saved = localStorage.getItem(key);
+  state.history = saved ? JSON.parse(saved) : [];
+}
+
+function saveHistory() {
+  const key = 'rsq-sessions-' + state.client.toLowerCase().replace(/\s+/g, '-');
+  localStorage.setItem(key, JSON.stringify(state.history));
+}
+
+function pickDefaultSession() {
+  // If they did upper last, suggest lower next (and vice versa). Otherwise default to A-upper.
+  if (state.history.length === 0) {
+    state.currentSession = 'A-upper';
+    return;
+  }
+  const last = state.history[state.history.length - 1];
+  const lastSession = PROGRAMME[last.sessionId];
+  if (lastSession && lastSession.day === 'Upper') {
+    // Suggest lower of same block
+    state.currentSession = lastSession.block + '-lower';
+  } else if (lastSession && lastSession.day === 'Lower') {
+    // Suggest upper of same block
+    state.currentSession = lastSession.block + '-upper';
+  }
+}
+
+function showApp() {
+  $('app').style.display = 'block';
+  $('client-name-tag').textContent = state.client;
+  renderTabs();
+  loadSession(state.currentSession);
+}
+
+function renderTabs() {
+  const tabsEl = $('session-tabs');
+  tabsEl.innerHTML = SESSIONS_ORDER.map(id => {
+    const session = PROGRAMME[id];
+    const active = id === state.currentSession ? 'active' : '';
+    return '<div class="tab ' + active + '" onclick="selectSession(\'' + id + '\')">' +
+      'Block ' + session.block +
+      '<span class="tab-day">' + session.day + '</span>' +
+      '</div>';
+  }).join('');
+}
+
+function selectSession(id) {
+  // Save current todayLog to history if anything was entered
+  if (hasAnyData()) {
+    saveTodayLog();
+  }
+  state.currentSession = id;
+  state.todayLog = {};
+  renderTabs();
+  loadSession(id);
+}
+
+function loadSession(id) {
+  const session = PROGRAMME[id];
+  $('session-name').textContent = session.name;
+  $('session-date').textContent = formatDate(new Date());
+  // Try to load any existing todayLog from localStorage (if they refresh during a session)
+  const todayKey = 'rsq-today-' + state.client.toLowerCase().replace(/\s+/g, '-') + '-' + id + '-' + new Date().toISOString().split('T')[0];
+  const todayData = localStorage.getItem(todayKey);
+  if (todayData) {
+    state.todayLog = JSON.parse(todayData);
+  }
+  renderExercises();
+  updateProgress();
+}
+
+function renderExercises() {
+  const session = PROGRAMME[state.currentSession];
+  const container = $('exercises');
+  container.innerHTML = session.exercises.map((ex, idx) => {
+    const last = findLastForExercise(ex.id);
+    const today = state.todayLog[ex.id] || { weight: [], reps: [], note: '' };
+    const isOpen = idx === 0 || hasAnyDataFor(ex.id);
+    const isDone = isExerciseDone(ex, today);
+
+    let lastBar = '';
+    if (last) {
+      const summary = formatLastSummary(last);
+      lastBar = '<div class="last-bar" onclick="copyLast(\'' + ex.id + '\')">' +
+        '<span class="last-label">Last</span>' +
+        '<span class="last-data">' + summary + '</span>' +
+        '<span class="last-copy">Use</span>' +
+        '</div>';
+    } else {
+      lastBar = '<div class="last-bar">' +
+        '<span class="last-label">Last</span>' +
+        '<span class="last-data empty">No history yet</span>' +
+        '</div>';
+    }
+
+    let setsHtml = '<div class="set-headers">' +
+      '<div></div>' +
+      '<div class="set-label">Weight (kg)</div>' +
+      '<div class="set-label">Reps</div>' +
+      '</div>';
+
+    for (let s = 0; s < ex.sets; s++) {
+      const w = today.weight[s] || '';
+      const r = today.reps[s] || '';
+      const wFilled = w !== '' ? 'filled' : '';
+      const rFilled = r !== '' ? 'filled' : '';
+      setsHtml += '<div class="set-row">' +
+        '<div class="set-num">' + (s + 1) + '</div>' +
+        '<input type="number" inputmode="decimal" class="set-input ' + wFilled + '" data-ex="' + ex.id + '" data-set="' + s + '" data-field="weight" value="' + w + '" placeholder="—" />' +
+        '<input type="number" inputmode="numeric" class="set-input ' + rFilled + '" data-ex="' + ex.id + '" data-set="' + s + '" data-field="reps" value="' + r + '" placeholder="—" />' +
+        '</div>';
+    }
+
+    const noteHtml = '<div class="ex-note">' +
+      '<textarea data-ex="' + ex.id + '" data-field="note" placeholder="Notes (optional)">' + (today.note || '') + '</textarea>' +
+      '</div>';
+
+    return '<div class="exercise" data-ex="' + ex.id + '">' +
+      '<div class="ex-head" onclick="toggleExercise(\'' + ex.id + '\')">' +
+        '<div style="flex:1;min-width:0;">' +
+          '<p class="ex-name">' + ex.name + '</p>' +
+          '<p class="ex-target">' + ex.target + '</p>' +
+        '</div>' +
+        '<span class="ex-toggle ' + (isDone ? 'done' : '') + '">' + (isOpen ? '−' : '+') + '</span>' +
+      '</div>' +
+      lastBar +
+      '<div class="ex-body ' + (isOpen ? 'open' : '') + '">' +
+        setsHtml +
+        noteHtml +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  // Wire up input listeners
+  container.querySelectorAll('input[type="number"], textarea').forEach(input => {
+    input.addEventListener('input', handleInput);
+    input.addEventListener('blur', handleInput);
+  });
+}
+
+function toggleExercise(exId) {
+  const card = document.querySelector('.exercise[data-ex="' + exId + '"]');
+  const body = card.querySelector('.ex-body');
+  const toggle = card.querySelector('.ex-toggle');
+  body.classList.toggle('open');
+  toggle.textContent = body.classList.contains('open') ? '−' : '+';
+}
+
+function handleInput(e) {
+  const exId = e.target.dataset.ex;
+  const field = e.target.dataset.field;
+
+  if (!state.todayLog[exId]) {
+    state.todayLog[exId] = { weight: [], reps: [], note: '' };
+  }
+
+  if (field === 'note') {
+    state.todayLog[exId].note = e.target.value;
+  } else {
+    const setIdx = parseInt(e.target.dataset.set);
+    const val = parseFloat(e.target.value);
+    if (!isNaN(val)) {
+      state.todayLog[exId][field][setIdx] = val;
+      e.target.classList.add('filled');
+    } else {
+      delete state.todayLog[exId][field][setIdx];
+      e.target.classList.remove('filled');
+    }
+  }
+
+  // Save in-progress to localStorage
+  const todayKey = 'rsq-today-' + state.client.toLowerCase().replace(/\s+/g, '-') + '-' + state.currentSession + '-' + new Date().toISOString().split('T')[0];
+  localStorage.setItem(todayKey, JSON.stringify(state.todayLog));
+
+  // Update done indicator on header
+  updateDoneIndicator(exId);
+  updateProgress();
+}
+
+function updateDoneIndicator(exId) {
+  const session = PROGRAMME[state.currentSession];
+  const ex = session.exercises.find(x => x.id === exId);
+  const today = state.todayLog[exId];
+  const card = document.querySelector('.exercise[data-ex="' + exId + '"]');
+  const toggle = card.querySelector('.ex-toggle');
+  if (isExerciseDone(ex, today)) {
+    toggle.classList.add('done');
+  } else {
+    toggle.classList.remove('done');
+  }
+}
+
+function isExerciseDone(ex, today) {
+  if (!today) return false;
+  let filled = 0;
+  for (let s = 0; s < ex.sets; s++) {
+    if (today.weight[s] !== undefined || today.reps[s] !== undefined) filled++;
+  }
+  return filled >= ex.sets;
+}
+
+function updateProgress() {
+  const session = PROGRAMME[state.currentSession];
+  let totalSets = 0;
+  let filledSets = 0;
+  session.exercises.forEach(ex => {
+    totalSets += ex.sets;
+    const today = state.todayLog[ex.id];
+    if (today) {
+      for (let s = 0; s < ex.sets; s++) {
+        if (today.weight[s] !== undefined || today.reps[s] !== undefined) filledSets++;
+      }
+    }
+  });
+  $('progress-text').textContent = filledSets + ' / ' + totalSets;
+  const pct = totalSets > 0 ? (filledSets / totalSets) * 100 : 0;
+  $('progress-fill').style.width = pct + '%';
+  $('submit-bar').style.display = filledSets > 0 ? 'block' : 'none';
+}
+
+function copyLast(exId) {
+  const last = findLastForExercise(exId);
+  if (!last) return;
+  if (!state.todayLog[exId]) state.todayLog[exId] = { weight: [], reps: [], note: '' };
+  state.todayLog[exId].weight = [...last.weight];
+  state.todayLog[exId].reps = [...last.reps];
+  // Re-render this exercise
+  renderExercises();
+  updateProgress();
+  showToast('Last session loaded');
+}
+
+function findLastForExercise(exId) {
+  for (let i = state.history.length - 1; i >= 0; i--) {
+    const session = state.history[i];
+    if (session.sessionId === state.currentSession && session.exercises[exId]) {
+      const data = session.exercises[exId];
+      if (data.weight && data.weight.length > 0) {
+        return data;
+      }
+    }
+  }
+  return null;
+}
+
+function formatLastSummary(data) {
+  const sets = [];
+  for (let i = 0; i < Math.max(data.weight.length, data.reps.length); i++) {
+    const w = data.weight[i];
+    const r = data.reps[i];
+    if (w !== undefined && r !== undefined) sets.push(w + 'x' + r);
+    else if (w !== undefined) sets.push(w + 'kg');
+    else if (r !== undefined) sets.push(r + 'r');
+  }
+  return sets.join(' · ');
+}
+
+function hasAnyDataFor(exId) {
+  const today = state.todayLog[exId];
+  if (!today) return false;
+  return today.weight.length > 0 || today.reps.length > 0 || (today.note && today.note.length > 0);
+}
+
+function hasAnyData() {
+  return Object.keys(state.todayLog).some(exId => hasAnyDataFor(exId));
+}
+
+function saveTodayLog() {
+  const session = PROGRAMME[state.currentSession];
+  const entry = {
+    date: new Date().toISOString(),
+    sessionId: state.currentSession,
+    sessionName: session.name,
+    exercises: state.todayLog
+  };
+  state.history.push(entry);
+  saveHistory();
+}
+
+function finishSession() {
+  if (!hasAnyData()) {
+    showToast('Log at least one set first');
+    return;
+  }
+  saveTodayLog();
+  postToCoach();
+
+  // Clear in-progress storage for today
+  const todayKey = 'rsq-today-' + state.client.toLowerCase().replace(/\s+/g, '-') + '-' + state.currentSession + '-' + new Date().toISOString().split('T')[0];
+  localStorage.removeItem(todayKey);
+
+  state.todayLog = {};
+  renderExercises();
+  updateProgress();
+  showToast('Session saved. Strong work.');
+  setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 600);
+}
+
+function postToCoach() {
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('REPLACE') === 0) return;
+  const session = PROGRAMME[state.currentSession];
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    body: JSON.stringify({
+      client: state.client,
+      timestamp: new Date().toISOString(),
+      type: 'session',
+      sessionId: state.currentSession,
+      sessionName: session.name,
+      exercises: state.todayLog
+    })
+  }).catch(() => {});
+}
+
+function formatDate(d) {
+  return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+function showToast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+init();
+</script>
+
+</body>
+</html>

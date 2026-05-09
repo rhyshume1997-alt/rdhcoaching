@@ -224,6 +224,158 @@
     
     /* Production-grade utility classes */
     .text-mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* ============================================
+       TOAST NOTIFICATIONS
+       ============================================ */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      pointer-events: none;
+    }
+    
+    .toast {
+      background: white;
+      border-radius: 12px;
+      padding: 16px 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 320px;
+      max-width: 420px;
+      pointer-events: auto;
+      animation: toastSlideIn 0.3s ease, toastFadeOut 0.3s ease 3.7s forwards;
+      border-left: 4px solid #10B981;
+    }
+    
+    .toast.error { border-left-color: #EF4444; }
+    .toast.warning { border-left-color: #F59E0B; }
+    .toast.info { border-left-color: #3B82F6; }
+    
+    @keyframes toastSlideIn {
+      from { transform: translateX(400px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes toastFadeOut {
+      to { transform: translateX(400px); opacity: 0; }
+    }
+    
+    .toast-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: #D1FAE5;
+      color: #065F46;
+    }
+    
+    .toast.error .toast-icon { background: #FEE2E2; color: #991B1B; }
+    .toast.warning .toast-icon { background: #FEF3C7; color: #92400E; }
+    .toast.info .toast-icon { background: #DBEAFE; color: #1E40AF; }
+    
+    .toast-content { flex: 1; }
+    .toast-title { font-weight: 600; font-size: 14px; color: #0F172A; }
+    .toast-message { font-size: 13px; color: #64748B; margin-top: 2px; }
+    
+    /* ============================================
+       NOTIFICATION DROPDOWN
+       ============================================ */
+    .notification-dropdown {
+      position: absolute;
+      top: 50px;
+      right: 0;
+      width: 380px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      border: 1px solid #E2E8F0;
+      display: none;
+      z-index: 200;
+      max-height: 480px;
+      overflow: hidden;
+    }
+    
+    .notification-dropdown.active { display: block; }
+    
+    .notification-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #E2E8F0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .notification-list {
+      max-height: 380px;
+      overflow-y: auto;
+    }
+    
+    .notification-item {
+      padding: 14px 20px;
+      border-bottom: 1px solid #F1F5F9;
+      display: flex;
+      gap: 12px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    
+    .notification-item:hover { background: #F8FAFC; }
+    .notification-item.unread { background: #EFF6FF; }
+    
+    .notification-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* ============================================
+       FORM STYLES
+       ============================================ */
+    .form-group { margin-bottom: 16px; }
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 6px;
+    }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #CBD5E1;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none;
+      border-color: #1E3472;
+      box-shadow: 0 0 0 3px rgba(30, 52, 114, 0.1);
+    }
+    .form-textarea { min-height: 100px; resize: vertical; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    
+    /* ============================================
+       UTILITY
+       ============================================ */
+    .position-relative { position: relative; }
+
   </style>
 </head>
 <body>
@@ -318,12 +470,77 @@
           </div>
         </div>
         <div class="top-bar-right">
-          <button class="notification-btn">
-            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-            </svg>
-            <span class="notification-badge"></span>
-          </button>
+          <div class="position-relative">
+            <button class="notification-btn" onclick="toggleNotifications(event)">
+              <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+              </svg>
+              <span class="notification-badge"></span>
+            </button>
+            
+            <div id="notificationDropdown" class="notification-dropdown">
+              <div class="notification-header">
+                <h3 class="font-semibold text-gray-900">Notifications</h3>
+                <button onclick="markAllRead()" class="text-xs text-primary hover:text-primary-dark font-medium">Mark all read</button>
+              </div>
+              <div class="notification-list">
+                <div class="notification-item unread" onclick="navigateToPage('email'); closeNotifications();">
+                  <div class="notification-icon" style="background: #FEF3C7;">
+                    <svg class="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  </div>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold text-gray-900">2nd reminder due today</div>
+                    <div class="text-xs text-gray-600 mt-0.5">Defence Manufacturing Co - Quote JNR-Q-002</div>
+                    <div class="text-xs text-gray-400 mt-1">Just now</div>
+                  </div>
+                </div>
+                
+                <div class="notification-item unread" onclick="navigateToPage('invoice'); closeNotifications();">
+                  <div class="notification-icon" style="background: #FEE2E2;">
+                    <svg class="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                  </div>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold text-gray-900">Invoice overdue</div>
+                    <div class="text-xs text-gray-600 mt-0.5">INV-2026-089 - Defence Manufacturing - 2 days late</div>
+                    <div class="text-xs text-gray-400 mt-1">2 hours ago</div>
+                  </div>
+                </div>
+                
+                <div class="notification-item unread" onclick="navigateToPage('stock'); closeNotifications();">
+                  <div class="notification-icon" style="background: #DBEAFE;">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                  </div>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold text-gray-900">Auto-purchase completed</div>
+                    <div class="text-xs text-gray-600 mt-0.5">50 units Aluminium 6082 Bar ordered from MetalSupplies</div>
+                    <div class="text-xs text-gray-400 mt-1">5 hours ago</div>
+                  </div>
+                </div>
+                
+                <div class="notification-item" onclick="navigateToPage('rfq'); closeNotifications();">
+                  <div class="notification-icon" style="background: #DBEAFE;">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  </div>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold text-gray-900">New RFQ received</div>
+                    <div class="text-xs text-gray-600 mt-0.5">Aerospace Components Ltd - 50 titanium brackets</div>
+                    <div class="text-xs text-gray-400 mt-1">1 day ago</div>
+                  </div>
+                </div>
+                
+                <div class="notification-item" onclick="navigateToPage('machine'); closeNotifications();">
+                  <div class="notification-icon" style="background: #FEE2E2;">
+                    <svg class="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/></svg>
+                  </div>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold text-gray-900">Maintenance overdue</div>
+                    <div class="text-xs text-gray-600 mt-0.5">Haas VF-2 - 70+ days overdue service</div>
+                    <div class="text-xs text-gray-400 mt-1">2 days ago</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
           <div class="user-avatar">A</div>
         </div>
       </div>
@@ -766,7 +983,7 @@
               <h2 class="text-2xl font-bold">Email & Payment Automation</h2>
               <p class="text-gray-600 mt-1">AI-powered email parsing with automatic follow-ups</p>
             </div>
-            <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium flex items-center gap-2">
+            <button onclick="showModal('autoSendSettingsModal')" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium flex items-center gap-2">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
               Auto-Send Settings
             </button>
@@ -1034,7 +1251,7 @@
               <h2 class="text-2xl font-bold text-gray-900">RFQ Control Centre</h2>
               <p class="text-sm text-gray-500 mt-1">Manage incoming quote requests and track pipeline</p>
             </div>
-            <button class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark font-medium">+ New RFQ</button>
+            <button onclick="showModal('newRfqModal')" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark font-medium">+ New RFQ</button>
           </div>
 
           <div class="grid grid-cols-3 gap-4 mb-6">
@@ -1435,7 +1652,7 @@
               <h2 class="text-2xl font-bold text-gray-900">Invoicing</h2>
               <p class="text-sm text-gray-500 mt-1">Generate and track invoices from completed jobs</p>
             </div>
-            <button class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark font-medium">+ Create Invoice</button>
+            <button onclick="showModal('createInvoiceModal')" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark font-medium">+ Create Invoice</button>
           </div>
 
           <div class="grid grid-cols-4 gap-4 mb-6">
@@ -3029,7 +3246,659 @@
      * - Hosting: Vercel (frontend) + Railway/Render (backend)
      * - Payments: Stripe Billing for SaaS subscriptions
      */
+  
+    
+    // ============================================
+    // TOAST NOTIFICATION SYSTEM
+    // ============================================
+    function showToast(title, message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast ' + type;
+      
+      const icons = {
+        success: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>',
+        error: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>',
+        warning: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>',
+        info: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
+      };
+      
+      toast.innerHTML = `
+        <div class="toast-icon">${icons[type] || icons.success}</div>
+        <div class="toast-content">
+          <div class="toast-title">${title}</div>
+          <div class="toast-message">${message}</div>
+        </div>
+      `;
+      
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+    
+    // ============================================
+    // NOTIFICATION DROPDOWN
+    // ============================================
+    function toggleNotifications(e) {
+      e.stopPropagation();
+      document.getElementById('notificationDropdown').classList.toggle('active');
+    }
+    
+    function closeNotifications() {
+      document.getElementById('notificationDropdown').classList.remove('active');
+    }
+    
+    function markAllRead() {
+      document.querySelectorAll('.notification-item.unread').forEach(item => {
+        item.classList.remove('unread');
+      });
+      document.querySelector('.notification-badge').style.display = 'none';
+      showToast('Notifications cleared', 'All notifications marked as read');
+    }
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      const dropdown = document.getElementById('notificationDropdown');
+      const btn = document.querySelector('.notification-btn');
+      if (dropdown && !dropdown.contains(e.target) && !btn.contains(e.target)) {
+        dropdown.classList.remove('active');
+      }
+    });
+    
+    // ============================================
+    // NEW RFQ FORM
+    // ============================================
+    function submitNewRfq(e) {
+      e.preventDefault();
+      const form = e.target;
+      const customer = form.customer.value;
+      const description = form.description.value;
+      
+      // In real app: save to database here
+      console.log('New RFQ saved:', {
+        customer: customer,
+        description: description,
+        value: form.value.value,
+        timestamp: new Date().toISOString()
+      });
+      
+      closeModal('newRfqModal');
+      showToast('RFQ Created', `New RFQ from ${customer} added to pipeline`, 'success');
+      form.reset();
+    }
+    
+    // ============================================
+    // CLARIFY EMAIL
+    // ============================================
+    function loadTemplate(btn, template) {
+      const messageBox = document.getElementById('clarifyMessage');
+      const templates = {
+        material: `Hi Team,
+
+Thanks for the RFQ. Before quoting, we need clarification on the material specification:
+
+- The enquiry mentions stainless steel but doesn't specify the grade
+- We typically work with 304 (general purpose) or 316 (marine/medical grade)
+- 316 is approximately 15-20% more expensive than 304
+
+Could you please confirm which grade is required? Once confirmed we'll have your quote ready within 24 hours.
+
+Best regards,
+JNR Engineering Limited`,
+        drawing: `Hi Team,
+
+Thanks for the RFQ. We're missing some drawings to provide an accurate quote:
+
+- Received: General assembly drawing (Rev 2)
+- Missing: Detail drawings for parts 4-7
+- Missing: Tolerance schedule
+
+Please send across the missing drawings at your earliest convenience and we'll prepare a comprehensive quote.
+
+Best regards,
+JNR Engineering Limited`,
+        quantity: `Hi Team,
+
+Thanks for the RFQ. Quick clarification needed on quantities:
+
+- Your enquiry mentions "approximately 200 units"
+- We can offer different price breaks at: 100, 250, 500 units
+- Setup costs are amortised better at higher quantities
+
+Could you confirm the firm quantity required? We can also provide pricing at the closest break points if helpful.
+
+Best regards,
+JNR Engineering Limited`
+      };
+      messageBox.value = templates[template] || messageBox.value;
+    }
+    
+    function submitClarify(e) {
+      e.preventDefault();
+      closeModal('clarifyModal');
+      showToast('Clarification Sent', 'Email sent to procurement@defencemanufacturing.co.uk');
+    }
+    
+    // ============================================
+    // VIEW DETAIL MODAL (RFQ details)
+    // ============================================
+    function showRfqDetail(type) {
+      const details = {
+        aerospace: {
+          title: 'RFQ Detail - Aerospace Components Ltd',
+          html: `
+            <div class="space-y-4">
+              <div class="bg-gray-50 rounded-lg p-4">
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                  <div><span class="text-gray-500">Customer:</span> <span class="font-semibold">Aerospace Components Ltd</span></div>
+                  <div><span class="text-gray-500">Status:</span> <span class="badge badge-blue">New</span></div>
+                  <div><span class="text-gray-500">Received:</span> 3 May 2026</div>
+                  <div><span class="text-gray-500">Value:</span> <span class="text-mono">£8,400</span></div>
+                </div>
+              </div>
+              <div>
+                <h4 class="font-semibold mb-2">Description</h4>
+                <p class="text-sm text-gray-700">CNC machined titanium brackets x50 - Grade 5 Ti-6Al-4V. Required for aerospace assembly application. Customer has provided full technical drawings (Rev 3) and material specification.</p>
+              </div>
+              <div>
+                <h4 class="font-semibold mb-2">Attached Documents</h4>
+                <div class="space-y-1.5 text-sm">
+                  <div class="flex items-center gap-2 p-2 bg-blue-50 rounded">📎 Bracket_Technical_Drawing_Rev3.pdf <span class="text-mono text-gray-500">2.4 MB</span></div>
+                  <div class="flex items-center gap-2 p-2 bg-blue-50 rounded">📎 Material_Specification_Ti-6Al-4V.pdf <span class="text-mono text-gray-500">1.8 MB</span></div>
+                  <div class="flex items-center gap-2 p-2 bg-blue-50 rounded">📷 Reference_Photo_Assembly.jpg <span class="text-mono text-gray-500">850 KB</span></div>
+                </div>
+              </div>
+              <div>
+                <h4 class="font-semibold mb-2">Customer Contact</h4>
+                <div class="text-sm text-gray-700">
+                  <div>📧 procurement@aerospacecomponents.co.uk</div>
+                  <div>📞 01292 456 789</div>
+                  <div>📍 Aviation Business Park, Prestwick KA9 2RW</div>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3 pt-4 border-t">
+                <button onclick="closeModal('viewDetailModal'); showQuoteModal();" class="bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark">Generate Quote</button>
+                <button onclick="closeModal('viewDetailModal')" class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50">Close</button>
+              </div>
+            </div>
+          `
+        },
+        defence: {
+          title: 'RFQ Detail - Defence Manufacturing Co',
+          html: `
+            <div class="space-y-4">
+              <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div class="font-semibold text-amber-900 mb-1">⚠ Clarification Needed</div>
+                <div class="text-sm text-amber-800">Material grade not specified. Cannot quote accurately without this information.</div>
+              </div>
+              <div class="bg-gray-50 rounded-lg p-4">
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                  <div><span class="text-gray-500">Customer:</span> <span class="font-semibold">Defence Manufacturing Co</span></div>
+                  <div><span class="text-gray-500">Status:</span> <span class="badge badge-yellow">Clarification</span></div>
+                  <div><span class="text-gray-500">Received:</span> 1 May 2026</div>
+                  <div><span class="text-gray-500">Est. Value:</span> <span class="text-mono">£12,850</span></div>
+                </div>
+              </div>
+              <div>
+                <h4 class="font-semibold mb-2">Description</h4>
+                <p class="text-sm text-gray-700">Precision milled components x200. Required for defence application. Stainless steel - grade not specified by customer.</p>
+              </div>
+              <div class="grid grid-cols-2 gap-3 pt-4 border-t">
+                <button onclick="closeModal('viewDetailModal'); showModal('clarifyModal');" class="bg-amber-600 text-white py-3 rounded-lg font-semibold hover:bg-amber-700">Send Clarification</button>
+                <button onclick="closeModal('viewDetailModal')" class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50">Close</button>
+              </div>
+            </div>
+          `
+        },
+        precision: {
+          title: 'RFQ Detail - Precision Engineering Group',
+          html: `
+            <div class="space-y-4">
+              <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div class="font-semibold text-green-900 mb-1">✓ Ready to Quote</div>
+                <div class="text-sm text-green-800">All information provided. Drawings attached. Quick win - similar job completed last month.</div>
+              </div>
+              <div class="bg-gray-50 rounded-lg p-4">
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                  <div><span class="text-gray-500">Customer:</span> <span class="font-semibold">Precision Engineering Group</span></div>
+                  <div><span class="text-gray-500">Status:</span> <span class="badge badge-green">Ready</span></div>
+                  <div><span class="text-gray-500">Received:</span> 29 Apr 2026</div>
+                  <div><span class="text-gray-500">Est. Value:</span> <span class="text-mono">£6,200</span></div>
+                </div>
+              </div>
+              <div>
+                <h4 class="font-semibold mb-2">Description</h4>
+                <p class="text-sm text-gray-700">Stainless steel shafts x30 - 316 grade, drawings attached. Standard machine shop tolerances acceptable.</p>
+              </div>
+              <div class="grid grid-cols-2 gap-3 pt-4 border-t">
+                <button onclick="closeModal('viewDetailModal'); showQuoteModal();" class="bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700">Generate Quote Now</button>
+                <button onclick="closeModal('viewDetailModal')" class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50">Close</button>
+              </div>
+            </div>
+          `
+        }
+      };
+      
+      const detail = details[type];
+      if (detail) {
+        document.getElementById('viewDetailTitle').textContent = detail.title;
+        document.getElementById('viewDetailBody').innerHTML = detail.html;
+        showModal('viewDetailModal');
+      }
+    }
+    
+    // ============================================
+    // CREATE INVOICE
+    // ============================================
+    function loadJobDetails(jobId) {
+      if (jobId === 'JNR-J-218') {
+        document.getElementById('invCustomer').value = 'Aerospace Components Ltd';
+        document.getElementById('invDescription').value = 'CNC Machined Titanium Brackets - Ti-6Al-4V Grade 5, x50 units as per drawing ACL-BRACKET-Rev3';
+        document.getElementById('invQty').value = 50;
+        document.getElementById('invPrice').value = 168;
+        calculateInvoiceTotal();
+      } else if (jobId === 'JNR-J-221') {
+        document.getElementById('invCustomer').value = 'Industrial Systems Ltd';
+        document.getElementById('invDescription').value = 'Aluminium Plate Components x75 - 6082 grade, machined to drawing ISL-PLATE-2026-04';
+        document.getElementById('invQty').value = 75;
+        document.getElementById('invPrice').value = 208;
+        calculateInvoiceTotal();
+      }
+    }
+    
+    function calculateInvoiceTotal() {
+      const qty = parseFloat(document.getElementById('invQty').value) || 0;
+      const price = parseFloat(document.getElementById('invPrice').value) || 0;
+      const subtotal = qty * price;
+      const total = subtotal * 1.20;
+      document.getElementById('invTotal').value = '£' + total.toFixed(2);
+    }
+    
+    function submitNewInvoice(e) {
+      e.preventDefault();
+      const customer = document.getElementById('invCustomer').value;
+      const total = document.getElementById('invTotal').value;
+      closeModal('createInvoiceModal');
+      showToast('Invoice Created & Sent', `${total} invoice sent to ${customer}`, 'success');
+    }
+    
+    // ============================================
+    // EMAIL SETTINGS SAVE
+    // ============================================
+    function saveEmailSettings(e) {
+      e.preventDefault();
+      closeModal('autoSendSettingsModal');
+      showToast('Settings Saved', 'Auto-send schedule updated successfully');
+    }
+    
+    // ============================================
+    // OVERRIDE EXISTING ACTION BUTTONS - add toast feedback
+    // ============================================
+    
+    // Hijack quote/invoice modal action buttons to show toasts
+    document.addEventListener('click', function(e) {
+      const target = e.target.closest('button');
+      if (!target) return;
+      
+      const btnText = target.textContent.trim();
+      
+      // Action button mappings
+      const actions = {
+        'Download PDF': () => showToast('Download Started', 'PDF generated and downloading...', 'info'),
+        'Send to Customer': () => showToast('Email Sent', 'Document sent to customer successfully'),
+        'Send Now': () => showToast('Email Sent', 'Reminder sent successfully'),
+        'Send Reminder': () => showToast('Reminder Sent', 'Payment reminder sent to customer'),
+        'Final Notice': () => showToast('Final Notice Sent', 'Final payment notice sent', 'warning'),
+        'Convert to Job': () => showToast('Quote Converted', 'New job created from quote'),
+        'Edit Template': () => showToast('Template Editor', 'Opening email template editor...', 'info'),
+        'Cancel Auto-Send': () => showToast('Auto-Send Cancelled', 'Reminder will not auto-send', 'warning'),
+        'Reorder': () => showToast('Reorder Placed', 'Auto-purchase order created with preferred supplier'),
+        'Schedule Service': () => showToast('Service Scheduled', 'Maintenance booking created'),
+        'View Log': () => showToast('Loading Log', 'Opening machine maintenance history...', 'info'),
+        'View Details': () => showToast('Loading Details', 'Opening item details...', 'info'),
+        'Auto-Send All Overdue': () => showToast('Bulk Action Started', '2 reminder emails queued for sending', 'info'),
+        'Save Configuration': () => showToast('Configuration Saved', 'Supplier settings updated successfully'),
+        'Save Settings': () => showToast('Settings Saved', 'Changes applied successfully')
+      };
+      
+      if (actions[btnText]) {
+        actions[btnText]();
+      }
+    });
+    
+    console.log('QuoteFlow AI - All systems operational');
   </script>
+
+
+  <!-- ============================================
+       TOAST NOTIFICATION CONTAINER
+       ============================================ -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- ============================================
+       NEW RFQ MODAL
+       ============================================ -->
+  <div id="newRfqModal" class="modal" data-modal="newrfq">
+    <div class="modal-content" style="max-width: 700px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Create New RFQ</h3>
+        <button class="modal-close" onclick="closeModal('newRfqModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <form id="newRfqForm" onsubmit="submitNewRfq(event)">
+          <div class="form-group">
+            <label class="form-label">Customer Name *</label>
+            <input type="text" name="customer" class="form-input" placeholder="e.g. Aerospace Components Ltd" required>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Contact Email</label>
+              <input type="email" name="email" class="form-input" placeholder="contact@company.co.uk">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone</label>
+              <input type="tel" name="phone" class="form-input" placeholder="01698 123456">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Job Description *</label>
+            <textarea name="description" class="form-textarea" placeholder="e.g. CNC machined titanium brackets x50 - Grade 5 Ti-6Al-4V" required></textarea>
+          </div>
+          
+          <div class="form-row-3">
+            <div class="form-group">
+              <label class="form-label">Quantity</label>
+              <input type="number" name="quantity" class="form-input" placeholder="50">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Material</label>
+              <select name="material" class="form-select">
+                <option>Titanium Grade 5</option>
+                <option>Aluminium 6082</option>
+                <option>Stainless Steel 304</option>
+                <option>Stainless Steel 316</option>
+                <option>Mild Steel</option>
+                <option>Brass C360</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Est. Value (£)</label>
+              <input type="number" name="value" class="form-input" placeholder="8400">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select">
+              <option value="new">New - Just received</option>
+              <option value="clarification">Clarification needed</option>
+              <option value="ready">Ready to quote</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Notes / Drawings</label>
+            <textarea name="notes" class="form-textarea" placeholder="Drawing references, special requirements, deadlines..."></textarea>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-3 mt-6">
+            <button type="submit" class="bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark">
+              <svg class="w-4 h-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              Save & Confirm RFQ
+            </button>
+            <button type="button" class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50" onclick="closeModal('newRfqModal')">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================
+       CLARIFY EMAIL MODAL
+       ============================================ -->
+  <div id="clarifyModal" class="modal" data-modal="clarify">
+    <div class="modal-content" style="max-width: 700px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Send Clarification Request</h3>
+        <button class="modal-close" onclick="closeModal('clarifyModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="submitClarify(event)">
+          <div class="form-group">
+            <label class="form-label">To</label>
+            <input type="email" class="form-input" value="procurement@defencemanufacturing.co.uk" readonly>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Subject</label>
+            <input type="text" class="form-input" value="Clarification needed - RFQ for Precision Milled Components">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Quick Templates</label>
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" class="px-3 py-2 text-xs border border-gray-300 rounded-lg hover:bg-gray-50" onclick="loadTemplate(this, 'material')">Material spec</button>
+              <button type="button" class="px-3 py-2 text-xs border border-gray-300 rounded-lg hover:bg-gray-50" onclick="loadTemplate(this, 'drawing')">Missing drawings</button>
+              <button type="button" class="px-3 py-2 text-xs border border-gray-300 rounded-lg hover:bg-gray-50" onclick="loadTemplate(this, 'quantity')">Quantity confirm</button>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Message</label>
+            <textarea class="form-textarea" style="min-height: 200px;" id="clarifyMessage">Hi Team,
+
+Thank you for the RFQ for the precision milled components. Before we can prepare an accurate quote, we need clarification on the following:
+
+1. Material grade specification - your enquiry mentions "stainless steel" but doesn't specify the grade. We typically work with 304 or 316 - which would you prefer?
+
+2. Tolerances required - please confirm if standard machine shop tolerances are acceptable, or if tighter tolerances are needed.
+
+3. Drawing files - we received the bracket assembly drawing but appear to be missing the detail drawings for parts 4-7.
+
+Once we have this information we can turn around a quote within 24 hours.
+
+Best regards,
+JNR Engineering Limited</textarea>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-3 mt-6">
+            <button type="submit" class="bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark">Send Clarification</button>
+            <button type="button" class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50" onclick="closeModal('clarifyModal')">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================
+       VIEW DETAIL MODAL (Generic - for RFQ/Job/Quote details)
+       ============================================ -->
+  <div id="viewDetailModal" class="modal" data-modal="viewdetail">
+    <div class="modal-content" style="max-width: 800px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="viewDetailTitle">Item Details</h3>
+        <button class="modal-close" onclick="closeModal('viewDetailModal')">×</button>
+      </div>
+      <div class="modal-body" id="viewDetailBody">
+        <!-- Content injected dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================
+       CREATE INVOICE MODAL
+       ============================================ -->
+  <div id="createInvoiceModal" class="modal" data-modal="createinvoice">
+    <div class="modal-content" style="max-width: 800px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Create New Invoice</h3>
+        <button class="modal-close" onclick="closeModal('createInvoiceModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="submitNewInvoice(event)">
+          <div class="form-group">
+            <label class="form-label">Link to Job (auto-fills details)</label>
+            <select class="form-select" onchange="loadJobDetails(this.value)">
+              <option value="">-- Select completed job --</option>
+              <option value="JNR-J-218">JNR-J-218 - Aerospace Components - Titanium brackets x50 (£8,400)</option>
+              <option value="JNR-J-221">JNR-J-221 - Industrial Systems - Aluminium plates x75 (£15,600)</option>
+              <option value="manual">Manual entry (no linked job)</option>
+            </select>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Customer *</label>
+              <input type="text" class="form-input" id="invCustomer" placeholder="Company name" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Invoice Date</label>
+              <input type="date" class="form-input" value="2026-05-09">
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Due Date (30 days default)</label>
+              <input type="date" class="form-input" value="2026-06-08">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Payment Terms</label>
+              <select class="form-select">
+                <option>Net 30 days</option>
+                <option>Net 14 days</option>
+                <option>Net 60 days</option>
+                <option>Due on receipt</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Description *</label>
+            <textarea class="form-textarea" id="invDescription" required></textarea>
+          </div>
+          
+          <div class="form-row-3">
+            <div class="form-group">
+              <label class="form-label">Quantity</label>
+              <input type="number" class="form-input" id="invQty" value="1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Unit Price (£)</label>
+              <input type="number" class="form-input" id="invPrice" step="0.01" oninput="calculateInvoiceTotal()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Total (inc VAT)</label>
+              <input type="text" class="form-input text-mono" id="invTotal" readonly style="background: #F8FAFC;">
+            </div>
+          </div>
+          
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+            <strong>Auto-send schedule:</strong> Invoice will be sent immediately. Reminders auto-send if unpaid: 7 days before due, on due date, 7 days after.
+          </div>
+          
+          <div class="grid grid-cols-2 gap-3 mt-6">
+            <button type="submit" class="bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark">
+              <svg class="w-4 h-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              Save & Send Invoice
+            </button>
+            <button type="button" class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50" onclick="closeModal('createInvoiceModal')">Save as Draft</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================
+       AUTO-SEND EMAIL SETTINGS MODAL (functional version)
+       ============================================ -->
+  <div id="autoSendSettingsModal" class="modal" data-modal="autosendsettings">
+    <div class="modal-content" style="max-width: 700px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Auto-Send Email Settings</h3>
+        <button class="modal-close" onclick="closeModal('autoSendSettingsModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div class="font-semibold text-blue-900 mb-1">Email System Status</div>
+          <div class="text-sm text-blue-800">Connected to: <span class="text-mono font-semibold">enquiries@jnrengineering.co.uk</span></div>
+          <div class="text-sm text-blue-800 mt-1">Last sync: 2 minutes ago • Next reminder check: 14 minutes</div>
+        </div>
+
+        <form onsubmit="saveEmailSettings(event)">
+          <h4 class="font-semibold text-gray-900 mb-3">Follow-Up Schedule</h4>
+          
+          <div class="border border-gray-200 rounded-lg p-4 mb-3">
+            <div class="flex items-center justify-between mb-2">
+              <label class="font-medium">1st Reminder</label>
+              <div class="relative inline-block w-10 h-5 bg-green-500 rounded-full">
+                <div class="absolute top-0.5 right-0.5 w-4 h-4 bg-white rounded-full"></div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-gray-600">Send</span>
+              <input type="number" value="3" class="form-input" style="width: 70px;">
+              <span class="text-sm text-gray-600">days after quote sent at</span>
+              <input type="time" value="09:00" class="form-input" style="width: 110px;">
+            </div>
+          </div>
+          
+          <div class="border border-gray-200 rounded-lg p-4 mb-3">
+            <div class="flex items-center justify-between mb-2">
+              <label class="font-medium">2nd Reminder</label>
+              <div class="relative inline-block w-10 h-5 bg-green-500 rounded-full">
+                <div class="absolute top-0.5 right-0.5 w-4 h-4 bg-white rounded-full"></div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-gray-600">Send</span>
+              <input type="number" value="7" class="form-input" style="width: 70px;">
+              <span class="text-sm text-gray-600">days after quote sent at</span>
+              <input type="time" value="09:00" class="form-input" style="width: 110px;">
+            </div>
+          </div>
+          
+          <div class="border border-gray-200 rounded-lg p-4 mb-6">
+            <div class="flex items-center justify-between mb-2">
+              <label class="font-medium">Final Notice</label>
+              <div class="relative inline-block w-10 h-5 bg-green-500 rounded-full">
+                <div class="absolute top-0.5 right-0.5 w-4 h-4 bg-white rounded-full"></div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-gray-600">Send</span>
+              <input type="number" value="14" class="form-input" style="width: 70px;">
+              <span class="text-sm text-gray-600">days after quote sent at</span>
+              <input type="time" value="09:00" class="form-input" style="width: 110px;">
+            </div>
+          </div>
+
+          <h4 class="font-semibold text-gray-900 mb-3">Pause Auto-Send If</h4>
+          <div class="space-y-2 mb-6">
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked class="w-4 h-4">
+              <span>Customer replies to any email in the thread</span>
+            </label>
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked class="w-4 h-4">
+              <span>Quote is marked as accepted/rejected</span>
+            </label>
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked class="w-4 h-4">
+              <span>Payment is auto-detected in incoming emails</span>
+            </label>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <button type="submit" class="bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark">Save & Apply Settings</button>
+            <button type="button" class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50" onclick="closeModal('autoSendSettingsModal')">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 
 </body>
 </html>

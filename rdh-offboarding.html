@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RDH Coaching | Offboarding</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #5271FF;
+    --purple: #C46BE4;
+    --gold: #AB8B00;
+    --pink: #F8CAFF;
+    --white: #FDFDFD;
+    --dark: #09090E;
+    --card: #15151E;
+    --border: rgba(255,255,255,0.07);
+    --muted: rgba(253,253,253,0.45);
+    --radius: 14px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--dark);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grain */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Glow orbs */
+  .glow-orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.18;
+  }
+  .glow-orb.a { width: 500px; height: 500px; background: var(--blue); top: -150px; right: -100px; }
+  .glow-orb.b { width: 400px; height: 400px; background: var(--purple); bottom: 50px; left: -100px; }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 60px 24px 80px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 52px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .logo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(82,113,255,0.12);
+    border: 1px solid rgba(82,113,255,0.25);
+    border-radius: 999px;
+    padding: 6px 16px 6px 10px;
+    margin-bottom: 28px;
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--blue);
+  }
+
+  .logo-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--blue);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(30px, 6vw, 42px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 14px;
+  }
+
+  h1 span {
+    background: linear-gradient(135deg, var(--blue) 0%, var(--purple) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.6;
+    font-weight: 300;
+    max-width: 440px;
+    margin: 0 auto;
+  }
+
+  /* Divider */
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border) 30%, var(--border) 70%, transparent);
+    margin: 20px 0 32px;
+  }
+
+  /* Section label */
+  .section-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--blue);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Form card */
+  .form-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    margin-bottom: 16px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .form-card:nth-child(2) { animation-delay: 0.05s; }
+  .form-card:nth-child(3) { animation-delay: 0.1s; }
+  .form-card:nth-child(4) { animation-delay: 0.15s; }
+  .form-card:nth-child(5) { animation-delay: 0.2s; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Field */
+  .field { margin-bottom: 22px; }
+  .field:last-child { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--white);
+    margin-bottom: 8px;
+  }
+
+  label .req {
+    color: var(--purple);
+    margin-left: 3px;
+  }
+
+  label .hint {
+    color: var(--muted);
+    font-weight: 300;
+    font-size: 12px;
+    margin-left: 4px;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  select,
+  textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 300;
+    transition: border-color 0.2s, background 0.2s;
+    outline: none;
+    appearance: none;
+  }
+
+  input::placeholder, textarea::placeholder { color: rgba(253,253,253,0.25); }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--blue);
+    background: rgba(82,113,255,0.06);
+  }
+
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(253,253,253,0.4)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+    cursor: pointer;
+  }
+
+  select option { background: #1a1a26; }
+
+  textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
+
+  /* Two-column grid */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 480px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  /* Star rating */
+  .stars {
+    display: flex;
+    gap: 6px;
+  }
+
+  .stars input { display: none; }
+
+  .stars label {
+    font-size: 28px;
+    cursor: pointer;
+    color: rgba(255,255,255,0.15);
+    transition: color 0.15s, transform 0.15s;
+    margin: 0;
+    line-height: 1;
+    user-select: none;
+  }
+
+  .stars:hover label { color: rgba(255,255,255,0.15); }
+  .stars label:hover,
+  .stars label:hover ~ label { color: rgba(255,255,255,0.15) !important; }
+
+  .stars input:checked ~ label { color: rgba(255,255,255,0.15) !important; }
+
+  /* Reversed star hack */
+  .stars {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+  }
+
+  .stars label:hover,
+  .stars label:hover ~ label,
+  .stars input:checked ~ label {
+    color: var(--gold) !important;
+  }
+
+  .stars label:hover { transform: scale(1.15); }
+
+  /* Radio/checkbox pills */
+  .pill-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .pill-group input { display: none; }
+
+  .pill-group label {
+    margin: 0;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.18s;
+    background: transparent;
+    user-select: none;
+  }
+
+  .pill-group input:checked + label {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: var(--white);
+  }
+
+  .pill-group label:hover { border-color: var(--blue); color: var(--white); }
+
+  /* NPS row */
+  .nps-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .nps-row input { display: none; }
+
+  .nps-row label {
+    margin: 0;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+
+  .nps-row input:checked + label {
+    background: var(--purple);
+    border-color: var(--purple);
+    color: var(--white);
+  }
+
+  .nps-row label:hover { border-color: var(--purple); color: var(--white); }
+
+  .nps-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  /* Submit */
+  .submit-area {
+    margin-top: 32px;
+    text-align: center;
+    animation: fadeUp 0.5s ease 0.25s both;
+  }
+
+  .btn-submit {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, var(--blue) 0%, var(--purple) 100%);
+    color: var(--white);
+    border: none;
+    border-radius: 12px;
+    padding: 16px 40px;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 8px 32px rgba(82,113,255,0.3);
+  }
+
+  .btn-submit:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(82,113,255,0.4);
+  }
+
+  .btn-submit:active { transform: translateY(0); }
+
+  .btn-submit svg { transition: transform 0.2s; }
+  .btn-submit:hover svg { transform: translateX(4px); }
+
+  .submit-note {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 300;
+  }
+
+  /* Success screen */
+  .success-screen {
+    display: none;
+    text-align: center;
+    padding: 80px 24px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .success-icon {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    font-size: 28px;
+    box-shadow: 0 12px 40px rgba(82,113,255,0.35);
+  }
+
+  .success-screen h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    margin-bottom: 12px;
+  }
+
+  .success-screen p {
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.7;
+    max-width: 360px;
+    margin: 0 auto;
+    font-weight: 300;
+  }
+
+  /* Error message */
+  .field-error {
+    color: #ff6b6b;
+    font-size: 12px;
+    margin-top: 6px;
+    display: none;
+  }
+
+  input.invalid, textarea.invalid, select.invalid {
+    border-color: #ff6b6b;
+  }
+
+  .char-count {
+    text-align: right;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 5px;
+  }
+</style>
+</head>
+<body>
+
+<div class="glow-orb a"></div>
+<div class="glow-orb b"></div>
+
+<div class="wrapper" id="main-form">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-badge">
+      <span class="logo-dot"></span>
+      RDH Coaching
+    </div>
+    <h1>Before you go<span>.</span><br>We want to <span>hear from you</span></h1>
+    <p class="subtitle">This takes under 3 minutes. Your feedback directly shapes how we coach the next person — so be brutally honest.</p>
+  </div>
+
+  <form id="offboarding-form" action="https://formspree.io/f/xwvadgzw" method="POST" novalidate>
+
+    <!-- Hidden metadata -->
+    <input type="hidden" name="_subject" value="RDH Coaching Offboarding Feedback">
+    <input type="hidden" name="_template" value="table">
+
+    <!-- Section 1: About you -->
+    <div class="form-card">
+      <div class="section-label">01 — About you</div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="name">Full name <span class="req">*</span></label>
+          <input type="text" id="name" name="name" placeholder="Your name" required>
+          <div class="field-error" id="name-err">Please enter your name</div>
+        </div>
+        <div class="field">
+          <label for="email">Email <span class="req">*</span></label>
+          <input type="email" id="email" name="email" placeholder="your@email.com" required>
+          <div class="field-error" id="email-err">Please enter a valid email</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="duration">How long were you a client?</label>
+        <select id="duration" name="duration">
+          <option value="" disabled selected>Select a duration</option>
+          <option>Less than 1 month</option>
+          <option>1 to 3 months</option>
+          <option>3 to 6 months</option>
+          <option>6 to 12 months</option>
+          <option>Over 12 months</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Section 2: Why leaving -->
+    <div class="form-card">
+      <div class="section-label">02 — Your reason for leaving</div>
+
+      <div class="field">
+        <label>Main reason for leaving <span class="req">*</span></label>
+        <div class="pill-group" id="reason-group">
+          <input type="radio" name="leaving_reason" id="r1" value="Achieved my goal" required>
+          <label for="r1">Achieved my goal 🎯</label>
+          <input type="radio" name="leaving_reason" id="r2" value="Financial reasons">
+          <label for="r2">Financial reasons</label>
+          <input type="radio" name="leaving_reason" id="r3" value="Life circumstances changed">
+          <label for="r3">Life changed</label>
+          <input type="radio" name="leaving_reason" id="r4" value="Not the right fit">
+          <label for="r4">Not the right fit</label>
+          <input type="radio" name="leaving_reason" id="r5" value="Taking a break">
+          <label for="r5">Taking a break</label>
+          <input type="radio" name="leaving_reason" id="r6" value="Other">
+          <label for="r6">Other</label>
+        </div>
+        <div class="field-error" id="reason-err">Please select a reason</div>
+      </div>
+
+      <div class="field" id="other-reason-field" style="display:none;">
+        <label for="other_reason">Tell us more</label>
+        <input type="text" id="other_reason" name="other_reason" placeholder="Anything you'd like to add...">
+      </div>
+    </div>
+
+    <!-- Section 3: What they loved / what to improve -->
+    <div class="form-card">
+      <div class="section-label">03 — The honest bit</div>
+
+      <div class="field">
+        <label for="loved">What did you love most about coaching with RDH? <span class="req">*</span></label>
+        <textarea id="loved" name="what_you_loved" placeholder="The programme structure, check-ins, results, communication — whatever stood out..." required maxlength="600"></textarea>
+        <div class="char-count"><span id="loved-count">0</span>/600</div>
+        <div class="field-error" id="loved-err">Please share what you loved</div>
+      </div>
+
+      <div class="field">
+        <label for="improve">What could we have done better? <span class="req">*</span></label>
+        <textarea id="improve" name="areas_to_improve" placeholder="Be brutally honest — this is how we actually get better..." required maxlength="600"></textarea>
+        <div class="char-count"><span id="improve-count">0</span>/600</div>
+        <div class="field-error" id="improve-err">Please share what we could improve</div>
+      </div>
+
+      <div class="field">
+        <label>Overall experience <span class="hint">— how would you rate it?</span></label>
+        <div class="stars">
+          <input type="radio" name="rating" id="s5" value="5"><label for="s5">★</label>
+          <input type="radio" name="rating" id="s4" value="4"><label for="s4">★</label>
+          <input type="radio" name="rating" id="s3" value="3"><label for="s3">★</label>
+          <input type="radio" name="rating" id="s2" value="2"><label for="s2">★</label>
+          <input type="radio" name="rating" id="s1" value="1"><label for="s1">★</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4: Business intelligence -->
+    <div class="form-card">
+      <div class="section-label">04 — Looking ahead</div>
+
+      <div class="field">
+        <label>How likely are you to recommend RDH Coaching to someone?</label>
+        <div class="nps-row" id="nps-row">
+          <input type="radio" name="nps_score" id="n0" value="0"><label for="n0">0</label>
+          <input type="radio" name="nps_score" id="n1" value="1"><label for="n1">1</label>
+          <input type="radio" name="nps_score" id="n2" value="2"><label for="n2">2</label>
+          <input type="radio" name="nps_score" id="n3" value="3"><label for="n3">3</label>
+          <input type="radio" name="nps_score" id="n4" value="4"><label for="n4">4</label>
+          <input type="radio" name="nps_score" id="n5" value="5"><label for="n5">5</label>
+          <input type="radio" name="nps_score" id="n6" value="6"><label for="n6">6</label>
+          <input type="radio" name="nps_score" id="n7" value="7"><label for="n7">7</label>
+          <input type="radio" name="nps_score" id="n8" value="8"><label for="n8">8</label>
+          <input type="radio" name="nps_score" id="n9" value="9"><label for="n9">9</label>
+          <input type="radio" name="nps_score" id="n10" value="10"><label for="n10">10</label>
+        </div>
+        <div class="nps-labels">
+          <span>Not likely at all</span>
+          <span>Extremely likely</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Would you come back to RDH Coaching in the future?</label>
+        <div class="pill-group">
+          <input type="radio" name="would_return" id="wr1" value="Yes definitely">
+          <label for="wr1">Yes definitely</label>
+          <input type="radio" name="would_return" id="wr2" value="Maybe">
+          <label for="wr2">Maybe</label>
+          <input type="radio" name="would_return" id="wr3" value="Probably not">
+          <label for="wr3">Probably not</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Did you achieve the goal you signed up with?</label>
+        <div class="pill-group">
+          <input type="radio" name="goal_achieved" id="g1" value="Yes fully">
+          <label for="g1">Yes fully</label>
+          <input type="radio" name="goal_achieved" id="g2" value="Partially">
+          <label for="g2">Partially</label>
+          <input type="radio" name="goal_achieved" id="g3" value="Not really">
+          <label for="g3">Not really</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 5: Testimonial -->
+    <div class="form-card">
+      <div class="section-label">05 — Leave your mark</div>
+
+      <div class="field">
+        <label for="testimonial">Anything else you'd like to say? <span class="hint">— or a testimonial we can share</span></label>
+        <textarea id="testimonial" name="testimonial" placeholder="This is your space — results you're proud of, something that shifted for you, a message to future clients..." maxlength="800" style="min-height:120px;"></textarea>
+        <div class="char-count"><span id="testi-count">0</span>/800</div>
+      </div>
+
+      <div class="field">
+        <label>Can we use your feedback as a testimonial?</label>
+        <div class="pill-group">
+          <input type="radio" name="testimonial_permission" id="tp1" value="Yes use my full name">
+          <label for="tp1">Yes — use my full name</label>
+          <input type="radio" name="testimonial_permission" id="tp2" value="Yes use first name only">
+          <label for="tp2">First name only</label>
+          <input type="radio" name="testimonial_permission" id="tp3" value="No keep it private">
+          <label for="tp3">Keep it private</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="submit-area">
+      <button type="submit" class="btn-submit">
+        Send feedback
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <p class="submit-note">Responses go directly to Rhys. No spam, ever.</p>
+    </div>
+
+  </form>
+</div>
+
+<!-- Success screen -->
+<div class="wrapper success-screen" id="success-screen">
+  <div class="success-icon">🤝</div>
+  <h2>Thank you. Genuinely.</h2>
+  <p>Your feedback means a lot. Every response makes the coaching better for the next person. Wishing you nothing but progress from here.</p>
+</div>
+
+<script>
+  // Show/hide "other reason" field
+  document.querySelectorAll('input[name="leaving_reason"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const other = document.getElementById('other-reason-field');
+      other.style.display = radio.value === 'Other' ? 'block' : 'none';
+    });
+  });
+
+  // Character counters
+  function bindCounter(textareaId, countId) {
+    const el = document.getElementById(textareaId);
+    const counter = document.getElementById(countId);
+    if (!el || !counter) return;
+    el.addEventListener('input', () => {
+      counter.textContent = el.value.length;
+    });
+  }
+  bindCounter('loved', 'loved-count');
+  bindCounter('improve', 'improve-count');
+  bindCounter('testimonial', 'testi-count');
+
+  // Validation
+  function validateForm() {
+    let valid = true;
+
+    // Name
+    const name = document.getElementById('name');
+    const nameErr = document.getElementById('name-err');
+    if (!name.value.trim()) {
+      name.classList.add('invalid');
+      nameErr.style.display = 'block';
+      valid = false;
+    } else {
+      name.classList.remove('invalid');
+      nameErr.style.display = 'none';
+    }
+
+    // Email
+    const email = document.getElementById('email');
+    const emailErr = document.getElementById('email-err');
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value);
+    if (!emailOk) {
+      email.classList.add('invalid');
+      emailErr.style.display = 'block';
+      valid = false;
+    } else {
+      email.classList.remove('invalid');
+      emailErr.style.display = 'none';
+    }
+
+    // Reason
+    const reasonChecked = document.querySelector('input[name="leaving_reason"]:checked');
+    const reasonErr = document.getElementById('reason-err');
+    if (!reasonChecked) {
+      reasonErr.style.display = 'block';
+      valid = false;
+    } else {
+      reasonErr.style.display = 'none';
+    }
+
+    // Loved
+    const loved = document.getElementById('loved');
+    const lovedErr = document.getElementById('loved-err');
+    if (!loved.value.trim()) {
+      loved.classList.add('invalid');
+      lovedErr.style.display = 'block';
+      valid = false;
+    } else {
+      loved.classList.remove('invalid');
+      lovedErr.style.display = 'none';
+    }
+
+    // Improve
+    const improve = document.getElementById('improve');
+    const improveErr = document.getElementById('improve-err');
+    if (!improve.value.trim()) {
+      improve.classList.add('invalid');
+      improveErr.style.display = 'block';
+      valid = false;
+    } else {
+      improve.classList.remove('invalid');
+      improveErr.style.display = 'none';
+    }
+
+    return valid;
+  }
+
+  // Form submission
+  document.getElementById('offboarding-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      const firstInvalid = document.querySelector('.invalid, .field-error[style*="block"]');
+      if (firstInvalid) firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    const btn = document.querySelector('.btn-submit');
+    btn.textContent = 'Sending...';
+    btn.disabled = true;
+
+    try {
+      const formData = new FormData(this);
+      const response = await fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        headers: { 'Accept': 'application/json' }
+      });
+
+      if (response.ok) {
+        document.getElementById('main-form').style.display = 'none';
+        document.getElementById('success-screen').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        btn.textContent = 'Send feedback';
+        btn.disabled = false;
+        alert('Something went wrong. Please try again or email Rhys directly.');
+      }
+    } catch (err) {
+      btn.textContent = 'Send feedback';
+      btn.disabled = false;
+      alert('Something went wrong. Please try again.');
+    }
+  });
+</script>
+</body>
+</html>

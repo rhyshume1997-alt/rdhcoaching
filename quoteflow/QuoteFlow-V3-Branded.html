@@ -377,6 +377,10 @@
     .position-relative { position: relative; }
 
   </style>
+
+  <!-- Supabase Client Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 </head>
 <body>
 
@@ -1291,7 +1295,7 @@
                   </div>
                 </div>
                 <div class="flex gap-2">
-                  <button class="px-3 py-1.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">View</button>
+                  <button onclick="showRfqDetail('aerospace')" class="px-3 py-1.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">View</button>
                   <button onclick="showQuoteModal()" class="px-3 py-1.5 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-dark">Quote</button>
                 </div>
               </div>
@@ -1315,8 +1319,8 @@
                   </div>
                 </div>
                 <div class="flex gap-2">
-                  <button class="px-3 py-1.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">View</button>
-                  <button class="px-3 py-1.5 text-sm font-medium bg-amber-600 text-white rounded-lg hover:bg-amber-700">Clarify</button>
+                  <button onclick="showRfqDetail('defence')" class="px-3 py-1.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">View</button>
+                  <button onclick="showModal('clarifyModal')" class="px-3 py-1.5 text-sm font-medium bg-amber-600 text-white rounded-lg hover:bg-amber-700">Clarify</button>
                 </div>
               </div>
 
@@ -1339,7 +1343,7 @@
                   </div>
                 </div>
                 <div class="flex gap-2">
-                  <button class="px-3 py-1.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">View</button>
+                  <button onclick="showRfqDetail('precision')" class="px-3 py-1.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">View</button>
                   <button onclick="showQuoteModal()" class="px-3 py-1.5 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700">Generate Quote</button>
                 </div>
               </div>
@@ -3566,7 +3570,327 @@ JNR Engineering Limited`
     });
     
     console.log('QuoteFlow AI - All systems operational');
-  </script>
+  
+    
+    // ============================================
+    // SUPABASE DATABASE CONNECTION
+    // ============================================
+    const SUPABASE_URL = 'https://qtgqliczvyyrkibvxfqv.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_PO5fd_8waT5Rg0kisgVIXA_tlKkImV8';
+    
+    // Initialize Supabase client
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    console.log('Supabase connected:', SUPABASE_URL);
+    
+    // ============================================
+    // RFQ DATABASE OPERATIONS
+    // ============================================
+    
+    async function loadRfqsFromDB() {
+      try {
+        const { data, error } = await db
+          .from('rfqs')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        console.log('Loaded RFQs:', data);
+        renderRfqs(data);
+        return data;
+      } catch (error) {
+        console.error('Error loading RFQs:', error);
+        showToast('Database Error', 'Could not load RFQs. Check connection.', 'error');
+        return [];
+      }
+    }
+    
+    async function saveRfqToDB(rfqData) {
+      try {
+        const { data, error } = await db
+          .from('rfqs')
+          .insert([rfqData])
+          .select();
+        
+        if (error) throw error;
+        console.log('RFQ saved:', data);
+        return data[0];
+      } catch (error) {
+        console.error('Error saving RFQ:', error);
+        showToast('Save Failed', error.message, 'error');
+        return null;
+      }
+    }
+    
+    async function updateRfqStatus(id, newStatus) {
+      try {
+        const { data, error } = await db
+          .from('rfqs')
+          .update({ status: newStatus, updated_at: new Date().toISOString() })
+          .eq('id', id)
+          .select();
+        
+        if (error) throw error;
+        return data[0];
+      } catch (error) {
+        console.error('Error updating RFQ:', error);
+        return null;
+      }
+    }
+    
+    // ============================================
+    // QUOTES DATABASE OPERATIONS
+    // ============================================
+    
+    async function loadQuotesFromDB() {
+      try {
+        const { data, error } = await db
+          .from('quotes')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        console.log('Loaded quotes:', data);
+        return data;
+      } catch (error) {
+        console.error('Error loading quotes:', error);
+        return [];
+      }
+    }
+    
+    async function saveQuoteToDB(quoteData) {
+      try {
+        const { data, error } = await db
+          .from('quotes')
+          .insert([quoteData])
+          .select();
+        
+        if (error) throw error;
+        return data[0];
+      } catch (error) {
+        console.error('Error saving quote:', error);
+        showToast('Save Failed', error.message, 'error');
+        return null;
+      }
+    }
+    
+    // ============================================
+    // INVOICES DATABASE OPERATIONS
+    // ============================================
+    
+    async function loadInvoicesFromDB() {
+      try {
+        const { data, error } = await db
+          .from('invoices')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        return data;
+      } catch (error) {
+        console.error('Error loading invoices:', error);
+        return [];
+      }
+    }
+    
+    async function saveInvoiceToDB(invoiceData) {
+      try {
+        const { data, error } = await db
+          .from('invoices')
+          .insert([invoiceData])
+          .select();
+        
+        if (error) throw error;
+        return data[0];
+      } catch (error) {
+        console.error('Error saving invoice:', error);
+        showToast('Save Failed', error.message, 'error');
+        return null;
+      }
+    }
+    
+    // ============================================
+    // STOCK DATABASE OPERATIONS
+    // ============================================
+    
+    async function loadStockFromDB() {
+      try {
+        const { data, error } = await db
+          .from('stock')
+          .select('*')
+          .order('current_stock', { ascending: true });
+        
+        if (error) throw error;
+        return data;
+      } catch (error) {
+        console.error('Error loading stock:', error);
+        return [];
+      }
+    }
+    
+    async function updateStockLevel(sku, newLevel) {
+      try {
+        const { data, error } = await db
+          .from('stock')
+          .update({ current_stock: newLevel, updated_at: new Date().toISOString() })
+          .eq('sku', sku)
+          .select();
+        
+        if (error) throw error;
+        return data[0];
+      } catch (error) {
+        console.error('Error updating stock:', error);
+        return null;
+      }
+    }
+    
+    // ============================================
+    // RENDER FUNCTIONS - Display data from DB
+    // ============================================
+    
+    function renderRfqs(rfqs) {
+      // Find the RFQ list container - we'll inject realdata
+      const container = document.querySelector('#rfq .space-y-3');
+      if (!container || !rfqs || rfqs.length === 0) return;
+      
+      const statusBadges = {
+        new: { class: 'bg-blue-50 text-blue-700 border-blue-200', label: 'New', iconBg: 'bg-blue-50', iconColor: 'text-blue-600', actionBtn: '<button onclick="generateQuoteFromRfq(\'' + 0 + '\')" class="px-3 py-1.5 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-dark">Quote</button>' },
+        clarification: { class: 'bg-amber-50 text-amber-700 border-amber-200', label: 'Clarification', iconBg: 'bg-amber-50', iconColor: 'text-amber-600', actionBtn: '<button onclick="showModal(\'clarifyModal\')" class="px-3 py-1.5 text-sm font-medium bg-amber-600 text-white rounded-lg hover:bg-amber-700">Clarify</button>' },
+        ready: { class: 'bg-green-50 text-green-700 border-green-200', label: 'Ready', iconBg: 'bg-green-50', iconColor: 'text-green-600', actionBtn: '<button onclick="showQuoteModal()" class="px-3 py-1.5 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700">Generate Quote</button>' }
+      };
+      
+      let html = '';
+      rfqs.forEach(rfq => {
+        const statusInfo = statusBadges[rfq.status] || statusBadges.new;
+        const dateStr = new Date(rfq.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        
+        html += `
+          <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors" data-rfq-id="${rfq.id}">
+            <div class="flex gap-4 flex-1">
+              <div class="p-3 ${statusInfo.iconBg} rounded-lg">
+                <svg class="h-6 w-6 ${statusInfo.iconColor}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center gap-3 mb-2">
+                  <h4 class="font-semibold text-gray-900">${rfq.customer}</h4>
+                  <span class="px-2 py-0.5 text-xs font-medium ${statusInfo.class} border rounded">${statusInfo.label}</span>
+                </div>
+                <p class="text-sm text-gray-600 mb-2">${rfq.description || ''}</p>
+                <div class="flex items-center gap-4 text-xs text-gray-500">
+                  <span>Est. Value: <strong class="text-gray-900 text-mono">£${parseFloat(rfq.estimated_value || 0).toLocaleString()}</strong></span>
+                  <span>•</span>
+                  <span>Received: ${dateStr}</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="viewRfqFromDB(${rfq.id})" class="px-3 py-1.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">View</button>
+              ${statusInfo.actionBtn}
+            </div>
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+    }
+    
+    async function viewRfqFromDB(id) {
+      try {
+        const { data, error } = await db.from('rfqs').select('*').eq('id', id).single();
+        if (error) throw error;
+        
+        const dateStr = new Date(data.created_at).toLocaleDateString('en-GB');
+        
+        document.getElementById('viewDetailTitle').textContent = `RFQ Detail - ${data.customer}`;
+        document.getElementById('viewDetailBody').innerHTML = `
+          <div class="space-y-4">
+            <div class="bg-gray-50 rounded-lg p-4">
+              <div class="grid grid-cols-2 gap-4 text-sm">
+                <div><span class="text-gray-500">Customer:</span> <span class="font-semibold">${data.customer}</span></div>
+                <div><span class="text-gray-500">Status:</span> <span class="badge badge-blue">${data.status}</span></div>
+                <div><span class="text-gray-500">Received:</span> ${dateStr}</div>
+                <div><span class="text-gray-500">Value:</span> <span class="text-mono">£${parseFloat(data.estimated_value || 0).toLocaleString()}</span></div>
+              </div>
+            </div>
+            <div>
+              <h4 class="font-semibold mb-2">Description</h4>
+              <p class="text-sm text-gray-700">${data.description || 'No description'}</p>
+            </div>
+            ${data.email ? `<div><h4 class="font-semibold mb-2">Contact</h4><div class="text-sm text-gray-700">📧 ${data.email}</div></div>` : ''}
+            ${data.notes ? `<div><h4 class="font-semibold mb-2">Notes</h4><p class="text-sm text-gray-700">${data.notes}</p></div>` : ''}
+            <div class="grid grid-cols-2 gap-3 pt-4 border-t">
+              <button onclick="closeModal('viewDetailModal'); showQuoteModal();" class="bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark">Generate Quote</button>
+              <button onclick="closeModal('viewDetailModal')" class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50">Close</button>
+            </div>
+          </div>
+        `;
+        showModal('viewDetailModal');
+      } catch (error) {
+        console.error('Error viewing RFQ:', error);
+        showToast('Error', 'Could not load RFQ details', 'error');
+      }
+    }
+    
+    // ============================================
+    // OVERRIDE NEW RFQ FORM TO SAVE TO DATABASE
+    // ============================================
+    async function submitNewRfq(e) {
+      e.preventDefault();
+      const form = e.target;
+      
+      const rfqData = {
+        customer: form.customer.value,
+        email: form.email.value || null,
+        phone: form.phone.value || null,
+        description: form.description.value,
+        quantity: parseInt(form.quantity.value) || null,
+        material: form.material.value,
+        estimated_value: parseFloat(form.value.value) || null,
+        status: form.status.value,
+        notes: form.notes.value || null
+      };
+      
+      const saved = await saveRfqToDB(rfqData);
+      
+      if (saved) {
+        closeModal('newRfqModal');
+        showToast('RFQ Saved', `New RFQ from ${rfqData.customer} added to database`, 'success');
+        form.reset();
+        // Reload the RFQ list
+        await loadRfqsFromDB();
+      }
+    }
+    
+    // ============================================
+    // INITIALIZE - Load real data on page load
+    // ============================================
+    
+    async function initializeData() {
+      console.log('Loading data from Supabase...');
+      
+      // Load all data in parallel
+      const [rfqs, quotes, invoices, stock] = await Promise.all([
+        loadRfqsFromDB(),
+        loadQuotesFromDB(),
+        loadInvoicesFromDB(),
+        loadStockFromDB()
+      ]);
+      
+      console.log(`Loaded: ${rfqs.length} RFQs, ${quotes.length} quotes, ${invoices.length} invoices, ${stock.length} stock items`);
+      
+      // Show success toast
+      showToast('System Online', `Connected to database. ${rfqs.length} RFQs loaded.`, 'success');
+    }
+    
+    // Run on page load (after DOM is ready)
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializeData);
+    } else {
+      // DOM already loaded
+      setTimeout(initializeData, 100);
+    }
+</script>
 
 
   <!-- ============================================

@@ -4692,3 +4692,342 @@ JNR Engineering Limited`
         row.style.display = show ? '' : 'none';
       });
     }
+    
+
+
+</script>
+
+
+  <!-- ============================================
+       TOAST NOTIFICATION CONTAINER
+       ============================================ -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- ============================================
+       NEW RFQ MODAL
+       ============================================ -->
+  <div id="newRfqModal" class="modal" data-modal="newrfq">
+    <div class="modal-content" style="max-width: 700px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Create New RFQ</h3>
+        <button class="modal-close" onclick="closeModal('newRfqModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <form id="newRfqForm" onsubmit="submitNewRfq(event)">
+          <div class="form-group">
+            <label class="form-label">Customer Name *</label>
+            <input type="text" name="customer" class="form-input" placeholder="e.g. Aerospace Components Ltd" required>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Contact Email</label>
+              <input type="email" name="email" class="form-input" placeholder="contact@company.co.uk">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone</label>
+              <input type="tel" name="phone" class="form-input" placeholder="01698 123456">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Job Description *</label>
+            <textarea name="description" class="form-textarea" placeholder="e.g. CNC machined titanium brackets x50 - Grade 5 Ti-6Al-4V" required></textarea>
+          </div>
+          
+          <div class="form-row-3">
+            <div class="form-group">
+              <label class="form-label">Quantity</label>
+              <input type="number" name="quantity" class="form-input" placeholder="50">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Material</label>
+              <select name="material" class="form-select">
+                <option>Titanium Grade 5</option>
+                <option>Aluminium 6082</option>
+                <option>Stainless Steel 304</option>
+                <option>Stainless Steel 316</option>
+                <option>Mild Steel</option>
+                <option>Brass C360</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Est. Value (£)</label>
+              <input type="number" name="value" class="form-input" placeholder="8400">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select">
+              <option value="new">New - Just received</option>
+              <option value="clarification">Clarification needed</option>
+              <option value="ready">Ready to quote</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Notes / Drawings</label>
+            <textarea name="notes" class="form-textarea" placeholder="Drawing references, special requirements, deadlines..."></textarea>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-3 mt-6">
+            <button type="submit" class="bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark">
+              <svg class="w-4 h-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              Save & Confirm RFQ
+            </button>
+            <button type="button" class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50" onclick="closeModal('newRfqModal')">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================
+       CLARIFY EMAIL MODAL
+       ============================================ -->
+  <div id="clarifyModal" class="modal" data-modal="clarify">
+    <div class="modal-content" style="max-width: 700px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Send Clarification Request</h3>
+        <button class="modal-close" onclick="closeModal('clarifyModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="submitClarify(event)">
+          <div class="form-group">
+            <label class="form-label">To</label>
+            <input type="email" class="form-input" value="procurement@defencemanufacturing.co.uk" readonly>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Subject</label>
+            <input type="text" class="form-input" value="Clarification needed - RFQ for Precision Milled Components">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Quick Templates</label>
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" class="px-3 py-2 text-xs border border-gray-300 rounded-lg hover:bg-gray-50" onclick="loadTemplate(this, 'material')">Material spec</button>
+              <button type="button" class="px-3 py-2 text-xs border border-gray-300 rounded-lg hover:bg-gray-50" onclick="loadTemplate(this, 'drawing')">Missing drawings</button>
+              <button type="button" class="px-3 py-2 text-xs border border-gray-300 rounded-lg hover:bg-gray-50" onclick="loadTemplate(this, 'quantity')">Quantity confirm</button>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Message</label>
+            <textarea class="form-textarea" style="min-height: 200px;" id="clarifyMessage">Hi Team,
+
+Thank you for the RFQ for the precision milled components. Before we can prepare an accurate quote, we need clarification on the following:
+
+1. Material grade specification - your enquiry mentions "stainless steel" but doesn't specify the grade. We typically work with 304 or 316 - which would you prefer?
+
+2. Tolerances required - please confirm if standard machine shop tolerances are acceptable, or if tighter tolerances are needed.
+
+3. Drawing files - we received the bracket assembly drawing but appear to be missing the detail drawings for parts 4-7.
+
+Once we have this information we can turn around a quote within 24 hours.
+
+Best regards,
+JNR Engineering Limited</textarea>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-3 mt-6">
+            <button type="submit" class="bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark">Send Clarification</button>
+            <button type="button" class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50" onclick="closeModal('clarifyModal')">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================
+       VIEW DETAIL MODAL (Generic - for RFQ/Job/Quote details)
+       ============================================ -->
+  <div id="viewDetailModal" class="modal" data-modal="viewdetail">
+    <div class="modal-content" style="max-width: 800px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="viewDetailTitle">Item Details</h3>
+        <button class="modal-close" onclick="closeModal('viewDetailModal')">×</button>
+      </div>
+      <div class="modal-body" id="viewDetailBody">
+        <!-- Content injected dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================
+       CREATE INVOICE MODAL
+       ============================================ -->
+  <div id="createInvoiceModal" class="modal" data-modal="createinvoice">
+    <div class="modal-content" style="max-width: 800px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Create New Invoice</h3>
+        <button class="modal-close" onclick="closeModal('createInvoiceModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="submitNewInvoice(event)">
+          <div class="form-group">
+            <label class="form-label">Link to Job (auto-fills details)</label>
+            <select class="form-select" onchange="loadJobDetails(this.value)">
+              <option value="">-- Select completed job --</option>
+              <option value="JNR-J-218">JNR-J-218 - Aerospace Components - Titanium brackets x50 (£8,400)</option>
+              <option value="JNR-J-221">JNR-J-221 - Industrial Systems - Aluminium plates x75 (£15,600)</option>
+              <option value="manual">Manual entry (no linked job)</option>
+            </select>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Customer *</label>
+              <input type="text" class="form-input" id="invCustomer" placeholder="Company name" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Invoice Date</label>
+              <input type="date" class="form-input" value="2026-05-09">
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Due Date (30 days default)</label>
+              <input type="date" class="form-input" value="2026-06-08">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Payment Terms</label>
+              <select class="form-select">
+                <option>Net 30 days</option>
+                <option>Net 14 days</option>
+                <option>Net 60 days</option>
+                <option>Due on receipt</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Description *</label>
+            <textarea class="form-textarea" id="invDescription" required></textarea>
+          </div>
+          
+          <div class="form-row-3">
+            <div class="form-group">
+              <label class="form-label">Quantity</label>
+              <input type="number" class="form-input" id="invQty" value="1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Unit Price (£)</label>
+              <input type="number" class="form-input" id="invPrice" step="0.01" oninput="calculateInvoiceTotal()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Total (inc VAT)</label>
+              <input type="text" class="form-input text-mono" id="invTotal" readonly style="background: #F8FAFC;">
+            </div>
+          </div>
+          
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+            <strong>Auto-send schedule:</strong> Invoice will be sent immediately. Reminders auto-send if unpaid: 7 days before due, on due date, 7 days after.
+          </div>
+          
+          <div class="grid grid-cols-2 gap-3 mt-6">
+            <button type="submit" class="bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark">
+              <svg class="w-4 h-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              Save & Send Invoice
+            </button>
+            <button type="button" class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50" onclick="closeModal('createInvoiceModal')">Save as Draft</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================
+       AUTO-SEND EMAIL SETTINGS MODAL (functional version)
+       ============================================ -->
+  <div id="autoSendSettingsModal" class="modal" data-modal="autosendsettings">
+    <div class="modal-content" style="max-width: 700px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Auto-Send Email Settings</h3>
+        <button class="modal-close" onclick="closeModal('autoSendSettingsModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div class="font-semibold text-blue-900 mb-1">Email System Status</div>
+          <div class="text-sm text-blue-800">Connected to: <span class="text-mono font-semibold">enquiries@jnrengineering.co.uk</span></div>
+          <div class="text-sm text-blue-800 mt-1">Last sync: 2 minutes ago • Next reminder check: 14 minutes</div>
+        </div>
+
+        <form onsubmit="saveEmailSettings(event)">
+          <h4 class="font-semibold text-gray-900 mb-3">Follow-Up Schedule</h4>
+          
+          <div class="border border-gray-200 rounded-lg p-4 mb-3">
+            <div class="flex items-center justify-between mb-2">
+              <label class="font-medium">1st Reminder</label>
+              <div class="relative inline-block w-10 h-5 bg-green-500 rounded-full">
+                <div class="absolute top-0.5 right-0.5 w-4 h-4 bg-white rounded-full"></div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-gray-600">Send</span>
+              <input type="number" value="3" class="form-input" style="width: 70px;">
+              <span class="text-sm text-gray-600">days after quote sent at</span>
+              <input type="time" value="09:00" class="form-input" style="width: 110px;">
+            </div>
+          </div>
+          
+          <div class="border border-gray-200 rounded-lg p-4 mb-3">
+            <div class="flex items-center justify-between mb-2">
+              <label class="font-medium">2nd Reminder</label>
+              <div class="relative inline-block w-10 h-5 bg-green-500 rounded-full">
+                <div class="absolute top-0.5 right-0.5 w-4 h-4 bg-white rounded-full"></div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-gray-600">Send</span>
+              <input type="number" value="7" class="form-input" style="width: 70px;">
+              <span class="text-sm text-gray-600">days after quote sent at</span>
+              <input type="time" value="09:00" class="form-input" style="width: 110px;">
+            </div>
+          </div>
+          
+          <div class="border border-gray-200 rounded-lg p-4 mb-6">
+            <div class="flex items-center justify-between mb-2">
+              <label class="font-medium">Final Notice</label>
+              <div class="relative inline-block w-10 h-5 bg-green-500 rounded-full">
+                <div class="absolute top-0.5 right-0.5 w-4 h-4 bg-white rounded-full"></div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-gray-600">Send</span>
+              <input type="number" value="14" class="form-input" style="width: 70px;">
+              <span class="text-sm text-gray-600">days after quote sent at</span>
+              <input type="time" value="09:00" class="form-input" style="width: 110px;">
+            </div>
+          </div>
+
+          <h4 class="font-semibold text-gray-900 mb-3">Pause Auto-Send If</h4>
+          <div class="space-y-2 mb-6">
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked class="w-4 h-4">
+              <span>Customer replies to any email in the thread</span>
+            </label>
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked class="w-4 h-4">
+              <span>Quote is marked as accepted/rejected</span>
+            </label>
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked class="w-4 h-4">
+              <span>Payment is auto-detected in incoming emails</span>
+            </label>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <button type="submit" class="bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark">Save & Apply Settings</button>
+            <button type="button" class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50" onclick="closeModal('autoSendSettingsModal')">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1199,7 +1199,7 @@
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
-                  <tr class="bg-gray-50 border-l-4 border-gray-400">
+                  <tr class="bg-gray-50 border-l-4 border-gray-400 email-row" data-email-status="sent_today">
                     <td class="px-6 py-4 text-sm font-medium text-gray-900">Industrial Systems Ltd</td>
                     <td class="px-6 py-4 text-sm text-gray-900 text-mono">JNR-Q-004</td>
                     <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-mono">£15,600</td>
@@ -1218,7 +1218,7 @@
                     </td>
                   </tr>
                   
-                  <tr class="bg-yellow-50 border-l-4 border-yellow-400">
+                  <tr class="bg-yellow-50 border-l-4 border-yellow-400 email-row" data-email-status="scheduled">
                     <td class="px-6 py-4 text-sm font-medium text-gray-900">Aerospace Components Ltd</td>
                     <td class="px-6 py-4 text-sm text-gray-900 text-mono">JNR-Q-001</td>
                     <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-mono">£8,400</td>
@@ -1237,7 +1237,7 @@
                     </td>
                   </tr>
 
-                  <tr class="bg-orange-50 border-l-4 border-orange-500">
+                  <tr class="bg-orange-50 border-l-4 border-orange-500 email-row" data-email-status="scheduled">
                     <td class="px-6 py-4 text-sm font-medium text-gray-900">Defence Manufacturing Co</td>
                     <td class="px-6 py-4 text-sm text-gray-900 text-mono">JNR-Q-002</td>
                     <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-mono">£12,850</td>
@@ -1257,7 +1257,7 @@
                     </td>
                   </tr>
 
-                  <tr class="bg-red-50 border-l-4 border-red-500">
+                  <tr class="bg-red-50 border-l-4 border-red-500 email-row" data-email-status="overdue">
                     <td class="px-6 py-4 text-sm font-medium text-gray-900">Precision Engineering Group</td>
                     <td class="px-6 py-4 text-sm text-gray-900 text-mono">JNR-Q-003</td>
                     <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-mono">£6,200</td>
@@ -1278,7 +1278,7 @@
                     </td>
                   </tr>
 
-                  <tr class="bg-green-50 border-l-4 border-green-400">
+                  <tr class="bg-green-50 border-l-4 border-green-400 email-row" data-email-status="paused">
                     <td class="px-6 py-4 text-sm font-medium text-gray-900">Marine Engineering Co</td>
                     <td class="px-6 py-4 text-sm text-gray-900 text-mono">JNR-Q-005</td>
                     <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-mono">£9,400</td>
@@ -2517,7 +2517,7 @@
                     </td>
                   </tr>
 
-                  <tr class="bg-red-50 hover:bg-red-100 transition-colors">
+                  <tr class="bg-red-50 hover:bg-red-100 transition-colors stock-row" data-stock-status="critical" data-auto-purchase="true">
                     <td class="px-6 py-4">
                       <div class="font-medium text-gray-900">Brass C360</div>
                       <div class="text-xs text-gray-500 mt-1 text-mono">SKU: BR-C360-BAR</div>
@@ -3430,6 +3430,7 @@
         quote: document.getElementById('quote'),
         job: document.getElementById('job'),
         invoice: document.getElementById('invoice'),
+        approval: document.getElementById('approval'),
         stock: document.getElementById('stock'),
         machine: document.getElementById('machine')
       },
@@ -3449,6 +3450,7 @@
       quote: { title: 'Quote Generator', route: '/quote-generator' },
       job: { title: 'Job Board', route: '/job-board' },
       invoice: { title: 'Invoicing', route: '/invoicing' },
+      approval: { title: 'Approval Queue', route: '/approval' },
       stock: { title: 'Stock & Suppliers', route: '/stock-suppliers' },
       machine: { title: 'Machine Maintenance', route: '/machine-maintenance' }
     };
@@ -4431,27 +4433,68 @@ JNR Engineering Limited`
 
     
     // ============================================
-    // FILTER FUNCTIONS - all pages
+    // MULTI-SELECT FILTER FUNCTIONS - all pages
     // ============================================
     
-    function setActiveFilterChip(filterType, filterValue) {
-      // Remove active from all chips for this filter type
-      document.querySelectorAll(`[data-${filterType}-filter]`).forEach(chip => {
-        chip.classList.remove('active');
-      });
-      // Add active to clicked
-      document.querySelector(`[data-${filterType}-filter="${filterValue}"]`)?.classList.add('active');
+    // Track active filters per page (Sets allow multi-select)
+    const activeFilters = {
+      rfq: new Set(['all']),
+      job_status: new Set(['all']),
+      job_stage: new Set(),
+      email: new Set(['all']),
+      stock: new Set(['all']),
+      machine: new Set(['all']),
+      invoice: new Set(['all'])
+    };
+    
+    // Generic multi-select toggle - handles all filter chips
+    function toggleFilterChip(filterKey, value, chipElement) {
+      const filterSet = activeFilters[filterKey];
+      if (!filterSet) return;
+      
+      if (value === 'all') {
+        // Clicking "All" clears everything else and selects only "all"
+        filterSet.clear();
+        filterSet.add('all');
+        // Update visual state
+        document.querySelectorAll(`[data-${filterKey.replace('_', '-')}-filter]`).forEach(c => c.classList.remove('active'));
+        chipElement?.classList.add('active');
+      } else {
+        // Clicking a specific filter
+        if (filterSet.has(value)) {
+          // Already active - toggle off
+          filterSet.delete(value);
+          chipElement?.classList.remove('active');
+        } else {
+          // Not active - add it, remove "all"
+          filterSet.delete('all');
+          filterSet.add(value);
+          chipElement?.classList.add('active');
+          // Deactivate "all" button
+          const allBtn = document.querySelector(`[data-${filterKey.replace('_', '-')}-filter="all"]`);
+          if (allBtn) allBtn.classList.remove('active');
+        }
+        
+        // If nothing selected, default back to "all"
+        if (filterSet.size === 0) {
+          filterSet.add('all');
+          const allBtn = document.querySelector(`[data-${filterKey.replace('_', '-')}-filter="all"]`);
+          if (allBtn) allBtn.classList.add('active');
+        }
+      }
     }
     
-    // RFQ Filter
+    // RFQ Filter (multi-select)
     function filterRfqs(filter) {
-      setActiveFilterChip('rfq', filter);
+      const chip = document.querySelector(`[data-rfq-filter="${filter}"]`);
+      toggleFilterChip('rfq', filter, chip);
+      
       const rows = document.querySelectorAll('.rfq-row');
       let visible = 0;
       
       rows.forEach(row => {
         const status = row.dataset.rfqStatus;
-        const show = filter === 'all' || status === filter;
+        const show = activeFilters.rfq.has('all') || activeFilters.rfq.has(status);
         row.style.display = show ? '' : 'none';
         if (show) visible++;
       });
@@ -4460,28 +4503,69 @@ JNR Engineering Limited`
       if (counter) counter.textContent = `Showing ${visible} of ${rows.length}`;
     }
     
-    // Job Board Filter
+    // Job Board Filter (multi-select with two filter groups)
     function filterJobs(filter) {
-      setActiveFilterChip('job', filter);
-      const rows = document.querySelectorAll('.job-row');
-      let visible = 0;
-      
+      const chip = document.querySelector(`[data-job-filter="${filter}"]`);
       const statusFilters = ['all', 'on_track', 'at_risk', 'overdue'];
       const stageFilters = ['material', 'setup', 'machining', 'inspection'];
+      
+      // Determine which group this filter belongs to
+      let group = null;
+      if (statusFilters.includes(filter)) group = 'job_status';
+      else if (stageFilters.includes(filter)) group = 'job_stage';
+      
+      if (!group) return;
+      
+      // Custom toggle for job_status (which uses "all")
+      const filterSet = activeFilters[group];
+      if (filter === 'all') {
+        filterSet.clear();
+        filterSet.add('all');
+        // Clear all status chips
+        statusFilters.forEach(f => {
+          const c = document.querySelector(`[data-job-filter="${f}"]`);
+          if (c) c.classList.remove('active');
+        });
+        chip?.classList.add('active');
+      } else if (group === 'job_status') {
+        if (filterSet.has(filter)) {
+          filterSet.delete(filter);
+          chip?.classList.remove('active');
+        } else {
+          filterSet.delete('all');
+          filterSet.add(filter);
+          chip?.classList.add('active');
+          const allBtn = document.querySelector('[data-job-filter="all"]');
+          if (allBtn) allBtn.classList.remove('active');
+        }
+        if (filterSet.size === 0) {
+          filterSet.add('all');
+          const allBtn = document.querySelector('[data-job-filter="all"]');
+          if (allBtn) allBtn.classList.add('active');
+        }
+      } else if (group === 'job_stage') {
+        if (filterSet.has(filter)) {
+          filterSet.delete(filter);
+          chip?.classList.remove('active');
+        } else {
+          filterSet.add(filter);
+          chip?.classList.add('active');
+        }
+      }
+      
+      const rows = document.querySelectorAll('.job-row');
+      let visible = 0;
       
       rows.forEach(row => {
         const status = row.dataset.status;
         const stage = row.dataset.stage;
-        let show = false;
         
-        if (filter === 'all') {
-          show = true;
-        } else if (statusFilters.includes(filter)) {
-          show = status === filter;
-        } else if (stageFilters.includes(filter)) {
-          show = stage === filter;
-        }
+        // Status check
+        const statusMatch = activeFilters.job_status.has('all') || activeFilters.job_status.has(status);
+        // Stage check (only if any stages selected)
+        const stageMatch = activeFilters.job_stage.size === 0 || activeFilters.job_stage.has(stage);
         
+        const show = statusMatch && stageMatch;
         row.style.display = show ? '' : 'none';
         if (show) visible++;
       });
@@ -4490,32 +4574,30 @@ JNR Engineering Limited`
       if (counter) counter.textContent = `Showing ${visible} of ${rows.length} jobs`;
     }
     
-    // Email Automation Filter
+    // Email Filter (multi-select, no toast)
     function filterEmails(filter) {
-      setActiveFilterChip('email', filter);
-      // Email page filtering - target email items if they exist
-      const items = document.querySelectorAll('[data-email-status]');
+      const chip = document.querySelector(`[data-email-filter="${filter}"]`);
+      toggleFilterChip('email', filter, chip);
+      
+      const rows = document.querySelectorAll('.email-row');
       let visible = 0;
       
-      items.forEach(item => {
-        const status = item.dataset.emailStatus;
-        const show = filter === 'all' || status === filter;
-        item.style.display = show ? '' : 'none';
+      rows.forEach(row => {
+        const status = row.dataset.emailStatus;
+        const show = activeFilters.email.has('all') || activeFilters.email.has(status);
+        row.style.display = show ? '' : 'none';
         if (show) visible++;
       });
       
       const counter = document.getElementById('emailFilterCount');
-      if (counter) counter.textContent = items.length > 0 ? `Showing ${visible} of ${items.length}` : 'Filter applied';
-      
-      // Show toast feedback since email page items aren't yet tagged with data attributes
-      if (items.length === 0 && filter !== 'all') {
-        showToast('Filter Applied', `Showing ${filter.replace('_', ' ')} emails`, 'info');
-      }
+      if (counter) counter.textContent = `Showing ${visible} of ${rows.length}`;
     }
     
-    // Stock Filter
+    // Stock Filter (multi-select)
     function filterStock(filter) {
-      setActiveFilterChip('stock', filter);
+      const chip = document.querySelector(`[data-stock-filter="${filter}"]`);
+      toggleFilterChip('stock', filter, chip);
+      
       const rows = document.querySelectorAll('.stock-row');
       let visible = 0;
       
@@ -4524,11 +4606,17 @@ JNR Engineering Limited`
         const autoPurchase = row.dataset.autoPurchase;
         let show = false;
         
-        if (filter === 'all') show = true;
-        else if (filter === 'critical' && status === 'critical') show = true;
-        else if (filter === 'low' && (status === 'low' || status === 'critical')) show = true;
-        else if (filter === 'healthy' && status === 'healthy') show = true;
-        else if (filter === 'auto' && autoPurchase === 'true') show = true;
+        if (activeFilters.stock.has('all')) {
+          show = true;
+        } else {
+          // Check each active filter (OR logic between filters)
+          for (const f of activeFilters.stock) {
+            if (f === 'critical' && status === 'critical') { show = true; break; }
+            if (f === 'low' && (status === 'low' || status === 'critical')) { show = true; break; }
+            if (f === 'healthy' && status === 'healthy') { show = true; break; }
+            if (f === 'auto' && autoPurchase === 'true') { show = true; break; }
+          }
+        }
         
         row.style.display = show ? '' : 'none';
         if (show) visible++;
@@ -4538,15 +4626,17 @@ JNR Engineering Limited`
       if (counter) counter.textContent = `Showing ${visible} of ${rows.length} items`;
     }
     
-    // Machine Filter
+    // Machine Filter (multi-select)
     function filterMachines(filter) {
-      setActiveFilterChip('machine', filter);
+      const chip = document.querySelector(`[data-machine-filter="${filter}"]`);
+      toggleFilterChip('machine', filter, chip);
+      
       const rows = document.querySelectorAll('.machine-row');
       let visible = 0;
       
       rows.forEach(row => {
         const status = row.dataset.machineStatus;
-        const show = filter === 'all' || status === filter;
+        const show = activeFilters.machine.has('all') || activeFilters.machine.has(status);
         row.style.display = show ? '' : 'none';
         if (show) visible++;
       });
@@ -4554,339 +4644,51 @@ JNR Engineering Limited`
       const counter = document.getElementById('machineFilterCount');
       if (counter) counter.textContent = `Showing ${visible} of ${rows.length} machines`;
     }
-</script>
-
-
-  <!-- ============================================
-       TOAST NOTIFICATION CONTAINER
-       ============================================ -->
-  <div id="toastContainer" class="toast-container"></div>
-
-  <!-- ============================================
-       NEW RFQ MODAL
-       ============================================ -->
-  <div id="newRfqModal" class="modal" data-modal="newrfq">
-    <div class="modal-content" style="max-width: 700px;">
-      <div class="modal-header">
-        <h3 class="modal-title">Create New RFQ</h3>
-        <button class="modal-close" onclick="closeModal('newRfqModal')">×</button>
-      </div>
-      <div class="modal-body">
-        <form id="newRfqForm" onsubmit="submitNewRfq(event)">
-          <div class="form-group">
-            <label class="form-label">Customer Name *</label>
-            <input type="text" name="customer" class="form-input" placeholder="e.g. Aerospace Components Ltd" required>
-          </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Contact Email</label>
-              <input type="email" name="email" class="form-input" placeholder="contact@company.co.uk">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Phone</label>
-              <input type="tel" name="phone" class="form-input" placeholder="01698 123456">
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label">Job Description *</label>
-            <textarea name="description" class="form-textarea" placeholder="e.g. CNC machined titanium brackets x50 - Grade 5 Ti-6Al-4V" required></textarea>
-          </div>
-          
-          <div class="form-row-3">
-            <div class="form-group">
-              <label class="form-label">Quantity</label>
-              <input type="number" name="quantity" class="form-input" placeholder="50">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Material</label>
-              <select name="material" class="form-select">
-                <option>Titanium Grade 5</option>
-                <option>Aluminium 6082</option>
-                <option>Stainless Steel 304</option>
-                <option>Stainless Steel 316</option>
-                <option>Mild Steel</option>
-                <option>Brass C360</option>
-                <option>Other</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Est. Value (£)</label>
-              <input type="number" name="value" class="form-input" placeholder="8400">
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label">Status</label>
-            <select name="status" class="form-select">
-              <option value="new">New - Just received</option>
-              <option value="clarification">Clarification needed</option>
-              <option value="ready">Ready to quote</option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label">Notes / Drawings</label>
-            <textarea name="notes" class="form-textarea" placeholder="Drawing references, special requirements, deadlines..."></textarea>
-          </div>
-          
-          <div class="grid grid-cols-2 gap-3 mt-6">
-            <button type="submit" class="bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark">
-              <svg class="w-4 h-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-              Save & Confirm RFQ
-            </button>
-            <button type="button" class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50" onclick="closeModal('newRfqModal')">Cancel</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============================================
-       CLARIFY EMAIL MODAL
-       ============================================ -->
-  <div id="clarifyModal" class="modal" data-modal="clarify">
-    <div class="modal-content" style="max-width: 700px;">
-      <div class="modal-header">
-        <h3 class="modal-title">Send Clarification Request</h3>
-        <button class="modal-close" onclick="closeModal('clarifyModal')">×</button>
-      </div>
-      <div class="modal-body">
-        <form onsubmit="submitClarify(event)">
-          <div class="form-group">
-            <label class="form-label">To</label>
-            <input type="email" class="form-input" value="procurement@defencemanufacturing.co.uk" readonly>
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label">Subject</label>
-            <input type="text" class="form-input" value="Clarification needed - RFQ for Precision Milled Components">
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label">Quick Templates</label>
-            <div class="grid grid-cols-3 gap-2">
-              <button type="button" class="px-3 py-2 text-xs border border-gray-300 rounded-lg hover:bg-gray-50" onclick="loadTemplate(this, 'material')">Material spec</button>
-              <button type="button" class="px-3 py-2 text-xs border border-gray-300 rounded-lg hover:bg-gray-50" onclick="loadTemplate(this, 'drawing')">Missing drawings</button>
-              <button type="button" class="px-3 py-2 text-xs border border-gray-300 rounded-lg hover:bg-gray-50" onclick="loadTemplate(this, 'quantity')">Quantity confirm</button>
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label">Message</label>
-            <textarea class="form-textarea" style="min-height: 200px;" id="clarifyMessage">Hi Team,
-
-Thank you for the RFQ for the precision milled components. Before we can prepare an accurate quote, we need clarification on the following:
-
-1. Material grade specification - your enquiry mentions "stainless steel" but doesn't specify the grade. We typically work with 304 or 316 - which would you prefer?
-
-2. Tolerances required - please confirm if standard machine shop tolerances are acceptable, or if tighter tolerances are needed.
-
-3. Drawing files - we received the bracket assembly drawing but appear to be missing the detail drawings for parts 4-7.
-
-Once we have this information we can turn around a quote within 24 hours.
-
-Best regards,
-JNR Engineering Limited</textarea>
-          </div>
-          
-          <div class="grid grid-cols-2 gap-3 mt-6">
-            <button type="submit" class="bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark">Send Clarification</button>
-            <button type="button" class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50" onclick="closeModal('clarifyModal')">Cancel</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============================================
-       VIEW DETAIL MODAL (Generic - for RFQ/Job/Quote details)
-       ============================================ -->
-  <div id="viewDetailModal" class="modal" data-modal="viewdetail">
-    <div class="modal-content" style="max-width: 800px;">
-      <div class="modal-header">
-        <h3 class="modal-title" id="viewDetailTitle">Item Details</h3>
-        <button class="modal-close" onclick="closeModal('viewDetailModal')">×</button>
-      </div>
-      <div class="modal-body" id="viewDetailBody">
-        <!-- Content injected dynamically -->
-      </div>
-    </div>
-  </div>
-
-  <!-- ============================================
-       CREATE INVOICE MODAL
-       ============================================ -->
-  <div id="createInvoiceModal" class="modal" data-modal="createinvoice">
-    <div class="modal-content" style="max-width: 800px;">
-      <div class="modal-header">
-        <h3 class="modal-title">Create New Invoice</h3>
-        <button class="modal-close" onclick="closeModal('createInvoiceModal')">×</button>
-      </div>
-      <div class="modal-body">
-        <form onsubmit="submitNewInvoice(event)">
-          <div class="form-group">
-            <label class="form-label">Link to Job (auto-fills details)</label>
-            <select class="form-select" onchange="loadJobDetails(this.value)">
-              <option value="">-- Select completed job --</option>
-              <option value="JNR-J-218">JNR-J-218 - Aerospace Components - Titanium brackets x50 (£8,400)</option>
-              <option value="JNR-J-221">JNR-J-221 - Industrial Systems - Aluminium plates x75 (£15,600)</option>
-              <option value="manual">Manual entry (no linked job)</option>
-            </select>
-          </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Customer *</label>
-              <input type="text" class="form-input" id="invCustomer" placeholder="Company name" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Invoice Date</label>
-              <input type="date" class="form-input" value="2026-05-09">
-            </div>
-          </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Due Date (30 days default)</label>
-              <input type="date" class="form-input" value="2026-06-08">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Payment Terms</label>
-              <select class="form-select">
-                <option>Net 30 days</option>
-                <option>Net 14 days</option>
-                <option>Net 60 days</option>
-                <option>Due on receipt</option>
-              </select>
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label">Description *</label>
-            <textarea class="form-textarea" id="invDescription" required></textarea>
-          </div>
-          
-          <div class="form-row-3">
-            <div class="form-group">
-              <label class="form-label">Quantity</label>
-              <input type="number" class="form-input" id="invQty" value="1">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Unit Price (£)</label>
-              <input type="number" class="form-input" id="invPrice" step="0.01" oninput="calculateInvoiceTotal()">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Total (inc VAT)</label>
-              <input type="text" class="form-input text-mono" id="invTotal" readonly style="background: #F8FAFC;">
-            </div>
-          </div>
-          
-          <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
-            <strong>Auto-send schedule:</strong> Invoice will be sent immediately. Reminders auto-send if unpaid: 7 days before due, on due date, 7 days after.
-          </div>
-          
-          <div class="grid grid-cols-2 gap-3 mt-6">
-            <button type="submit" class="bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark">
-              <svg class="w-4 h-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-              Save & Send Invoice
-            </button>
-            <button type="button" class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50" onclick="closeModal('createInvoiceModal')">Save as Draft</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============================================
-       AUTO-SEND EMAIL SETTINGS MODAL (functional version)
-       ============================================ -->
-  <div id="autoSendSettingsModal" class="modal" data-modal="autosendsettings">
-    <div class="modal-content" style="max-width: 700px;">
-      <div class="modal-header">
-        <h3 class="modal-title">Auto-Send Email Settings</h3>
-        <button class="modal-close" onclick="closeModal('autoSendSettingsModal')">×</button>
-      </div>
-      <div class="modal-body">
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <div class="font-semibold text-blue-900 mb-1">Email System Status</div>
-          <div class="text-sm text-blue-800">Connected to: <span class="text-mono font-semibold">enquiries@jnrengineering.co.uk</span></div>
-          <div class="text-sm text-blue-800 mt-1">Last sync: 2 minutes ago • Next reminder check: 14 minutes</div>
-        </div>
-
-        <form onsubmit="saveEmailSettings(event)">
-          <h4 class="font-semibold text-gray-900 mb-3">Follow-Up Schedule</h4>
-          
-          <div class="border border-gray-200 rounded-lg p-4 mb-3">
-            <div class="flex items-center justify-between mb-2">
-              <label class="font-medium">1st Reminder</label>
-              <div class="relative inline-block w-10 h-5 bg-green-500 rounded-full">
-                <div class="absolute top-0.5 right-0.5 w-4 h-4 bg-white rounded-full"></div>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-sm text-gray-600">Send</span>
-              <input type="number" value="3" class="form-input" style="width: 70px;">
-              <span class="text-sm text-gray-600">days after quote sent at</span>
-              <input type="time" value="09:00" class="form-input" style="width: 110px;">
-            </div>
-          </div>
-          
-          <div class="border border-gray-200 rounded-lg p-4 mb-3">
-            <div class="flex items-center justify-between mb-2">
-              <label class="font-medium">2nd Reminder</label>
-              <div class="relative inline-block w-10 h-5 bg-green-500 rounded-full">
-                <div class="absolute top-0.5 right-0.5 w-4 h-4 bg-white rounded-full"></div>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-sm text-gray-600">Send</span>
-              <input type="number" value="7" class="form-input" style="width: 70px;">
-              <span class="text-sm text-gray-600">days after quote sent at</span>
-              <input type="time" value="09:00" class="form-input" style="width: 110px;">
-            </div>
-          </div>
-          
-          <div class="border border-gray-200 rounded-lg p-4 mb-6">
-            <div class="flex items-center justify-between mb-2">
-              <label class="font-medium">Final Notice</label>
-              <div class="relative inline-block w-10 h-5 bg-green-500 rounded-full">
-                <div class="absolute top-0.5 right-0.5 w-4 h-4 bg-white rounded-full"></div>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-sm text-gray-600">Send</span>
-              <input type="number" value="14" class="form-input" style="width: 70px;">
-              <span class="text-sm text-gray-600">days after quote sent at</span>
-              <input type="time" value="09:00" class="form-input" style="width: 110px;">
-            </div>
-          </div>
-
-          <h4 class="font-semibold text-gray-900 mb-3">Pause Auto-Send If</h4>
-          <div class="space-y-2 mb-6">
-            <label class="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked class="w-4 h-4">
-              <span>Customer replies to any email in the thread</span>
-            </label>
-            <label class="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked class="w-4 h-4">
-              <span>Quote is marked as accepted/rejected</span>
-            </label>
-            <label class="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked class="w-4 h-4">
-              <span>Payment is auto-detected in incoming emails</span>
-            </label>
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <button type="submit" class="bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark">Save & Apply Settings</button>
-            <button type="button" class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50" onclick="closeModal('autoSendSettingsModal')">Cancel</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-</body>
-</html>
+    
+    // Invoice Filter (multi-select)
+    function filterInvoices(filter) {
+      const chip = document.querySelector(`.invoice-filter[data-filter="${filter}"]`);
+      const filterSet = activeFilters.invoice;
+      
+      if (filter === 'all') {
+        filterSet.clear();
+        filterSet.add('all');
+        document.querySelectorAll('.invoice-filter').forEach(c => c.classList.remove('active'));
+        chip?.classList.add('active');
+      } else {
+        if (filterSet.has(filter)) {
+          filterSet.delete(filter);
+          chip?.classList.remove('active');
+        } else {
+          filterSet.delete('all');
+          filterSet.add(filter);
+          chip?.classList.add('active');
+          const allBtn = document.querySelector('.invoice-filter[data-filter="all"]');
+          if (allBtn) allBtn.classList.remove('active');
+        }
+        if (filterSet.size === 0) {
+          filterSet.add('all');
+          const allBtn = document.querySelector('.invoice-filter[data-filter="all"]');
+          if (allBtn) allBtn.classList.add('active');
+        }
+      }
+      
+      const rows = document.querySelectorAll('.invoice-row');
+      
+      rows.forEach(row => {
+        const status = row.dataset.status;
+        let show = false;
+        
+        if (filterSet.has('all')) {
+          show = true;
+        } else {
+          for (const f of filterSet) {
+            if (f === 'overdue' && status === 'overdue') { show = true; break; }
+            if (f === 'outstanding' && status === 'outstanding') { show = true; break; }
+            if (f === 'paid' && status === 'paid') { show = true; break; }
+          }
+        }
+        
+        row.style.display = show ? '' : 'none';
+      });
+    }

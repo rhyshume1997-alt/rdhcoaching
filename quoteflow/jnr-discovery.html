@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JNR Engineering - Business Discovery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%);
+      color: #0F172A;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #1E3472 0%, #152654 100%);
+      color: white;
+      padding: 40px;
+      border-radius: 16px 16px 0 0;
+      box-shadow: 0 4px 20px rgba(30, 52, 114, 0.2);
+    }
+    
+    .header-top {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    
+    .logo-circle {
+      width: 56px;
+      height: 56px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 24px;
+      backdrop-filter: blur(10px);
+    }
+    
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+    
+    .header-subtitle {
+      font-size: 14px;
+      opacity: 0.8;
+      margin-top: 4px;
+    }
+    
+    .header-message {
+      font-size: 16px;
+      line-height: 1.6;
+      opacity: 0.95;
+      max-width: 600px;
+    }
+    
+    .header-meta {
+      display: flex;
+      gap: 24px;
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255,255,255,0.15);
+      font-size: 13px;
+    }
+    
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0.9;
+    }
+    
+    /* Form */
+    .form-card {
+      background: white;
+      padding: 40px;
+      border-radius: 0 0 16px 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+    
+    .progress-bar {
+      height: 6px;
+      background: #F1F5F9;
+      border-radius: 3px;
+      margin-bottom: 32px;
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #1E3472 0%, #2E52B8 100%);
+      border-radius: 3px;
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+    
+    .section {
+      margin-bottom: 40px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid #F1F5F9;
+    }
+    
+    .section:last-child {
+      border-bottom: none;
+    }
+    
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 20px;
+      font-weight: 700;
+      color: #0F172A;
+      margin-bottom: 8px;
+    }
+    
+    .section-number {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #1E3472 0%, #2E52B8 100%);
+      color: white;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .section-description {
+      font-size: 14px;
+      color: #64748B;
+      margin-bottom: 24px;
+      line-height: 1.6;
+      padding-left: 44px;
+    }
+    
+    .question {
+      margin-bottom: 24px;
+    }
+    
+    .question-label {
+      display: block;
+      font-size: 15px;
+      font-weight: 600;
+      color: #0F172A;
+      margin-bottom: 4px;
+    }
+    
+    .question-hint {
+      font-size: 13px;
+      color: #64748B;
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+    
+    .form-input,
+    .form-textarea,
+    .form-select {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #CBD5E1;
+      border-radius: 10px;
+      font-size: 15px;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s;
+      background: white;
+    }
+    
+    .form-input:focus,
+    .form-textarea:focus,
+    .form-select:focus {
+      outline: none;
+      border-color: #1E3472;
+      box-shadow: 0 0 0 4px rgba(30, 52, 114, 0.08);
+    }
+    
+    .form-textarea {
+      min-height: 100px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+    
+    .radio-group, .checkbox-group {
+      display: grid;
+      gap: 8px;
+    }
+    
+    .radio-option, .checkbox-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 16px;
+      border: 1px solid #E2E8F0;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: #FAFBFC;
+    }
+    
+    .radio-option:hover, .checkbox-option:hover {
+      border-color: #2E52B8;
+      background: #F0F7FF;
+    }
+    
+    .radio-option input[type="radio"],
+    .checkbox-option input[type="checkbox"] {
+      margin-top: 2px;
+      width: 18px;
+      height: 18px;
+      accent-color: #1E3472;
+      flex-shrink: 0;
+    }
+    
+    .option-text {
+      font-size: 14px;
+      color: #334155;
+      line-height: 1.5;
+      flex: 1;
+    }
+    
+    .scale-group {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+    
+    .scale-option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 8px;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: #FAFBFC;
+      text-align: center;
+    }
+    
+    .scale-option:hover {
+      border-color: #2E52B8;
+      background: #F0F7FF;
+    }
+    
+    .scale-option input[type="radio"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #1E3472;
+      margin-bottom: 6px;
+    }
+    
+    .scale-number {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1E3472;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .scale-label {
+      font-size: 11px;
+      color: #64748B;
+      margin-top: 2px;
+    }
+    
+    .submit-section {
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 2px solid #F1F5F9;
+    }
+    
+    .submit-button {
+      width: 100%;
+      padding: 16px 32px;
+      background: linear-gradient(135deg, #1E3472 0%, #2E52B8 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'DM Sans', sans-serif;
+    }
+    
+    .submit-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(30, 52, 114, 0.3);
+    }
+    
+    .submit-note {
+      font-size: 13px;
+      color: #64748B;
+      text-align: center;
+      margin-top: 12px;
+      line-height: 1.5;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      padding: 20px;
+      color: #94A3B8;
+      font-size: 13px;
+    }
+    
+    /* Success state */
+    .success-state {
+      display: none;
+      background: white;
+      padding: 60px 40px;
+      border-radius: 16px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+    
+    .success-state.show {
+      display: block;
+    }
+    
+    .success-icon {
+      width: 80px;
+      height: 80px;
+      background: #D1FAE5;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+    }
+    
+    .success-icon svg {
+      width: 40px;
+      height: 40px;
+      color: #065F46;
+    }
+    
+    .success-state h2 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #0F172A;
+      margin-bottom: 12px;
+    }
+    
+    .success-state p {
+      font-size: 16px;
+      color: #475569;
+      line-height: 1.6;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    
+    @media (max-width: 640px) {
+      body { padding: 20px 12px; }
+      .header, .form-card { padding: 24px; }
+      .header h1 { font-size: 22px; }
+      .scale-group { grid-template-columns: repeat(5, 1fr); gap: 4px; }
+      .scale-number { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="container">
+    
+    <!-- HEADER -->
+    <div class="header">
+      <div class="header-top">
+        <div class="logo-circle">JNR</div>
+        <div>
+          <h1>Business Discovery</h1>
+          <div class="header-subtitle">QuoteFlow AI - Built Specifically for JNR Engineering</div>
+        </div>
+      </div>
+      
+      <p class="header-message">
+        I'm building a system to handle quoting, jobs, invoicing, and stock for JNR. To make sure it actually solves your real problems (not just looks fancy), I need 15 minutes of your honest answers below. Be brutal - the more painful the problems you describe, the better I can build solutions.
+      </p>
+      
+      <div class="header-meta">
+        <div class="meta-item">
+          ⏱️ 15-20 minutes
+        </div>
+        <div class="meta-item">
+          📝 20 questions
+        </div>
+        <div class="meta-item">
+          🔒 Private to JNR & Rhys
+        </div>
+      </div>
+    </div>
+    
+    <!-- FORM -->
+    <div class="form-card" id="formCard">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      
+      <form id="discoveryForm" onsubmit="submitForm(event)">
+        
+        <!-- ============================================
+             SECTION 1: ABOUT JNR
+             ============================================ -->
+        <div class="section">
+          <div class="section-title">
+            <div class="section-number">1</div>
+            <span>About JNR (Quick Background)</span>
+          </div>
+          <div class="section-description">
+            A few quick questions about how JNR runs today, so I can build for your reality not someone else's.
+          </div>
+          
+          <div class="question">
+            <label class="question-label">Who's filling this in?</label>
+            <p class="question-hint">Your name and role at JNR</p>
+            <input type="text" name="q1_name" class="form-input" placeholder="e.g. John Hume - Director" required>
+          </div>
+          
+          <div class="question">
+            <label class="question-label">How many people work in the office side of JNR?</label>
+            <p class="question-hint">Quoting, admin, accounts, customer comms - not shop floor</p>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input type="radio" name="q2_office_size" value="just_me" required>
+                <span class="option-text">Just me / one person doing everything</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q2_office_size" value="2_3">
+                <span class="option-text">2-3 people</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q2_office_size" value="4_6">
+                <span class="option-text">4-6 people</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q2_office_size" value="7_plus">
+                <span class="option-text">7+ people</span>
+              </label>
+            </div>
+          </div>
+          
+          <div class="question">
+            <label class="question-label">Roughly how many quotes do you send per month?</label>
+            <p class="question-hint">Best guess is fine - just a rough number</p>
+            <input type="text" name="q3_quote_volume" class="form-input" placeholder="e.g. about 30-40 quotes/month">
+          </div>
+        </div>
+        
+        <!-- ============================================
+             SECTION 2: DAILY ADMIN PAIN
+             ============================================ -->
+        <div class="section">
+          <div class="section-title">
+            <div class="section-number">2</div>
+            <span>What's Eating Your Time?</span>
+          </div>
+          <div class="section-description">
+            Be honest about where the day disappears. The more specific the better.
+          </div>
+          
+          <div class="question">
+            <label class="question-label">What's the most annoying admin task that eats your time every week?</label>
+            <p class="question-hint">The thing that makes you want to throw your laptop. Be specific - "writing quotes" is too vague, "hunting for old emails to find what we quoted last year" is useful.</p>
+            <textarea name="q4_biggest_pain" class="form-textarea" placeholder="The thing that genuinely winds me up every week is..." required></textarea>
+          </div>
+          
+          <div class="question">
+            <label class="question-label">Roughly how many hours per week do you spend on quoting and admin?</label>
+            <p class="question-hint">Quoting, chasing invoices, looking for files, updating spreadsheets, etc.</p>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input type="radio" name="q5_admin_hours" value="under_5" required>
+                <span class="option-text">Under 5 hours/week</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q5_admin_hours" value="5_10">
+                <span class="option-text">5-10 hours/week</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q5_admin_hours" value="10_20">
+                <span class="option-text">10-20 hours/week</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q5_admin_hours" value="20_plus">
+                <span class="option-text">20+ hours/week (basically a full-time job)</span>
+              </label>
+            </div>
+          </div>
+          
+          <div class="question">
+            <label class="question-label">If a magic system could automate ONE thing for you, what would it be?</label>
+            <p class="question-hint">No wrong answer. The thing that would change your week the most.</p>
+            <textarea name="q6_magic_wish" class="form-textarea" placeholder="If I never had to do X again, my life would be so much better..."></textarea>
+          </div>
+        </div>
+        
+        <!-- ============================================
+             SECTION 3: QUOTING & RFQs
+             ============================================ -->
+        <div class="section">
+          <div class="section-title">
+            <div class="section-number">3</div>
+            <span>How Quoting Currently Works</span>
+          </div>
+          <div class="section-description">
+            Walk me through your current process - the messier the truth, the better I can fix it.
+          </div>
+          
+          <div class="question">
+            <label class="question-label">What format do customers usually send their RFQs in?</label>
+            <p class="question-hint">Tick all that apply</p>
+            <div class="checkbox-group">
+              <label class="checkbox-option">
+                <input type="checkbox" name="q7_rfq_format" value="email_text">
+                <span class="option-text">Plain email text ("Can you quote 50 of these...")</span>
+              </label>
+              <label class="checkbox-option">
+                <input type="checkbox" name="q7_rfq_format" value="pdf">
+                <span class="option-text">PDF technical drawings</span>
+              </label>
+              <label class="checkbox-option">
+                <input type="checkbox" name="q7_rfq_format" value="step_iges">
+                <span class="option-text">CAD files (STEP, IGES, DWG)</span>
+              </label>
+              <label class="checkbox-option">
+                <input type="checkbox" name="q7_rfq_format" value="excel">
+                <span class="option-text">Excel spreadsheets / parts lists</span>
+              </label>
+              <label class="checkbox-option">
+                <input type="checkbox" name="q7_rfq_format" value="phone">
+                <span class="option-text">Phone calls (you write notes manually)</span>
+              </label>
+              <label class="checkbox-option">
+                <input type="checkbox" name="q7_rfq_format" value="customer_portal">
+                <span class="option-text">Through a customer's procurement portal</span>
+              </label>
+            </div>
+          </div>
+          
+          <div class="question">
+            <label class="question-label">How long does it currently take to turn an RFQ into a quote (on average)?</label>
+            <p class="question-hint">From "got the email" to "quote sent"</p>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input type="radio" name="q8_quote_time" value="under_hour" required>
+                <span class="option-text">Under an hour - we're quick</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q8_quote_time" value="few_hours">
+                <span class="option-text">A few hours - same day</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q8_quote_time" value="next_day">
+                <span class="option-text">Next day usually</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q8_quote_time" value="2_3_days">
+                <span class="option-text">2-3 days realistically</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q8_quote_time" value="week_plus">
+                <span class="option-text">Often a week or more (we get behind)</span>
+              </label>
+            </div>
+          </div>
+          
+          <div class="question">
+            <label class="question-label">When customers don't respond to a quote, what happens?</label>
+            <p class="question-hint">Honest answer - we all know this is where deals die</p>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input type="radio" name="q9_followup" value="never" required>
+                <span class="option-text">Honestly? We forget about it most of the time</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q9_followup" value="sometimes">
+                <span class="option-text">Sometimes I remember to chase if it's a big quote</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q9_followup" value="few_days">
+                <span class="option-text">I try to chase after a few days</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q9_followup" value="systematic">
+                <span class="option-text">We have a process - reminders sent on schedule</span>
+              </label>
+            </div>
+          </div>
+          
+          <div class="question">
+            <label class="question-label">Roughly what % of quotes do you actually win?</label>
+            <p class="question-hint">Best guess - this is one of the most important metrics</p>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input type="radio" name="q10_win_rate" value="under_25">
+                <span class="option-text">Under 25% - we quote a lot, win a few</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q10_win_rate" value="25_50">
+                <span class="option-text">25-50%</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q10_win_rate" value="50_75">
+                <span class="option-text">50-75%</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q10_win_rate" value="over_75">
+                <span class="option-text">Over 75% - we usually win</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q10_win_rate" value="no_idea">
+                <span class="option-text">Honestly no idea - we don't track it</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        
+        <!-- ============================================
+             SECTION 4: JOB MANAGEMENT
+             ============================================ -->
+        <div class="section">
+          <div class="section-title">
+            <div class="section-number">4</div>
+            <span>Tracking Jobs Through The Workshop</span>
+          </div>
+          <div class="section-description">
+            Once a quote is accepted, what happens? Where do things go wrong?
+          </div>
+          
+          <div class="question">
+            <label class="question-label">How do you currently track which job is at which stage?</label>
+            <p class="question-hint">Be honest - if it's a whiteboard or "in my head" that's a real answer</p>
+            <textarea name="q11_job_tracking" class="form-textarea" placeholder="We use... but the problem with it is..." required></textarea>
+          </div>
+          
+          <div class="question">
+            <label class="question-label">How often do jobs get delayed or run late?</label>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input type="radio" name="q12_delays" value="rarely" required>
+                <span class="option-text">Rarely - we're usually on time</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q12_delays" value="sometimes">
+                <span class="option-text">Sometimes - maybe 1 in 5 jobs</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q12_delays" value="often">
+                <span class="option-text">Often - probably half the jobs</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q12_delays" value="always">
+                <span class="option-text">Honestly most jobs run late</span>
+              </label>
+            </div>
+          </div>
+          
+          <div class="question">
+            <label class="question-label">What's the most common cause of delays?</label>
+            <div class="checkbox-group">
+              <label class="checkbox-option">
+                <input type="checkbox" name="q13_delay_cause" value="material">
+                <span class="option-text">Materials don't arrive on time from suppliers</span>
+              </label>
+              <label class="checkbox-option">
+                <input type="checkbox" name="q13_delay_cause" value="machine">
+                <span class="option-text">Machine breakdowns / unexpected maintenance</span>
+              </label>
+              <label class="checkbox-option">
+                <input type="checkbox" name="q13_delay_cause" value="capacity">
+                <span class="option-text">Too many jobs in the shop, capacity issues</span>
+              </label>
+              <label class="checkbox-option">
+                <input type="checkbox" name="q13_delay_cause" value="changes">
+                <span class="option-text">Customer changes specs mid-job</span>
+              </label>
+              <label class="checkbox-option">
+                <input type="checkbox" name="q13_delay_cause" value="people">
+                <span class="option-text">Staff sickness/holidays/availability</span>
+              </label>
+              <label class="checkbox-option">
+                <input type="checkbox" name="q13_delay_cause" value="quote">
+                <span class="option-text">We underquoted the time needed</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        
+        <!-- ============================================
+             SECTION 5: INVOICING & MONEY
+             ============================================ -->
+        <div class="section">
+          <div class="section-title">
+            <div class="section-number">5</div>
+            <span>The Money Side</span>
+          </div>
+          <div class="section-description">
+            Where the rubber meets the road - getting paid.
+          </div>
+          
+          <div class="question">
+            <label class="question-label">Roughly how much money is owed to JNR right now from unpaid invoices?</label>
+            <p class="question-hint">Ballpark only - this is private and just for me</p>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input type="radio" name="q14_outstanding" value="under_5k" required>
+                <span class="option-text">Under £5k</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q14_outstanding" value="5k_20k">
+                <span class="option-text">£5k - £20k</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q14_outstanding" value="20k_50k">
+                <span class="option-text">£20k - £50k</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q14_outstanding" value="50k_plus">
+                <span class="option-text">Over £50k</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q14_outstanding" value="unsure">
+                <span class="option-text">Genuinely don't know off the top of my head</span>
+              </label>
+            </div>
+          </div>
+          
+          <div class="question">
+            <label class="question-label">Have specific customers always paid late? Who?</label>
+            <p class="question-hint">Names help me build "late payer warnings" into the system. This is private.</p>
+            <textarea name="q15_late_payers" class="form-textarea" placeholder="Yeah, X always takes 60 days, Y is usually 45..."></textarea>
+          </div>
+          
+          <div class="question">
+            <label class="question-label">How do you currently chase unpaid invoices?</label>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input type="radio" name="q16_chase_method" value="email" required>
+                <span class="option-text">Email reminder when I remember</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q16_chase_method" value="phone">
+                <span class="option-text">I call them</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q16_chase_method" value="both">
+                <span class="option-text">Mix of email then phone</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q16_chase_method" value="dont">
+                <span class="option-text">Honestly we don't really chase, we hope</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q16_chase_method" value="systematic">
+                <span class="option-text">We have a proper process - 30/60/90 day chases</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        
+        <!-- ============================================
+             SECTION 6: STOCK & SUPPLIERS
+             ============================================ -->
+        <div class="section">
+          <div class="section-title">
+            <div class="section-number">6</div>
+            <span>Stock & Suppliers</span>
+          </div>
+          <div class="section-description">
+            The materials side - where things often quietly fall apart.
+          </div>
+          
+          <div class="question">
+            <label class="question-label">Have you ever started a job and then realised you don't have enough of a material?</label>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input type="radio" name="q17_stockout" value="never" required>
+                <span class="option-text">Never - we always have what we need</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q17_stockout" value="rarely">
+                <span class="option-text">Rarely - maybe once a year</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q17_stockout" value="few_times">
+                <span class="option-text">A few times a year</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q17_stockout" value="often">
+                <span class="option-text">More often than I'd like to admit</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="q17_stockout" value="constantly">
+                <span class="option-text">Constantly - it's an ongoing nightmare</span>
+              </label>
+            </div>
+          </div>
+          
+          <div class="question">
+            <label class="question-label">Which suppliers consistently let JNR down?</label>
+            <p class="question-hint">For "supplier reliability" tracking. This is private.</p>
+            <textarea name="q18_bad_suppliers" class="form-textarea" placeholder="X always promises 5 days then takes 14, Y has been getting worse..."></textarea>
+          </div>
+        </div>
+        
+        <!-- ============================================
+             SECTION 7: CURRENT TOOLS
+             ============================================ -->
+        <div class="section">
+          <div class="section-title">
+            <div class="section-number">7</div>
+            <span>What You Use Today</span>
+          </div>
+          <div class="section-description">
+            So I know what to integrate with (or replace).
+          </div>
+          
+          <div class="question">
+            <label class="question-label">What software do you currently use for the business?</label>
+            <p class="question-hint">Tick all that apply, even if you barely use them</p>
+            <div class="checkbox-group">
+              <label class="checkbox-option">
+                <input type="checkbox" name="q19_tools" value="excel">
+                <span class="option-text">Excel / Spreadsheets (be honest, we all do)</span>
+              </label>
+              <label class="checkbox-option">
+                <input type="checkbox" name="q19_tools" value="sage">
+                <span class="option-text">Sage (50, 200, or other)</span>
+              </label>
+              <label class="checkbox-option">
+                <input type="checkbox" name="q19_tools" value="quickbooks">
+                <span class="option-text">QuickBooks</span>
+              </label>
+              <label class="checkbox-option">
+                <input type="checkbox" name="q19_tools" value="xero">
+                <span class="option-text">Xero</span>
+              </label>
+              <label class="checkbox-option">
+                <input type="checkbox" name="q19_tools" value="outlook">
+                <span class="option-text">Microsoft Outlook / 365</span>
+              </label>
+              <label class="checkbox-option">
+                <input type="checkbox" name="q19_tools" value="gmail">
+                <span class="option-text">Gmail / Google Workspace</span>
+              </label>
+              <label class="checkbox-option">
+                <input type="checkbox" name="q19_tools" value="cad">
+                <span class="option-text">CAD software (SolidWorks, Fusion, Mastercam, etc.)</span>
+              </label>
+              <label class="checkbox-option">
+                <input type="checkbox" name="q19_tools" value="paper">
+                <span class="option-text">Paper / printed documents (genuinely - it's still common)</span>
+              </label>
+              <label class="checkbox-option">
+                <input type="checkbox" name="q19_tools" value="other">
+                <span class="option-text">Something else (mention in next question)</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        
+        <!-- ============================================
+             SECTION 8: THE BIG OPEN QUESTION
+             ============================================ -->
+        <div class="section">
+          <div class="section-title">
+            <div class="section-number">8</div>
+            <span>Anything Else?</span>
+          </div>
+          <div class="section-description">
+            The thing I haven't asked about that's actually really important.
+          </div>
+          
+          <div class="question">
+            <label class="question-label">If you could change ONE thing about how JNR runs, what would it be?</label>
+            <p class="question-hint">Could be anything - a process, a tool, a habit, anything. Dream big.</p>
+            <textarea name="q20_dream" class="form-textarea" placeholder="Honestly, the thing I'd love to fix more than anything is..." required style="min-height: 140px;"></textarea>
+          </div>
+        </div>
+        
+        <!-- SUBMIT -->
+        <div class="submit-section">
+          <button type="submit" class="submit-button">
+            Send Answers to Rhys →
+          </button>
+          <p class="submit-note">
+            Your answers go directly to me to build solutions for these specific problems. Nothing is shared with anyone else.
+          </p>
+        </div>
+        
+      </form>
+    </div>
+    
+    <!-- SUCCESS STATE -->
+    <div class="success-state" id="successState">
+      <div class="success-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+        </svg>
+      </div>
+      <h2>Thanks - Got Them All</h2>
+      <p>
+        Your answers have been captured. I'll go through them properly and come back to you with a build plan that actually solves these specific problems. Speak soon.
+      </p>
+    </div>
+    
+    <!-- FOOTER -->
+    <div class="footer">
+      QuoteFlow AI · Built specifically for JNR Engineering by Rhys Hume<br>
+      <span style="font-size: 11px; opacity: 0.7;">All responses are private and used only to inform the build.</span>
+    </div>
+    
+  </div>
+  
+  <script>
+    // Progress bar updates as fields are filled
+    function updateProgress() {
+      const form = document.getElementById('discoveryForm');
+      const inputs = form.querySelectorAll('input[type="text"], input[type="radio"]:checked, textarea, select');
+      const allRequired = form.querySelectorAll('[required]');
+      
+      let filled = 0;
+      let total = allRequired.length;
+      
+      // Count radio groups (1 group = 1 answer)
+      const radioGroups = new Set();
+      allRequired.forEach(input => {
+        if (input.type === 'radio') {
+          radioGroups.add(input.name);
+        }
+      });
+      
+      // Recount: text/textarea + radio groups
+      total = 0;
+      const textRequired = form.querySelectorAll('input[type="text"][required], textarea[required]');
+      total = textRequired.length + radioGroups.size;
+      
+      // Count filled
+      textRequired.forEach(input => {
+        if (input.value.trim().length > 0) filled++;
+      });
+      radioGroups.forEach(name => {
+        if (form.querySelector(`input[name="${name}"]:checked`)) filled++;
+      });
+      
+      const pct = (filled / total) * 100;
+      document.getElementById('progressFill').style.width = pct + '%';
+    }
+    
+    document.querySelectorAll('input, textarea, select').forEach(el => {
+      el.addEventListener('change', updateProgress);
+      el.addEventListener('input', updateProgress);
+    });
+    
+    // Submit handler - sends to Formspree which emails Rhys directly
+    async function submitForm(e) {
+      e.preventDefault();
+      const form = e.target;
+      const formData = new FormData(form);
+      const submitBtn = form.querySelector('.submit-button');
+      
+      // Helper labels for human-readable email
+      const labels = {
+        q2_office_size: {
+          'just_me': 'Just me / one person doing everything',
+          '2_3': '2-3 people',
+          '4_6': '4-6 people',
+          '7_plus': '7+ people'
+        },
+        q5_admin_hours: {
+          'under_5': 'Under 5 hours/week',
+          '5_10': '5-10 hours/week',
+          '10_20': '10-20 hours/week',
+          '20_plus': '20+ hours/week (basically a full-time job)'
+        },
+        q8_quote_time: {
+          'under_hour': 'Under an hour - quick',
+          'few_hours': 'A few hours - same day',
+          'next_day': 'Next day usually',
+          '2_3_days': '2-3 days realistically',
+          'week_plus': 'Often a week or more'
+        },
+        q9_followup: {
+          'never': 'Honestly forget about it most of the time',
+          'sometimes': 'Sometimes remember to chase if its big',
+          'few_days': 'Try to chase after a few days',
+          'systematic': 'Have a process - reminders sent on schedule'
+        },
+        q10_win_rate: {
+          'under_25': 'Under 25%',
+          '25_50': '25-50%',
+          '50_75': '50-75%',
+          'over_75': 'Over 75%',
+          'no_idea': 'No idea - dont track it'
+        },
+        q12_delays: {
+          'rarely': 'Rarely - usually on time',
+          'sometimes': 'Sometimes - 1 in 5 jobs',
+          'often': 'Often - half the jobs',
+          'always': 'Most jobs run late'
+        },
+        q14_outstanding: {
+          'under_5k': 'Under £5k',
+          '5k_20k': '£5k - £20k',
+          '20k_50k': '£20k - £50k',
+          '50k_plus': 'Over £50k',
+          'unsure': 'Dont know off the top of head'
+        },
+        q16_chase_method: {
+          'email': 'Email reminder when remembered',
+          'phone': 'Call them',
+          'both': 'Mix of email then phone',
+          'dont': 'Dont really chase, hope',
+          'systematic': 'Proper process - 30/60/90 day chases'
+        },
+        q17_stockout: {
+          'never': 'Never',
+          'rarely': 'Rarely - once a year',
+          'few_times': 'A few times a year',
+          'often': 'More often than wanted',
+          'constantly': 'Constantly - ongoing nightmare'
+        }
+      };
+      
+      function readable(question, value) {
+        if (labels[question] && labels[question][value]) return labels[question][value];
+        return value;
+      }
+      
+      // Build the formatted email body
+      const tools = formData.getAll('q19_tools');
+      const rfqFormats = formData.getAll('q7_rfq_format');
+      const delayCauses = formData.getAll('q13_delay_cause');
+      
+      const submission = {
+        '_subject': 'JNR Discovery Submission - ' + (formData.get('q1_name') || 'Unknown') + ' - ' + new Date().toLocaleDateString('en-GB'),
+        'tool': 'jnr-discovery-questionnaire',
+        '00_filled_by': formData.get('q1_name') || '',
+        '01_office_team_size': readable('q2_office_size', formData.get('q2_office_size')),
+        '02_quotes_per_month': formData.get('q3_quote_volume') || '',
+        '03_BIGGEST_PAIN': formData.get('q4_biggest_pain') || '',
+        '04_admin_hours_per_week': readable('q5_admin_hours', formData.get('q5_admin_hours')),
+        '05_magic_wish': formData.get('q6_magic_wish') || '',
+        '06_rfq_formats_received': rfqFormats.join(', '),
+        '07_time_to_quote': readable('q8_quote_time', formData.get('q8_quote_time')),
+        '08_followup_process': readable('q9_followup', formData.get('q9_followup')),
+        '09_win_rate': readable('q10_win_rate', formData.get('q10_win_rate')),
+        '10_job_tracking_method': formData.get('q11_job_tracking') || '',
+        '11_delay_frequency': readable('q12_delays', formData.get('q12_delays')),
+        '12_delay_causes': delayCauses.join(', '),
+        '13_outstanding_amount': readable('q14_outstanding', formData.get('q14_outstanding')),
+        '14_LATE_PAYERS': formData.get('q15_late_payers') || '',
+        '15_chase_method': readable('q16_chase_method', formData.get('q16_chase_method')),
+        '16_stockout_frequency': readable('q17_stockout', formData.get('q17_stockout')),
+        '17_BAD_SUPPLIERS': formData.get('q18_bad_suppliers') || '',
+        '18_current_software': tools.join(', '),
+        '19_DREAM_CHANGE': formData.get('q20_dream') || ''
+      };
+      
+      // Update button to loading state
+      submitBtn.textContent = 'Sending...';
+      submitBtn.style.opacity = '0.6';
+      submitBtn.disabled = true;
+      
+      try {
+        const response = await fetch('https://formspree.io/f/mqegvgqd', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(submission)
+        });
+        
+        if (response.ok) {
+          // Show success state
+          document.getElementById('formCard').style.display = 'none';
+          document.getElementById('successState').classList.add('show');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          throw new Error('Submission failed');
+        }
+      } catch (error) {
+        submitBtn.textContent = 'Send Answers to Rhys →';
+        submitBtn.style.opacity = '1';
+        submitBtn.disabled = false;
+        alert('Something went wrong sending the form. Please WhatsApp Rhys directly with your answers, or try again.');
+        console.error('Form submission error:', error);
+      }
+    }
+  </script>
+  
+</body>
+</html>

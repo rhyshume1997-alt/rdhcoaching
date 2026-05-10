@@ -441,6 +441,13 @@
           </svg>
           Invoicing
         </a>
+        <a href="#" class="nav-item" data-page="approval">
+          <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+          </svg>
+          Approval Queue
+          <span style="margin-left: auto; background: #DC2626; color: white; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px; min-width: 18px; text-align: center;" id="approvalBadge">3</span>
+        </a>
         
         <div class="nav-group-title">Operations</div>
         <a href="#" class="nav-item" data-page="stock">
@@ -1654,212 +1661,436 @@
           <div class="flex items-center justify-between mb-6">
             <div>
               <h2 class="text-2xl font-bold text-gray-900">Invoicing</h2>
-              <p class="text-sm text-gray-500 mt-1">Generate and track invoices from completed jobs</p>
+              <p class="text-gray-500 text-sm mt-1">Track money owed and chase late payments automatically</p>
             </div>
-            <button onclick="showModal('createInvoiceModal')" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark font-medium">+ Create Invoice</button>
-          </div>
-
-          <div class="grid grid-cols-4 gap-4 mb-6">
-            <div class="bg-white border border-gray-200 rounded-lg p-4">
-              <div class="text-sm text-gray-500">Unpaid Invoices</div>
-              <div class="text-2xl font-bold text-amber-600 text-mono">7</div>
-              <div class="text-xs text-gray-500 mt-1">£48,200 outstanding</div>
-            </div>
-            <div class="bg-white border border-gray-200 rounded-lg p-4">
-              <div class="text-sm text-gray-500">Overdue</div>
-              <div class="text-2xl font-bold text-red-600 text-mono">2</div>
-              <div class="text-xs text-gray-500 mt-1">£18,650 overdue</div>
-            </div>
-            <div class="bg-white border border-gray-200 rounded-lg p-4">
-              <div class="text-sm text-gray-500">Paid This Month</div>
-              <div class="text-2xl font-bold text-green-600 text-mono">£142k</div>
-              <div class="text-xs text-gray-500 mt-1">18 invoices</div>
-            </div>
-            <div class="bg-white border border-gray-200 rounded-lg p-4">
-              <div class="text-sm text-gray-500">Average Days to Pay</div>
-              <div class="text-2xl font-bold text-blue-600 text-mono">28</div>
-              <div class="text-xs text-gray-500 mt-1">down from 34</div>
+            <div class="flex gap-2">
+              <button onclick="bulkSendReminders()" class="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 font-medium flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                Chase All Overdue
+              </button>
+              <button onclick="showModal('createInvoiceModal')" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark font-medium">+ Create Invoice</button>
             </div>
           </div>
 
-          <!-- Jobs Ready to Invoice -->
-          <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 mb-6">
-            <div class="flex items-start gap-4">
-              <div class="p-3 bg-green-100 rounded-lg">
-                <svg class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <!-- ====================================
+               MONEY DASHBOARD
+               ==================================== -->
+          <div class="bg-gradient-to-br from-red-50 to-amber-50 border-2 border-red-200 rounded-xl p-6 mb-6">
+            <div class="flex items-start justify-between mb-4">
+              <div>
+                <div class="text-xs font-semibold text-red-700 uppercase tracking-wider mb-1">Total Owed to JNR</div>
+                <div class="text-4xl font-bold text-red-900 text-mono" id="totalOwed">£52,847</div>
+                <div class="text-sm text-red-700 mt-1">Across <span id="overdueCount">7</span> outstanding invoices</div>
               </div>
-              <div class="flex-1">
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">Jobs Ready to Invoice</h3>
-                <p class="text-sm text-gray-700 mb-4">These completed jobs from the Job Board can be converted to invoices automatically</p>
-                
-                <div class="space-y-2">
-                  <div class="flex items-center justify-between bg-white rounded-lg p-3 border border-green-200">
-                    <div class="flex items-center gap-3">
-                      <div class="text-xs font-medium text-gray-500 text-mono">JNR-J-218</div>
-                      <div class="text-sm font-medium text-gray-900">Aerospace Components Ltd</div>
-                      <div class="text-xs text-gray-600">• Titanium brackets x50</div>
-                      <span class="px-2 py-0.5 text-xs font-medium bg-green-50 text-green-700 border border-green-200 rounded">Completed</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                      <div class="text-sm font-semibold text-gray-900 text-mono">£8,400</div>
-                      <button onclick="showInvoiceModal()" class="px-3 py-1 text-xs font-medium bg-primary text-white rounded hover:bg-primary-dark">Generate Invoice</button>
-                    </div>
+              <div class="bg-white rounded-lg p-3 shadow-sm">
+                <svg class="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+            </div>
+
+            <!-- Aging Breakdown -->
+            <div class="grid grid-cols-4 gap-3 mt-6">
+              <div class="bg-white rounded-lg p-4 border border-gray-200">
+                <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">Current</div>
+                <div class="text-2xl font-bold text-gray-900 text-mono mt-1" id="agingCurrent">£18,420</div>
+                <div class="text-xs text-gray-500 mt-1">Within terms</div>
+              </div>
+              <div class="bg-white rounded-lg p-4 border border-amber-300">
+                <div class="text-xs font-medium text-amber-600 uppercase tracking-wider">1-30 Days Late</div>
+                <div class="text-2xl font-bold text-amber-700 text-mono mt-1" id="aging30">£15,600</div>
+                <div class="text-xs text-amber-600 mt-1">2 invoices</div>
+              </div>
+              <div class="bg-white rounded-lg p-4 border border-red-300">
+                <div class="text-xs font-medium text-red-600 uppercase tracking-wider">31-60 Days Late</div>
+                <div class="text-2xl font-bold text-red-700 text-mono mt-1" id="aging60">£12,827</div>
+                <div class="text-xs text-red-600 mt-1">2 invoices</div>
+              </div>
+              <div class="bg-white rounded-lg p-4 border border-red-500" style="background: #FEF2F2;">
+                <div class="text-xs font-medium text-red-700 uppercase tracking-wider">60+ Days Late</div>
+                <div class="text-2xl font-bold text-red-800 text-mono mt-1" id="aging90">£6,000</div>
+                <div class="text-xs text-red-700 mt-1">⚠ 1 invoice critical</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ====================================
+               LATE PAYER INTELLIGENCE
+               ==================================== -->
+          <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-gray-900">Late Payer Patterns</h3>
+              <span class="text-xs text-gray-500">Auto-detected from payment history</span>
+            </div>
+            <div class="space-y-2">
+              <div class="flex items-center justify-between p-3 bg-red-50 border border-red-200 rounded-lg">
+                <div class="flex items-center gap-3">
+                  <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                  <div>
+                    <div class="font-semibold text-gray-900">Construction Services Ltd</div>
+                    <div class="text-xs text-gray-600">Paid late on 8 of last 10 invoices · Avg 47 days late</div>
                   </div>
-                  <div class="flex items-center justify-between bg-white rounded-lg p-3 border border-green-200">
-                    <div class="flex items-center gap-3">
-                      <div class="text-xs font-medium text-gray-500 text-mono">JNR-J-221</div>
-                      <div class="text-sm font-medium text-gray-900">Industrial Systems Ltd</div>
-                      <div class="text-xs text-gray-600">• Aluminium plates x75</div>
-                      <span class="px-2 py-0.5 text-xs font-medium bg-green-50 text-green-700 border border-green-200 rounded">Completed</span>
+                </div>
+                <span class="px-2 py-1 text-xs font-bold bg-red-600 text-white rounded">CHRONIC</span>
+              </div>
+              <div class="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <div class="flex items-center gap-3">
+                  <div class="w-2 h-2 bg-amber-500 rounded-full"></div>
+                  <div>
+                    <div class="font-semibold text-gray-900">Marine Engineering Co</div>
+                    <div class="text-xs text-gray-600">Paid late on 6 of last 10 invoices · Avg 38 days late</div>
+                  </div>
+                </div>
+                <span class="px-2 py-1 text-xs font-bold bg-amber-600 text-white rounded">WATCH</span>
+              </div>
+              <div class="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <div class="flex items-center gap-3">
+                  <div class="w-2 h-2 bg-amber-500 rounded-full"></div>
+                  <div>
+                    <div class="font-semibold text-gray-900">Tech Manufacturing Ltd</div>
+                    <div class="text-xs text-gray-600">Paid late on 5 of last 10 invoices · Avg 36 days late</div>
+                  </div>
+                </div>
+                <span class="px-2 py-1 text-xs font-bold bg-amber-600 text-white rounded">WATCH</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ====================================
+               INVOICE LIST WITH FILTERS
+               ==================================== -->
+          <div class="bg-white rounded-xl border border-gray-200">
+            <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+              <div class="flex gap-2">
+                <button onclick="filterInvoices('all')" class="invoice-filter active px-3 py-1.5 text-sm font-medium rounded-lg" data-filter="all">All (12)</button>
+                <button onclick="filterInvoices('overdue')" class="invoice-filter px-3 py-1.5 text-sm font-medium rounded-lg" data-filter="overdue">Overdue (5)</button>
+                <button onclick="filterInvoices('outstanding')" class="invoice-filter px-3 py-1.5 text-sm font-medium rounded-lg" data-filter="outstanding">Outstanding (7)</button>
+                <button onclick="filterInvoices('paid')" class="invoice-filter px-3 py-1.5 text-sm font-medium rounded-lg" data-filter="paid">Paid (5)</button>
+              </div>
+              <div class="text-sm text-gray-500">Sorted by urgency</div>
+            </div>
+
+            <div class="divide-y divide-gray-100" id="invoiceList">
+              
+              <!-- 75 days overdue - critical -->
+              <div class="invoice-row p-4 hover:bg-gray-50 transition-colors" data-status="overdue" data-days="75">
+                <div class="flex items-center gap-4">
+                  <div class="w-2 h-12 bg-red-600 rounded"></div>
+                  <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-1">
+                      <span class="font-mono font-semibold text-gray-900">INV-2026-084</span>
+                      <span class="px-2 py-0.5 text-xs font-bold bg-red-600 text-white rounded">75 DAYS OVERDUE</span>
+                      <span class="px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700 rounded">CHRONIC LATE PAYER</span>
                     </div>
-                    <div class="flex items-center gap-3">
-                      <div class="text-sm font-semibold text-gray-900 text-mono">£15,600</div>
-                      <button onclick="showInvoiceModal()" class="px-3 py-1 text-xs font-medium bg-primary text-white rounded hover:bg-primary-dark">Generate Invoice</button>
-                    </div>
+                    <div class="text-sm font-semibold text-gray-900">Construction Services Ltd</div>
+                    <div class="text-xs text-gray-500 mt-1">Steel beam fabrication · Sent 24 Feb 2026 · Due 26 Mar 2026</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-2xl font-bold text-mono text-red-700">£6,000</div>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <button onclick="showInvoiceDetail('INV-2026-084')" class="px-3 py-1.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">View</button>
+                    <button onclick="markInvoicePaid('INV-2026-084')" class="px-3 py-1.5 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700">Mark Paid</button>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <!-- All Invoices Table -->
-          <div class="bg-white border border-gray-200 rounded-xl shadow-sm">
-            <div class="p-6 border-b border-gray-200 flex items-center justify-between">
-              <h3 class="text-lg font-semibold">All Invoices</h3>
-              <div class="flex gap-2">
-                <button class="px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-dark font-medium">Auto-Send All Overdue</button>
-                <button class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">All</button>
-                <button class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">Unpaid</button>
-                <button class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">Overdue</button>
-                <button class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">Paid</button>
+              <!-- 47 days overdue -->
+              <div class="invoice-row p-4 hover:bg-gray-50 transition-colors" data-status="overdue" data-days="47">
+                <div class="flex items-center gap-4">
+                  <div class="w-2 h-12 bg-red-500 rounded"></div>
+                  <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-1">
+                      <span class="font-mono font-semibold text-gray-900">INV-2026-091</span>
+                      <span class="px-2 py-0.5 text-xs font-bold bg-red-500 text-white rounded">47 DAYS OVERDUE</span>
+                    </div>
+                    <div class="text-sm font-semibold text-gray-900">Marine Engineering Co</div>
+                    <div class="text-xs text-gray-500 mt-1">Bronze marine fittings · Sent 24 Mar 2026 · Due 23 Apr 2026</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-2xl font-bold text-mono text-red-700">£4,827</div>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <button onclick="showInvoiceDetail('INV-2026-091')" class="px-3 py-1.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">View</button>
+                    <button onclick="markInvoicePaid('INV-2026-091')" class="px-3 py-1.5 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700">Mark Paid</button>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div class="overflow-x-auto">
-              <table class="w-full">
-                <thead class="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Invoice No</th>
-                    <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Customer</th>
-                    <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Linked To</th>
-                    <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Amount</th>
-                    <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Sent</th>
-                    <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Due Date</th>
-                    <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
-                    <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                  <tr class="bg-red-50 hover:bg-red-100 transition-colors">
-                    <td class="px-6 py-4 text-sm font-medium text-gray-900 text-mono">INV-2026-089</td>
-                    <td class="px-6 py-4 text-sm text-gray-900">Defence Manufacturing Co</td>
-                    <td class="px-6 py-4 text-xs text-gray-600 text-mono">JNR-Q-002 → JNR-J-219</td>
-                    <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-mono">£12,850</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">15 Apr 2026</td>
-                    <td class="px-6 py-4 text-sm text-red-600 font-medium">5 May 2026</td>
-                    <td class="px-6 py-4">
-                      <span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-700 border border-red-300 rounded">Overdue 2 days</span>
-                    </td>
-                    <td class="px-6 py-4">
-                      <button onclick="showInvoiceModal()" class="px-3 py-1 text-xs font-medium bg-red-600 text-white rounded hover:bg-red-700">Send Reminder</button>
-                    </td>
-                  </tr>
 
-                  <tr class="bg-red-100 hover:bg-red-200 transition-colors border-l-4 border-red-600">
-                    <td class="px-6 py-4 text-sm font-medium text-gray-900 text-mono">INV-2026-084</td>
-                    <td class="px-6 py-4 text-sm text-gray-900">Construction Services Ltd</td>
-                    <td class="px-6 py-4 text-xs text-gray-600 text-mono">JNR-J-215</td>
-                    <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-mono">£5,800</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">30 Mar 2026</td>
-                    <td class="px-6 py-4 text-sm text-red-600 font-medium">29 Apr 2026</td>
-                    <td class="px-6 py-4">
-                      <span class="px-2 py-1 text-xs font-medium bg-red-200 text-red-800 border border-red-400 rounded">Overdue 8 days</span>
-                    </td>
-                    <td class="px-6 py-4">
-                      <button class="px-3 py-1 text-xs font-medium bg-red-600 text-white rounded hover:bg-red-700">Final Notice</button>
-                    </td>
-                  </tr>
+              <!-- 38 days overdue -->
+              <div class="invoice-row p-4 hover:bg-gray-50 transition-colors" data-status="overdue" data-days="38">
+                <div class="flex items-center gap-4">
+                  <div class="w-2 h-12 bg-red-500 rounded"></div>
+                  <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-1">
+                      <span class="font-mono font-semibold text-gray-900">INV-2026-088</span>
+                      <span class="px-2 py-0.5 text-xs font-bold bg-red-500 text-white rounded">38 DAYS OVERDUE</span>
+                    </div>
+                    <div class="text-sm font-semibold text-gray-900">Tech Manufacturing Ltd</div>
+                    <div class="text-xs text-gray-500 mt-1">Aluminium plate components · Sent 7 Mar 2026 · Due 6 Apr 2026</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-2xl font-bold text-mono text-red-700">£8,000</div>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <button onclick="showInvoiceDetail('INV-2026-088')" class="px-3 py-1.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">View</button>
+                    <button onclick="markInvoicePaid('INV-2026-088')" class="px-3 py-1.5 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700">Mark Paid</button>
+                  </div>
+                </div>
+              </div>
 
-                  <tr class="bg-orange-50 hover:bg-orange-100 transition-colors">
-                    <td class="px-6 py-4 text-sm font-medium text-gray-900 text-mono">INV-2026-092</td>
-                    <td class="px-6 py-4 text-sm text-gray-900">Precision Engineering Group</td>
-                    <td class="px-6 py-4 text-xs text-gray-600 text-mono">JNR-Q-003 → JNR-J-220</td>
-                    <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-mono">£6,200</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">28 Apr 2026</td>
-                    <td class="px-6 py-4 text-sm text-amber-600 font-medium">28 May 2026</td>
-                    <td class="px-6 py-4">
-                      <span class="px-2 py-1 text-xs font-medium bg-amber-100 text-amber-700 border border-amber-300 rounded">Due in 21 days</span>
-                    </td>
-                    <td class="px-6 py-4">
-                      <button class="px-3 py-1 text-xs font-medium bg-amber-600 text-white rounded hover:bg-amber-700">Send Reminder</button>
-                    </td>
-                  </tr>
+              <!-- 12 days overdue -->
+              <div class="invoice-row p-4 hover:bg-gray-50 transition-colors" data-status="overdue" data-days="12">
+                <div class="flex items-center gap-4">
+                  <div class="w-2 h-12 bg-amber-500 rounded"></div>
+                  <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-1">
+                      <span class="font-mono font-semibold text-gray-900">INV-2026-095</span>
+                      <span class="px-2 py-0.5 text-xs font-bold bg-amber-500 text-white rounded">12 DAYS OVERDUE</span>
+                    </div>
+                    <div class="text-sm font-semibold text-gray-900">Industrial Systems Ltd</div>
+                    <div class="text-xs text-gray-500 mt-1">Stainless steel shafts · Sent 14 Apr 2026 · Due 28 Apr 2026</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-2xl font-bold text-mono text-amber-700">£8,800</div>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <button onclick="showInvoiceDetail('INV-2026-095')" class="px-3 py-1.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">View</button>
+                    <button onclick="markInvoicePaid('INV-2026-095')" class="px-3 py-1.5 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700">Mark Paid</button>
+                  </div>
+                </div>
+              </div>
 
-                  <tr class="bg-yellow-50 hover:bg-yellow-100 transition-colors">
-                    <td class="px-6 py-4 text-sm font-medium text-gray-900 text-mono">INV-2026-095</td>
-                    <td class="px-6 py-4 text-sm text-gray-900">Marine Engineering Co</td>
-                    <td class="px-6 py-4 text-xs text-gray-600 text-mono">JNR-J-222</td>
-                    <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-mono">£9,400</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">2 May 2026</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">1 Jun 2026</td>
-                    <td class="px-6 py-4">
-                      <span class="px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 rounded">Due in 25 days</span>
-                    </td>
-                    <td class="px-6 py-4">
-                      <button class="px-3 py-1 text-xs font-medium border border-gray-300 rounded hover:bg-gray-50">View</button>
-                    </td>
-                  </tr>
+              <!-- 5 days overdue -->
+              <div class="invoice-row p-4 hover:bg-gray-50 transition-colors" data-status="overdue" data-days="5">
+                <div class="flex items-center gap-4">
+                  <div class="w-2 h-12 bg-amber-400 rounded"></div>
+                  <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-1">
+                      <span class="font-mono font-semibold text-gray-900">INV-2026-097</span>
+                      <span class="px-2 py-0.5 text-xs font-bold bg-amber-400 text-white rounded">5 DAYS OVERDUE</span>
+                    </div>
+                    <div class="text-sm font-semibold text-gray-900">Defence Manufacturing Co</div>
+                    <div class="text-xs text-gray-500 mt-1">Precision milled components · Sent 30 Mar 2026 · Due 5 May 2026</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-2xl font-bold text-mono text-amber-700">£6,800</div>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <button onclick="showInvoiceDetail('INV-2026-097')" class="px-3 py-1.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">View</button>
+                    <button onclick="markInvoicePaid('INV-2026-097')" class="px-3 py-1.5 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700">Mark Paid</button>
+                  </div>
+                </div>
+              </div>
 
-                  <tr class="bg-purple-50 hover:bg-purple-100 transition-colors border-l-4 border-purple-400">
-                    <td class="px-6 py-4 text-sm font-medium text-gray-900 text-mono">INV-2026-096</td>
-                    <td class="px-6 py-4 text-sm text-gray-900">Tech Manufacturing Ltd</td>
-                    <td class="px-6 py-4 text-xs text-gray-600 text-mono">JNR-Q-007 → JNR-J-224</td>
-                    <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-mono">£11,200</td>
-                    <td class="px-6 py-4 text-sm text-purple-600 font-medium">Not sent</td>
-                    <td class="px-6 py-4 text-sm text-gray-400">-</td>
-                    <td class="px-6 py-4">
-                      <span class="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 border border-purple-300 rounded">Ready to Send</span>
-                    </td>
-                    <td class="px-6 py-4">
-                      <button class="px-3 py-1 text-xs font-medium bg-purple-600 text-white rounded hover:bg-purple-700">Send Now</button>
-                    </td>
-                  </tr>
+              <!-- Within terms -->
+              <div class="invoice-row p-4 hover:bg-gray-50 transition-colors" data-status="outstanding">
+                <div class="flex items-center gap-4">
+                  <div class="w-2 h-12 bg-blue-500 rounded"></div>
+                  <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-1">
+                      <span class="font-mono font-semibold text-gray-900">INV-2026-099</span>
+                      <span class="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded">Due in 8 days</span>
+                    </div>
+                    <div class="text-sm font-semibold text-gray-900">Aerospace Components Ltd</div>
+                    <div class="text-xs text-gray-500 mt-1">Titanium brackets · Sent 18 Apr 2026 · Due 18 May 2026</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-2xl font-bold text-mono text-gray-900">£10,080</div>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <button onclick="showInvoiceDetail('INV-2026-099')" class="px-3 py-1.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">View</button>
+                  </div>
+                </div>
+              </div>
 
-                  <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-6 py-4 text-sm font-medium text-gray-900 text-mono">INV-2026-088</td>
-                    <td class="px-6 py-4 text-sm text-gray-900">Industrial Systems Ltd</td>
-                    <td class="px-6 py-4 text-xs text-gray-600 text-mono">JNR-Q-004</td>
-                    <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-mono">£15,600</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">10 Apr 2026</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">10 May 2026</td>
-                    <td class="px-6 py-4">
-                      <span class="px-2 py-1 text-xs font-medium bg-green-50 text-green-700 border border-green-200 rounded">Paid 6 May</span>
-                    </td>
-                    <td class="px-6 py-4">
-                      <button class="px-3 py-1 text-xs font-medium border border-gray-300 rounded hover:bg-gray-50">View</button>
-                    </td>
-                  </tr>
+              <!-- Paid (recent) -->
+              <div class="invoice-row p-4 hover:bg-gray-50 transition-colors" data-status="paid" style="opacity: 0.6;">
+                <div class="flex items-center gap-4">
+                  <div class="w-2 h-12 bg-green-500 rounded"></div>
+                  <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-1">
+                      <span class="font-mono font-semibold text-gray-900">INV-2026-093</span>
+                      <span class="px-2 py-0.5 text-xs font-bold bg-green-600 text-white rounded">PAID</span>
+                    </div>
+                    <div class="text-sm font-semibold text-gray-900">Precision Engineering Group</div>
+                    <div class="text-xs text-gray-500 mt-1">Stainless steel shafts · Paid 2 May 2026 (4 days late)</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-2xl font-bold text-mono text-green-700">£6,200</div>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <button onclick="showInvoiceDetail('INV-2026-093')" class="px-3 py-1.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">View</button>
+                  </div>
+                </div>
+              </div>
 
-                  <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-6 py-4 text-sm font-medium text-gray-900 text-mono">INV-2026-085</td>
-                    <td class="px-6 py-4 text-sm text-gray-900">Aerospace Components Ltd</td>
-                    <td class="px-6 py-4 text-xs text-gray-600 text-mono">JNR-Q-001</td>
-                    <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-mono">£8,400</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">5 Apr 2026</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">5 May 2026</td>
-                    <td class="px-6 py-4">
-                      <span class="px-2 py-1 text-xs font-medium bg-green-50 text-green-700 border border-green-200 rounded">Paid 3 May</span>
-                    </td>
-                    <td class="px-6 py-4">
-                      <button class="px-3 py-1 text-xs font-medium border border-gray-300 rounded hover:bg-gray-50">View</button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
             </div>
           </div>
+
+          <style>
+            .invoice-filter {
+              background: #F1F5F9;
+              color: #64748B;
+              border: none;
+              transition: all 0.15s;
+            }
+            .invoice-filter:hover { background: #E2E8F0; color: #334155; }
+            .invoice-filter.active {
+              background: #1E3472;
+              color: white;
+            }
+          </style>
+
         </div>
 
         
+        <!-- ============================================
+             PAGE: APPROVAL QUEUE
+             Route: /approval
+             ============================================ -->
+        <div id="approval" class="page" data-route="/approval">
+          
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h2 class="text-2xl font-bold text-gray-900">Approval Queue</h2>
+              <p class="text-gray-500 text-sm mt-1">Review and approve emails before they send to customers</p>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="approveAllReminders()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                Approve All Safe
+              </button>
+              <button onclick="showModal('autoSendSettingsModal')" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">Settings</button>
+            </div>
+          </div>
+
+          <!-- Status Banner -->
+          <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+            <div class="flex items-center gap-3">
+              <div class="bg-blue-500 text-white rounded-lg p-2">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+              <div class="flex-1">
+                <div class="font-semibold text-blue-900">Manual Approval Mode</div>
+                <div class="text-sm text-blue-800">Every email requires your approval before sending. Currently 3 emails drafted and waiting.</div>
+              </div>
+              <button class="text-sm font-medium text-blue-600 hover:text-blue-800">Change Mode →</button>
+            </div>
+          </div>
+
+          <!-- Pending Approvals -->
+          <div class="space-y-3" id="approvalList">
+            
+            <!-- Email 1: Final Notice -->
+            <div class="bg-white border-2 border-red-200 rounded-xl overflow-hidden" data-approval-id="1">
+              <div class="bg-red-50 px-5 py-3 border-b border-red-200 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <span class="px-2 py-0.5 text-xs font-bold bg-red-600 text-white rounded">FINAL NOTICE</span>
+                  <span class="text-sm font-semibold text-gray-900">Construction Services Ltd</span>
+                  <span class="text-xs text-gray-600">Invoice INV-2026-084 · 75 days overdue · £6,000</span>
+                </div>
+                <span class="text-xs text-gray-500">Drafted 9 May 2026</span>
+              </div>
+              <div class="p-5">
+                <div class="text-xs text-gray-500 mb-1">To: accounts@constructionservices.co.uk</div>
+                <div class="text-sm font-semibold text-gray-900 mb-3">Subject: Final Notice - Invoice INV-2026-084 - £6,000 Overdue</div>
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-700 leading-relaxed mb-4 max-h-32 overflow-hidden relative">
+                  <p>Dear Sir/Madam,</p>
+                  <p class="mt-2">This is a final notice regarding outstanding invoice INV-2026-084 for £6,000.00, which was due for payment on 26 March 2026 and is now 75 days overdue.</p>
+                  <p class="mt-2">Despite previous reminders sent on 2 April and 23 April, we have not received payment or correspondence from you regarding this invoice...</p>
+                  <div class="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-gray-50 to-transparent"></div>
+                </div>
+                <div class="flex gap-2">
+                  <button onclick="approveEmail(1)" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium text-sm">Approve & Send</button>
+                  <button onclick="editEmail(1)" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-sm">Edit</button>
+                  <button onclick="previewEmail(1)" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-sm">Preview Full</button>
+                  <button onclick="skipEmail(1)" class="px-4 py-2 border border-gray-300 text-gray-500 rounded-lg hover:bg-gray-50 font-medium text-sm ml-auto">Skip</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Email 2: 47 day chase -->
+            <div class="bg-white border-2 border-amber-200 rounded-xl overflow-hidden" data-approval-id="2">
+              <div class="bg-amber-50 px-5 py-3 border-b border-amber-200 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <span class="px-2 py-0.5 text-xs font-bold bg-amber-600 text-white rounded">FIRM CHASE</span>
+                  <span class="text-sm font-semibold text-gray-900">Marine Engineering Co</span>
+                  <span class="text-xs text-gray-600">Invoice INV-2026-091 · 47 days overdue · £4,827</span>
+                </div>
+                <span class="text-xs text-gray-500">Drafted 9 May 2026</span>
+              </div>
+              <div class="p-5">
+                <div class="text-xs text-gray-500 mb-1">To: accounts@marineengineering.co.uk</div>
+                <div class="text-sm font-semibold text-gray-900 mb-3">Subject: Overdue Invoice - INV-2026-091 - £4,827 - 47 Days Outstanding</div>
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-700 leading-relaxed mb-4 max-h-32 overflow-hidden relative">
+                  <p>Hello,</p>
+                  <p class="mt-2">I'm following up on invoice INV-2026-091 for £4,827.00 which was due on 23 April 2026 and is now 47 days overdue.</p>
+                  <p class="mt-2">Could you let me know when we can expect payment? If there's an issue with the invoice or a query we need to address, please get in touch...</p>
+                  <div class="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-gray-50 to-transparent"></div>
+                </div>
+                <div class="flex gap-2">
+                  <button onclick="approveEmail(2)" class="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 font-medium text-sm">Approve & Send</button>
+                  <button onclick="editEmail(2)" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-sm">Edit</button>
+                  <button onclick="previewEmail(2)" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-sm">Preview Full</button>
+                  <button onclick="skipEmail(2)" class="px-4 py-2 border border-gray-300 text-gray-500 rounded-lg hover:bg-gray-50 font-medium text-sm ml-auto">Skip</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Email 3: Gentle reminder -->
+            <div class="bg-white border-2 border-blue-200 rounded-xl overflow-hidden" data-approval-id="3">
+              <div class="bg-blue-50 px-5 py-3 border-b border-blue-200 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <span class="px-2 py-0.5 text-xs font-bold bg-blue-600 text-white rounded">GENTLE REMINDER</span>
+                  <span class="text-sm font-semibold text-gray-900">Defence Manufacturing Co</span>
+                  <span class="text-xs text-gray-600">Invoice INV-2026-097 · 5 days overdue · £6,800</span>
+                </div>
+                <span class="text-xs text-gray-500">Drafted 9 May 2026</span>
+              </div>
+              <div class="p-5">
+                <div class="text-xs text-gray-500 mb-1">To: accounts@defencemanufacturing.co.uk</div>
+                <div class="text-sm font-semibold text-gray-900 mb-3">Subject: Friendly Reminder - Invoice INV-2026-097</div>
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-700 leading-relaxed mb-4 max-h-32 overflow-hidden relative">
+                  <p>Hi Team,</p>
+                  <p class="mt-2">Just a quick reminder that invoice INV-2026-097 for £6,800.00 was due on 5 May 2026.</p>
+                  <p class="mt-2">If you've already arranged payment please ignore this. Otherwise could you let me know roughly when we can expect it...</p>
+                  <div class="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-gray-50 to-transparent"></div>
+                </div>
+                <div class="flex gap-2">
+                  <button onclick="approveEmail(3)" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm">Approve & Send</button>
+                  <button onclick="editEmail(3)" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-sm">Edit</button>
+                  <button onclick="previewEmail(3)" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-sm">Preview Full</button>
+                  <button onclick="skipEmail(3)" class="px-4 py-2 border border-gray-300 text-gray-500 rounded-lg hover:bg-gray-50 font-medium text-sm ml-auto">Skip</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Recently Sent -->
+          <div class="mt-8">
+            <h3 class="font-semibold text-gray-900 mb-3">Recently Sent</h3>
+            <div class="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+              <div class="p-4 flex items-center gap-3">
+                <div class="bg-green-50 rounded-lg p-2"><svg class="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></div>
+                <div class="flex-1">
+                  <div class="text-sm font-semibold text-gray-900">Quote sent to Aerospace Components Ltd</div>
+                  <div class="text-xs text-gray-500">Approved by John · 9 May 2026 09:14</div>
+                </div>
+                <span class="text-xs text-gray-500">Delivered</span>
+              </div>
+              <div class="p-4 flex items-center gap-3">
+                <div class="bg-green-50 rounded-lg p-2"><svg class="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></div>
+                <div class="flex-1">
+                  <div class="text-sm font-semibold text-gray-900">1st reminder sent to Tech Manufacturing</div>
+                  <div class="text-xs text-gray-500">Approved by John · 8 May 2026 16:42</div>
+                </div>
+                <span class="text-xs text-gray-500">Opened</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
         <!-- ============================================
              ENHANCED STOCK & SUPPLIERS PAGE
              Route: /stock-suppliers
@@ -3889,6 +4120,172 @@ JNR Engineering Limited`
     } else {
       // DOM already loaded
       setTimeout(initializeData, 100);
+    }
+
+    
+    // ============================================
+    // INVOICE FILTERING & ACTIONS
+    // ============================================
+    
+    function filterInvoices(filter) {
+      const rows = document.querySelectorAll('.invoice-row');
+      const buttons = document.querySelectorAll('.invoice-filter');
+      
+      // Update active button
+      buttons.forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`.invoice-filter[data-filter="${filter}"]`)?.classList.add('active');
+      
+      rows.forEach(row => {
+        const status = row.dataset.status;
+        if (filter === 'all') {
+          row.style.display = '';
+        } else if (filter === 'overdue' && status === 'overdue') {
+          row.style.display = '';
+        } else if (filter === 'outstanding' && (status === 'outstanding' || status === 'overdue')) {
+          row.style.display = '';
+        } else if (filter === 'paid' && status === 'paid') {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+    
+    function bulkSendReminders() {
+      showToast('Reminders Drafted', '5 reminder emails added to Approval Queue. Review before sending.', 'info');
+      setTimeout(() => navigateToPage('approval'), 800);
+    }
+    
+    function markInvoicePaid(invoiceRef) {
+      if (!confirm(`Mark ${invoiceRef} as paid? This will move it to your Paid invoices and stop any chasing emails.`)) return;
+      
+      // Find the row and update visually
+      const rows = document.querySelectorAll('.invoice-row');
+      rows.forEach(row => {
+        if (row.querySelector('.font-mono')?.textContent === invoiceRef) {
+          row.style.opacity = '0.5';
+          row.dataset.status = 'paid';
+        }
+      });
+      
+      showToast('Invoice Marked Paid', `${invoiceRef} marked as paid. Auto-chase stopped.`, 'success');
+    }
+    
+    function showInvoiceDetail(invoiceRef) {
+      showToast('Loading Invoice', `Opening details for ${invoiceRef}...`, 'info');
+      setTimeout(() => showInvoiceModal(), 400);
+    }
+    
+    // ============================================
+    // APPROVAL QUEUE ACTIONS
+    // ============================================
+    
+    function approveEmail(id) {
+      const card = document.querySelector(`[data-approval-id="${id}"]`);
+      if (!card) return;
+      
+      const customerEl = card.querySelector('.font-semibold');
+      const customer = customerEl ? customerEl.textContent : 'customer';
+      
+      // Animate out
+      card.style.transition = 'all 0.4s ease';
+      card.style.transform = 'translateX(20px)';
+      card.style.opacity = '0';
+      
+      setTimeout(() => {
+        card.remove();
+        updateApprovalBadge();
+        checkEmptyQueue();
+      }, 400);
+      
+      showToast('Email Sent', `Reminder sent to ${customer}`, 'success');
+    }
+    
+    function editEmail(id) {
+      showToast('Opening Editor', 'Edit email content before sending...', 'info');
+    }
+    
+    function previewEmail(id) {
+      showToast('Loading Preview', 'Opening full email preview...', 'info');
+    }
+    
+    function skipEmail(id) {
+      const card = document.querySelector(`[data-approval-id="${id}"]`);
+      if (!card) return;
+      
+      if (!confirm('Skip this reminder? It won\'t be sent and won\'t auto-redraft for 7 days.')) return;
+      
+      card.style.transition = 'all 0.3s ease';
+      card.style.opacity = '0';
+      card.style.maxHeight = '0';
+      
+      setTimeout(() => {
+        card.remove();
+        updateApprovalBadge();
+        checkEmptyQueue();
+      }, 300);
+      
+      showToast('Email Skipped', 'Will not be redrafted for 7 days', 'warning');
+    }
+    
+    function approveAllReminders() {
+      const cards = document.querySelectorAll('[data-approval-id]');
+      const safeCards = Array.from(cards).filter(card => {
+        // Skip Final Notices - require individual approval
+        return !card.querySelector('.bg-red-600');
+      });
+      
+      if (safeCards.length === 0) {
+        showToast('No Safe Emails', 'Final notices require individual approval', 'warning');
+        return;
+      }
+      
+      if (!confirm(`Approve and send ${safeCards.length} reminder email${safeCards.length > 1 ? 's' : ''}? Final notices will still need individual approval.`)) return;
+      
+      safeCards.forEach((card, idx) => {
+        setTimeout(() => {
+          card.style.transition = 'all 0.4s ease';
+          card.style.transform = 'translateX(20px)';
+          card.style.opacity = '0';
+          setTimeout(() => {
+            card.remove();
+            updateApprovalBadge();
+            checkEmptyQueue();
+          }, 400);
+        }, idx * 200);
+      });
+      
+      showToast('Bulk Approval', `${safeCards.length} email${safeCards.length > 1 ? 's' : ''} sent successfully`, 'success');
+    }
+    
+    function updateApprovalBadge() {
+      const remaining = document.querySelectorAll('[data-approval-id]').length;
+      const badge = document.getElementById('approvalBadge');
+      if (badge) {
+        if (remaining === 0) {
+          badge.style.display = 'none';
+        } else {
+          badge.textContent = remaining;
+        }
+      }
+    }
+    
+    function checkEmptyQueue() {
+      const list = document.getElementById('approvalList');
+      if (!list) return;
+      
+      const remaining = list.querySelectorAll('[data-approval-id]').length;
+      if (remaining === 0) {
+        list.innerHTML = `
+          <div class="bg-white border border-gray-200 rounded-xl p-12 text-center">
+            <div class="bg-green-50 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <svg class="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <h3 class="font-semibold text-gray-900 mb-1">All Caught Up</h3>
+            <p class="text-sm text-gray-500">No emails waiting for approval. Next batch will draft tomorrow at 9:00am.</p>
+          </div>
+        `;
+      }
     }
 </script>
 

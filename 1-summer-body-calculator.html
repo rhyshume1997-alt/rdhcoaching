@@ -14,6 +14,8 @@
             --card: #15151E;
             --text: #FDFDFD;
             --muted: #BBBBD0;
+            --red: #FF5252;
+            --green: #4CAF50;
         }
 
         * {
@@ -164,6 +166,75 @@
             letter-spacing: 1px;
         }
 
+        .phase-breakdown {
+            margin: 40px 0;
+        }
+
+        .phase-card {
+            background: var(--dark);
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--blue);
+            position: relative;
+        }
+
+        .phase-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .phase-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .phase-weight {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--gold);
+        }
+
+        .phase-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .phase-detail {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            font-size: 11px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            font-size: 15px;
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        .phase-note {
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.6;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
         .form-group {
             margin-bottom: 25px;
         }
@@ -196,40 +267,44 @@
             box-shadow: 0 0 0 3px rgba(82, 113, 255, 0.1);
         }
 
-        .btn {
-            width: 100%;
-            padding: 16px 32px;
-            font-size: 16px;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--blue), var(--purple));
-            border: none;
-            border-radius: 10px;
-            color: var(--text);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        .live-feedback {
+            font-size: 14px;
+            margin-top: 8px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            display: none;
         }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(82, 113, 255, 0.3);
+        .live-feedback.show {
+            display: block;
+        }
+
+        .live-feedback.good {
+            background: rgba(76, 175, 80, 0.1);
+            color: var(--green);
+            border: 1px solid var(--green);
+        }
+
+        .live-feedback.warning {
+            background: rgba(171, 139, 0, 0.1);
+            color: var(--gold);
+            border: 1px solid var(--gold);
+        }
+
+        .live-feedback.bad {
+            background: rgba(255, 82, 82, 0.1);
+            color: var(--red);
+            border: 1px solid var(--red);
         }
 
         .results {
-            display: none;
             margin-top: 40px;
+            display: none;
         }
 
         .results.show {
             display: block;
-        }
-
-        .result-title {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 20px;
-            color: var(--text);
         }
 
         .reality-check {
@@ -241,7 +316,7 @@
         }
 
         .reality-check h3 {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 700;
             color: var(--gold);
             margin-bottom: 15px;
@@ -285,6 +360,27 @@
             line-height: 1.7;
         }
 
+        .cta-box {
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .cta-box h3 {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 15px;
+            color: var(--text);
+        }
+
+        .cta-box p {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 20px;
+        }
+
         @media (max-width: 480px) {
             .stats {
                 grid-template-columns: repeat(2, 1fr);
@@ -297,20 +393,20 @@
         <div class="header">
             <div class="logo">RDHCOACHING</div>
             <div class="badge">My 12-Week Photoshoot Story</div>
-            <h1>Will You Actually Get There?</h1>
-            <p class="subtitle">I went from 76kg to 63kg in 12 weeks for a photoshoot. Here's what actually happened, and what you can realistically expect if you're doing this properly.</p>
+            <h1>Summer Body Timeline Calculator</h1>
+            <p class="subtitle">I went from 76kg to 63kg in 12 weeks for a photoshoot. Here's the exact breakdown of what actually happened.</p>
         </div>
 
         <div class="card">
             <div class="story-grid">
                 <div class="story-image">
-                    <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAMgAyADASIAAhEBAxEB/8QAHQAAAAcBAQEAAAAAAAAAAAAAAAECAwQFBgcICf/EAFEQAAEDAgQDBAUGCQoGAgICAwEAAgMEEQUSITEGQVETImFxBzKBkbEUI0JzocEIM1JiktHhFSQ1U2NygqKyM1RkgpLwRZPC8WOjRABUZsb/xABsEAABAwIDBAUDAwkFBQEBAAEBAgMEEQURIRMGEjMiMUBBcRQVUQcyU2EkcGKBkaGxwSMlNlKCkhYWMzTRQ1R00uHwJjVj+5j/2gAMAwEAAhEDEQA/APRKFkAjRAkACiQCCYAsgEbQtIERSiC0HbBAiKCdUgAkAyVFCVG8UEpIFJsgAgojshogARG9k42BznFjRmJsSRYXPA8kO1LTawuo4qo0+5O1LDmJa7VaOhqHUlQ2Yey3RKY73qWXxSlZ6+azNf8A3SiuD0v5S4iiVuV1NNY48uHqR1RVEy6j1H7o+7pNd/KNGvWaW19Bnqe5VsvWaWevZkh0E4AqmzWiQFqiKBKV5oEwBCghfRABIgUiBKAH3nU+CjP3THRSHb+xNlZZMi+YEF2VwsOqHRZ/hIJdY8lGfsZZFkSUQUshNlMyE6JIKYxKJAvj8kAP3Rc0lp1Qsj0HRHdBc+B7p5HU+CQ47+K1PBuTqpJJO0H2qyWGMleVo+EdInFx5lXCraMZaTG38Vv2KxCrXJ92RV+0Z/tHf7R3xJTiUgtZEh56P+JKWCiRlAEglEgDQQQQAsAhZBABWQQQQMCFkLI0AA7pUbWktLyGtB1J08kh+id6qgXxh1u8NCQmloRYCmLfnaZ1rZZWO+a7m4+a6ckN6Okjk2kDZL5rp3+1Vuw7TS0L6qF18o+caAd+a6ckn0cPsovaSsrr7G7TufRNpqu4e0aA9VbN2hL/AOmp3j6R0Usj1ClXCRfAKHaWnP0z7CrSh2kic+xjPmFU7dHKzz7RX+yy9o6S+z1XDI9s0B8rKzDVqvPT+R/1EodmKv8A5f8AwNUbOy+BZ7dD8vkcdnasbMv+gVfU8EujuYXloHInVXZwqtt/Qh/eN/oqi/k3Ez4Tgz4H7/wI29ifw8Sof+FxFRayhmpJuzqI+zeDcW2IT81NUT+6l/cpD6aqDskTt/FXxi3wSn7TmpRkqf0MPt8L+kl9n+B6BLh9J/fRQJ03S30dRB68R8OaUXk72WVmqPDLHnlC3zjr0VwOmIJpfHr+BZArLURPjJLHZT0Wg4e/plO32rUoIJH/AKVM+U47G92G5XyZO4j2JK0PH/r4d/ZKpLWC4QSUJ/8AzYhihtVgY3UdkZMjTzKsuPPzMJ/rFVccZbI3zWp496WN+y1+yy5uQ9EqnuapAEQJG+iFOIvaiuj8PaiNkAEc+PJNk89k4bo2kDYoEM5tB4oCQW6+CdtsEm2yQEJ7U6AIsosO9f2JR8NfNABgO18EZa7p70G2KLl5oAbLHfcCjEnMc/JLsMzQgbaE7lMBstcfBEHu+9P8gkm4t5BABRtlccoc49Gm6mlsjXfOtDwOelk003aTLiNqo4NVm4d0K2FfF6yh0Uzw1xtcEHVcX8hMo+iQWW0ynH6P/nJP7t30SlMBEjQVmPRuiisFdoBJJVTd+vkclAKA65+1SH2Sbtui4ZwMo5B2V5PKwq8VlwqIjGcPLOTz7CtXNukekCq61XSxNPqtabkJd1S7XD/6un/xBVdgmyPRinzm+Qi+IPRO7qNZSEVQKiPRCiZa6UXVR/L7D5mqqp/a6kfV/BFVbLV/PubWh//2Q==" alt="Rhys transformation before">
+                    <img src="data:image/jpeg;base64,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" alt="Rhys transformation before">
                 </div>
                 <div class="story-content">
                     <h2>The Truth About My 12 Weeks</h2>
                     <p>Last year I decided to do a proper photoshoot. <strong>Started at 76kg, ended at 63kg</strong> in 12 weeks.</p>
-                    <p>I trained 4 to 5 times a week, built up to 220 minutes of cardio, and ran separate training day and rest day calories with refeed days strategically placed.</p>
-                    <p>Everyone asks if I was starving the whole time. Honestly? <strong>The hunger wasn't the hard part.</strong> The mental battle of staying consistent when progress slows down was the real fight.</p>
+                    <p>I trained 4 to 5 times a week, incremented cardio up to 220 minutes by the end, and ran training day and non-training day calories with refeed days here and there.</p>
+                    <p>Everyone asks if I was starving the whole time. Honestly? <strong>The hunger wasn't the hard part.</strong> The mental battle was.</p>
                 </div>
             </div>
 
@@ -333,7 +429,7 @@
                 </div>
                 <div class="stat">
                     <span class="stat-number">220min</span>
-                    <span class="stat-label">Final Cardio</span>
+                    <span class="stat-label">Cardio/Week</span>
                 </div>
                 <div class="stat">
                     <span class="stat-number">4-5x</span>
@@ -342,37 +438,126 @@
             </div>
         </div>
 
+        <!-- INSTANT VALUE: Show the exact protocol first -->
         <div class="card">
-            <h2 style="font-size: 28px; font-weight: 800; margin-bottom: 15px; color: var(--text);">What's Actually Realistic For You?</h2>
-            <p style="font-size: 16px; color: var(--muted); margin-bottom: 30px;">Put in your numbers and I'll tell you if your timeline makes sense or if you're setting yourself up to fail.</p>
+            <h2 style="font-size: 28px; font-weight: 800; margin-bottom: 20px; color: var(--text);">Here's Exactly How I Did It</h2>
+            <p style="font-size: 16px; color: var(--muted); margin-bottom: 30px;">Week by week breakdown of calories, cardio, and what actually happened. This is the blueprint.</p>
+            
+            <div class="phase-breakdown">
+                <div class="phase-card">
+                    <div class="phase-header">
+                        <div class="phase-title">Weeks 1-4: Foundation</div>
+                        <div class="phase-weight">76kg → 72kg</div>
+                    </div>
+                    <div class="phase-details">
+                        <div class="phase-detail">
+                            <span class="detail-label">Training Days</span>
+                            <span class="detail-value">2200 calories</span>
+                        </div>
+                        <div class="phase-detail">
+                            <span class="detail-label">Rest Days</span>
+                            <span class="detail-value">1800 calories</span>
+                        </div>
+                        <div class="phase-detail">
+                            <span class="detail-label">Cardio</span>
+                            <span class="detail-value">2x per week, 20min</span>
+                        </div>
+                        <div class="phase-detail">
+                            <span class="detail-label">Protein</span>
+                            <span class="detail-value">152g daily (2g/kg)</span>
+                        </div>
+                    </div>
+                    <div class="phase-note">Lost 4kg in first month. Mostly water and some fat. Hunger was manageable. Energy was fine. This phase felt easy.</div>
+                </div>
+
+                <div class="phase-card">
+                    <div class="phase-header">
+                        <div class="phase-title">Weeks 5-8: The Grind</div>
+                        <div class="phase-weight">72kg → 68kg</div>
+                    </div>
+                    <div class="phase-details">
+                        <div class="phase-detail">
+                            <span class="detail-label">Training Days</span>
+                            <span class="detail-value">2000 calories</span>
+                        </div>
+                        <div class="phase-detail">
+                            <span class="detail-label">Rest Days</span>
+                            <span class="detail-value">1700 calories</span>
+                        </div>
+                        <div class="phase-detail">
+                            <span class="detail-label">Cardio</span>
+                            <span class="detail-value">3x per week, 30min</span>
+                        </div>
+                        <div class="phase-detail">
+                            <span class="detail-label">Refeed</span>
+                            <span class="detail-value">Every 10 days</span>
+                        </div>
+                    </div>
+                    <div class="phase-note">Progress slowed. This is where most people panic and slash calories harder. I stayed the course. Added one refeed day every 10 days to keep my sanity. Lost another 4kg.</div>
+                </div>
+
+                <div class="phase-card">
+                    <div class="phase-header">
+                        <div class="phase-title">Weeks 9-12: The Finish</div>
+                        <div class="phase-weight">68kg → 63kg</div>
+                    </div>
+                    <div class="phase-details">
+                        <div class="phase-detail">
+                            <span class="detail-label">Training Days</span>
+                            <span class="detail-value">1900 calories</span>
+                        </div>
+                        <div class="phase-detail">
+                            <span class="detail-label">Rest Days</span>
+                            <span class="detail-value">1600 calories</span>
+                        </div>
+                        <div class="phase-detail">
+                            <span class="detail-label">Cardio</span>
+                            <span class="detail-value">4-5x per week, 40-50min</span>
+                        </div>
+                        <div class="phase-detail">
+                            <span class="detail-label">Refeed</span>
+                            <span class="detail-value">Every 7 days</span>
+                        </div>
+                    </div>
+                    <div class="phase-note">Hardest phase. I was lean, tired, and hungry most days. But I was close. Refeeds more frequent to keep metabolism going. Final 5kg came off. Worth every minute.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LOW FRICTION CALCULATOR: Auto-calculates as they type -->
+        <div class="card">
+            <h2 style="font-size: 28px; font-weight: 800; margin-bottom: 15px; color: var(--text);">Will This Pace Work For You?</h2>
+            <p style="font-size: 16px; color: var(--muted); margin-bottom: 30px;">Put in your numbers and see if your timeline is realistic. Results appear as you type.</p>
             
             <form id="calculatorForm">
                 <div class="form-group">
                     <label for="currentWeight">Current Weight (kg)</label>
-                    <input type="number" id="currentWeight" placeholder="e.g. 80" required>
+                    <input type="number" id="currentWeight" placeholder="e.g. 80" step="0.1">
+                    <div id="currentFeedback" class="live-feedback"></div>
                 </div>
 
                 <div class="form-group">
                     <label for="targetWeight">Target Weight (kg)</label>
-                    <input type="number" id="targetWeight" placeholder="e.g. 70" required>
+                    <input type="number" id="targetWeight" placeholder="e.g. 70" step="0.1">
+                    <div id="targetFeedback" class="live-feedback"></div>
                 </div>
 
                 <div class="form-group">
                     <label for="weeksUntil">Weeks You've Got</label>
-                    <input type="number" id="weeksUntil" placeholder="e.g. 12" required>
+                    <input type="number" id="weeksUntil" placeholder="e.g. 12">
+                    <div id="weeksFeedback" class="live-feedback"></div>
                 </div>
 
                 <div class="form-group">
                     <label for="commitment">How Committed Are You?</label>
-                    <select id="commitment" required>
+                    <select id="commitment">
                         <option value="">Select one...</option>
                         <option value="all-in">All in. Ready to do what it takes.</option>
                         <option value="balanced">I want results but also want balance.</option>
                         <option value="casual">Just testing the waters.</option>
                     </select>
+                    <div id="commitmentFeedback" class="live-feedback"></div>
                 </div>
-
-                <button type="submit" class="btn">Tell Me What's Realistic</button>
             </form>
 
             <div id="results" class="results"></div>
@@ -380,127 +565,150 @@
     </div>
 
     <script>
-        document.getElementById('calculatorForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const currentWeight = parseFloat(document.getElementById('currentWeight').value);
-            const targetWeight = parseFloat(document.getElementById('targetWeight').value);
-            const weeksUntil = parseInt(document.getElementById('weeksUntil').value);
-            const commitment = document.getElementById('commitment').value);
-            
+        const inputs = {
+            currentWeight: document.getElementById('currentWeight'),
+            targetWeight: document.getElementById('targetWeight'),
+            weeksUntil: document.getElementById('weeksUntil'),
+            commitment: document.getElementById('commitment')
+        };
+
+        const feedbacks = {
+            current: document.getElementById('currentFeedback'),
+            target: document.getElementById('targetFeedback'),
+            weeks: document.getElementById('weeksFeedback'),
+            commitment: document.getElementById('commitmentFeedback')
+        };
+
+        const results = document.getElementById('results');
+
+        // Auto-calculate on any input change
+        Object.keys(inputs).forEach(key => {
+            inputs[key].addEventListener('input', calculate);
+            inputs[key].addEventListener('change', calculate);
+        });
+
+        function calculate() {
+            const currentWeight = parseFloat(inputs.currentWeight.value);
+            const targetWeight = parseFloat(inputs.targetWeight.value);
+            const weeksUntil = parseInt(inputs.weeksUntil.value);
+            const commitment = inputs.commitment.value;
+
+            // Live feedback as they type
+            if (currentWeight && targetWeight) {
+                const weightToLose = currentWeight - targetWeight;
+                if (weightToLose <= 0) {
+                    feedbacks.target.textContent = "Target needs to be lower than current weight";
+                    feedbacks.target.className = 'live-feedback show bad';
+                } else {
+                    feedbacks.target.textContent = `You need to lose ${weightToLose.toFixed(1)}kg`;
+                    feedbacks.target.className = 'live-feedback show good';
+                }
+            }
+
+            if (currentWeight && targetWeight && weeksUntil) {
+                const weightToLose = currentWeight - targetWeight;
+                const weeklyRate = weightToLose / weeksUntil;
+                
+                if (weeklyRate > 1.2) {
+                    feedbacks.weeks.textContent = `${weeklyRate.toFixed(2)}kg/week - TOO FAST. You'll crash.`;
+                    feedbacks.weeks.className = 'live-feedback show bad';
+                } else if (weeklyRate < 0.3) {
+                    feedbacks.weeks.textContent = `${weeklyRate.toFixed(2)}kg/week - You've got plenty of time`;
+                    feedbacks.weeks.className = 'live-feedback show good';
+                } else {
+                    feedbacks.weeks.textContent = `${weeklyRate.toFixed(2)}kg/week - This is doable if you commit`;
+                    feedbacks.weeks.className = 'live-feedback show warning';
+                }
+
+                // Show full results
+                generateResults(currentWeight, targetWeight, weeksUntil, commitment);
+            }
+        }
+
+        function generateResults(currentWeight, targetWeight, weeksUntil, commitment) {
             const weightToLose = currentWeight - targetWeight;
             const weeklyRate = weightToLose / weeksUntil;
             
             let html = '';
             
-            // Unrealistic timeline
             if (weeklyRate > 1.2) {
                 html = `
                     <div class="reality-check">
                         <h3>This Isn't Happening</h3>
                         <p>You want to lose <strong>${weightToLose.toFixed(1)}kg in ${weeksUntil} weeks</strong>. That's <strong>${weeklyRate.toFixed(2)}kg per week</strong>.</p>
-                        <p>That rate is not sustainable. You'll lose muscle, feel terrible, crash hard, and probably rebound worse than where you started.</p>
-                        <p>A realistic rate for most people is <strong>0.5 to 1kg per week</strong> max.</p>
-                        <p><strong>What you should actually do:</strong> Give yourself <strong>${Math.ceil(weightToLose / 0.8)} weeks minimum</strong>, or adjust your target to <strong>${(currentWeight - (weeksUntil * 0.8)).toFixed(1)}kg</strong> for the timeline you've got.</p>
+                        <p>That rate is not sustainable. You'll lose muscle, feel terrible, and rebound worse than where you started.</p>
+                        <p><strong>What you should actually do:</strong> Give yourself <strong>${Math.ceil(weightToLose / 0.8)} weeks minimum</strong>, or adjust your target to <strong>${(currentWeight - (weeksUntil * 0.8)).toFixed(1)}kg</strong>.</p>
                     </div>
                 `;
-            } 
-            // Too slow
-            else if (weeklyRate < 0.3) {
+            } else if (weeklyRate < 0.3) {
                 html = `
                     <div class="reality-check">
                         <h3>You've Got More Than Enough Time</h3>
                         <p>You're looking to lose <strong>${weightToLose.toFixed(1)}kg in ${weeksUntil} weeks</strong>. That's only <strong>${weeklyRate.toFixed(2)}kg per week</strong>.</p>
-                        <p>You've got plenty of runway. You can do this without suffering, keep your strength, and actually enjoy the process.</p>
-                        <p>Don't overcomplicate it. Stay consistent and you'll get there easily.</p>
+                        <p>You've got plenty of runway. Stay consistent and you'll get there without suffering.</p>
                     </div>
                     
                     <div class="timeline-card">
-                        <div class="timeline-week">Weeks 1-4: Foundation Phase</div>
-                        <div class="timeline-content">Start with a moderate deficit (around 300-500 calories). Lock in your protein at 2g per kg bodyweight minimum. Get used to tracking. Add 2 to 3 cardio sessions per week (nothing crazy yet). You'll drop ${(weeklyRate * 4).toFixed(1)}kg easily here, mostly water and some fat.</div>
+                        <div class="timeline-week">Your Phase 1 (Weeks 1-4)</div>
+                        <div class="timeline-content">Start with a moderate deficit. Protein at 2g per kg (${(targetWeight * 2).toFixed(0)}g for you). Add 2-3 cardio sessions. You'll drop around ${(weeklyRate * 4).toFixed(1)}kg easily.</div>
                     </div>
                     
                     <div class="timeline-card">
-                        <div class="timeline-week">Weeks 5-8: The Consistency Test</div>
-                        <div class="timeline-content">Initial water weight is gone. Progress slows. This is where most people quit because they think it's not working. Keep your deficit consistent. Don't change anything drastically. Maybe add one more cardio session if you want. Another ${(weeklyRate * 4).toFixed(1)}kg comes off if you stay the course.</div>
-                    </div>
-                    
-                    <div class="timeline-card">
-                        <div class="timeline-week">Weeks 9-${weeksUntil}: Cruise Control</div>
-                        <div class="timeline-content">You're leaner now, habits are locked in. Keep doing what's working. You might feel a bit more tired but nothing unbearable. Protein stays high. Final ${(weightToLose - (weeklyRate * 8)).toFixed(1)}kg comes off here without drama.</div>
+                        <div class="timeline-week">Your Phase 2 (Weeks 5-${Math.min(weeksUntil, 8)})</div>
+                        <div class="timeline-content">Progress slows. This is normal. Keep your deficit consistent. Maybe add one more cardio session. Another ${(weeklyRate * 4).toFixed(1)}kg comes off.</div>
                     </div>
                 `;
-            } 
-            // Realistic timeline
-            else {
-                const phase1Loss = Math.min(weeklyRate * 4, weightToLose * 0.4);
-                const phase2Loss = Math.min(weeklyRate * 4, weightToLose - phase1Loss);
-                
+            } else {
                 html = `
                     <div class="reality-check">
                         <h3>This Is Doable If You Commit</h3>
                         <p>You're looking to lose <strong>${weightToLose.toFixed(1)}kg in ${weeksUntil} weeks</strong>. That's <strong>${weeklyRate.toFixed(2)}kg per week</strong>.</p>
-                        <p>This is realistic if you actually show up every day. It won't be comfortable, especially in the back half, but it's doable without wrecking yourself.</p>
-                        <p>The key is staying consistent when it gets hard. That's where most people fail.</p>
+                        <p>This is realistic if you show up every day. It won't be comfortable, but it's doable.</p>
                     </div>
                     
                     <div class="timeline-card">
-                        <div class="timeline-week">Weeks 1-4: Foundation Phase</div>
-                        <div class="timeline-content">Start with a solid deficit (400-600 calories). Protein at 2g per kg bodyweight, no negotiation. Track everything that goes in your mouth. Add 2 to 3 cardio sessions per week. Expect to drop around ${phase1Loss.toFixed(1)}kg in the first month (mix of water and fat).</div>
+                        <div class="timeline-week">Your Phase 1 (Weeks 1-4)</div>
+                        <div class="timeline-content">Solid deficit (400-600 cals). Protein at 2g/kg (${(targetWeight * 2).toFixed(0)}g). Track everything. 2-3 cardio sessions. Expect ${(weeklyRate * 4).toFixed(1)}kg off in first month.</div>
                     </div>
                     
                     <div class="timeline-card">
-                        <div class="timeline-week">Weeks 5-8: The Mental Grind</div>
-                        <div class="timeline-content">Progress slows down. You're not seeing daily changes anymore. This is normal. This is where discipline beats motivation. Keep your deficit consistent. Don't panic and slash calories harder. Add one more cardio session if needed. Another ${phase2Loss.toFixed(1)}kg should come off here.</div>
+                        <div class="timeline-week">Your Phase 2 (Weeks 5-8)</div>
+                        <div class="timeline-content">The mental grind. Progress slows. Stay consistent. Don't panic slash calories. Add one more cardio session if needed. Another ${(weeklyRate * 4).toFixed(1)}kg.</div>
                     </div>
                 `;
-                
-                if (weeksUntil > 8) {
-                    const phase3Loss = weightToLose - phase1Loss - phase2Loss;
-                    html += `
-                        <div class="timeline-card">
-                            <div class="timeline-week">Weeks 9-${weeksUntil}: The Finish Line</div>
-                            <div class="timeline-content">You're leaner, you're tired, but you're close. This is where most people either finish strong or fall apart. Keep protein high (2g per kg minimum). You might need more cardio now (4 to 5 sessions). Final ${phase3Loss.toFixed(1)}kg comes off here. Don't quit when you're this close.</div>
-                        </div>
-                    `;
-                }
             }
             
-            // Commitment reality checks
+            // Commitment feedback
             if (commitment === 'casual') {
                 html += `
-                    <div class="reality-check" style="background: rgba(196, 107, 228, 0.1); border-color: var(--purple);">
-                        <h3 style="color: var(--purple);">You Said "Testing The Waters"</h3>
+                    <div class="reality-check" style="background: rgba(255, 82, 82, 0.1); border-color: var(--red);">
+                        <h3 style="color: var(--red);">You Said "Testing The Waters"</h3>
                         <p>Let me be direct: you're not getting these results with a casual approach.</p>
-                        <p>You can't half-commit to a specific number in a specific timeline and expect your body to magically cooperate.</p>
-                        <p><strong>Either go all in or don't bother.</strong> There's no middle ground when you're chasing real change in a set timeframe.</p>
+                        <p><strong>Either go all in or don't bother.</strong> There's no middle ground when you're chasing real change.</p>
                     </div>
                 `;
             } else if (commitment === 'balanced') {
                 html += `
                     <div class="reality-check" style="background: rgba(196, 107, 228, 0.1); border-color: var(--purple);">
                         <h3 style="color: var(--purple);">You Want Balance</h3>
-                        <p>Balance is fine, but understand what it actually means: slower progress.</p>
-                        <p>If you want to keep your weekends free, keep drinking, keep eating out regularly, then <strong>add 4 to 6 weeks to this timeline</strong>. Maybe more.</p>
-                        <p>You can have balance OR you can have fast results. You cannot have both. Pick one and own it.</p>
+                        <p>Balance means slower progress. If you keep your weekends free, keep drinking, keep eating out, then <strong>add 4-6 weeks to this timeline</strong>.</p>
+                        <p>You can have balance OR fast results. Pick one.</p>
                     </div>
                 `;
             } else if (commitment === 'all-in') {
                 html += `
-                    <div class="reality-check" style="background: rgba(82, 113, 255, 0.1); border-color: var(--blue);">
-                        <h3 style="color: var(--blue);">You're All In</h3>
-                        <p>Good. That's the only way this works in the timeline you've got.</p>
-                        <p><strong>What "all in" actually means:</strong> You track every day. You don't skip sessions. You don't make excuses on the weekend. You accept hunger as part of the process.</p>
-                        <p>If you stay locked in like that, you'll hit your target. Most people won't. Be different.</p>
+                    <div class="reality-check" style="background: rgba(76, 175, 80, 0.1); border-color: var(--green);">
+                        <h3 style="color: var(--green);">You're All In</h3>
+                        <p>Good. That's the only way this works.</p>
+                        <p><strong>What "all in" means:</strong> Track every day. Don't skip sessions. No excuses on weekends. Accept hunger as part of it.</p>
+                        <p>Stay locked in like that and you'll hit your target.</p>
                     </div>
                 `;
             }
             
-            document.getElementById('results').innerHTML = html;
-            document.getElementById('results').classList.add('show');
-            document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        });
+            results.innerHTML = html;
+            results.classList.add('show');
+        }
     </script>
 </body>
 </html>
-```

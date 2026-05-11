@@ -108,14 +108,12 @@
         .story-image {
             border-radius: 12px;
             overflow: hidden;
-            aspect-ratio: 3/4;
         }
 
         .story-image img {
             width: 100%;
-            height: 100%;
-            object-fit: contain;
-            background: var(--dark);
+            height: auto;
+            display: block;
         }
 
         .story-content h2 {
@@ -176,7 +174,6 @@
             border-radius: 12px;
             margin-bottom: 20px;
             border-left: 4px solid var(--blue);
-            position: relative;
         }
 
         .phase-header {
@@ -184,6 +181,8 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         .phase-title {
@@ -202,7 +201,7 @@
 
         .phase-details {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 15px;
             margin-bottom: 15px;
         }
@@ -337,48 +336,32 @@
             color: var(--text);
         }
 
-        .timeline-card {
-            background: var(--dark);
-            padding: 25px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            border-left: 3px solid var(--blue);
+        .macro-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 12px;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(82, 113, 255, 0.05);
+            border-radius: 8px;
         }
 
-        .timeline-week {
-            font-size: 14px;
-            font-weight: 700;
+        .macro-item {
+            text-align: center;
+        }
+
+        .macro-value {
+            font-size: 22px;
+            font-weight: 800;
             color: var(--blue);
+            display: block;
+        }
+
+        .macro-label {
+            font-size: 11px;
+            color: var(--muted);
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 10px;
-        }
-
-        .timeline-content {
-            font-size: 15px;
-            color: var(--muted);
-            line-height: 1.7;
-        }
-
-        .cta-box {
-            background: linear-gradient(135deg, var(--blue), var(--purple));
-            padding: 30px;
-            border-radius: 12px;
-            text-align: center;
-            margin-top: 40px;
-        }
-
-        .cta-box h3 {
-            font-size: 24px;
-            font-weight: 800;
-            margin-bottom: 15px;
-            color: var(--text);
-        }
-
-        .cta-box p {
-            font-size: 16px;
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 20px;
         }
 
         @media (max-width: 480px) {
@@ -394,19 +377,19 @@
             <div class="logo">RDHCOACHING</div>
             <div class="badge">My 12-Week Photoshoot Story</div>
             <h1>Summer Body Timeline Calculator</h1>
-            <p class="subtitle">I went from 76kg to 63kg in 12 weeks for a photoshoot. Here's the exact breakdown of what actually happened.</p>
+            <p class="subtitle">I went from 76kg to 63kg in 12 weeks. Here's the exact nutrition and training strategy I used, week by week.</p>
         </div>
 
         <div class="card">
             <div class="story-grid">
                 <div class="story-image">
-                    <img src="data:image/jpeg;base64,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" alt="Rhys transformation before">
+                    <img src="https://i.ibb.co/pRjyFmK/rhys-transformation.jpg" alt="Rhys 12-week transformation" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'600\'%3E%3Crect fill=\'%2315151E\' width=\'400\' height=\'600\'/%3E%3Ctext fill=\'%235271FF\' font-family=\'Arial\' font-size=\'20\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\'%3E76kg → 63kg%3C/text%3E%3C/svg%3E'">
                 </div>
                 <div class="story-content">
                     <h2>The Truth About My 12 Weeks</h2>
                     <p>Last year I decided to do a proper photoshoot. <strong>Started at 76kg, ended at 63kg</strong> in 12 weeks.</p>
-                    <p>I trained 4 to 5 times a week, incremented cardio up to 220 minutes by the end, and ran training day and non-training day calories with refeed days here and there.</p>
-                    <p>Everyone asks if I was starving the whole time. Honestly? <strong>The hunger wasn't the hard part.</strong> The mental battle was.</p>
+                    <p>I trained 4 to 5 times a week, built cardio up to 220 minutes by the end, and ran separate training day and rest day calories with strategic refeed days.</p>
+                    <p>The hunger wasn't the hard part. <strong>The mental battle of staying consistent when progress slowed was the real fight.</strong></p>
                 </div>
             </div>
 
@@ -429,7 +412,7 @@
                 </div>
                 <div class="stat">
                     <span class="stat-number">220min</span>
-                    <span class="stat-label">Cardio/Week</span>
+                    <span class="stat-label">Peak Cardio</span>
                 </div>
                 <div class="stat">
                     <span class="stat-number">4-5x</span>
@@ -438,96 +421,145 @@
             </div>
         </div>
 
-        <!-- INSTANT VALUE: Show the exact protocol first -->
         <div class="card">
-            <h2 style="font-size: 28px; font-weight: 800; margin-bottom: 20px; color: var(--text);">Here's Exactly How I Did It</h2>
-            <p style="font-size: 16px; color: var(--muted); margin-bottom: 30px;">Week by week breakdown of calories, cardio, and what actually happened. This is the blueprint.</p>
+            <h2 style="font-size: 28px; font-weight: 800; margin-bottom: 20px; color: var(--text);">Here's The Exact Strategy I Used</h2>
+            <p style="font-size: 16px; color: var(--muted); margin-bottom: 30px;">Week by week calories, macros, cardio prescription, and what actually happened in each phase.</p>
             
             <div class="phase-breakdown">
                 <div class="phase-card">
                     <div class="phase-header">
                         <div class="phase-title">Weeks 1-4: Foundation</div>
-                        <div class="phase-weight">76kg → 72kg</div>
+                        <div class="phase-weight">76kg → 72kg (-4kg)</div>
                     </div>
+                    
+                    <div class="macro-grid">
+                        <div class="macro-item">
+                            <span class="macro-value">2200</span>
+                            <span class="macro-label">Training Days</span>
+                        </div>
+                        <div class="macro-item">
+                            <span class="macro-value">1800</span>
+                            <span class="macro-label">Rest Days</span>
+                        </div>
+                        <div class="macro-item">
+                            <span class="macro-value">152g</span>
+                            <span class="macro-label">Protein</span>
+                        </div>
+                        <div class="macro-item">
+                            <span class="macro-value">60g</span>
+                            <span class="macro-label">Fat</span>
+                        </div>
+                    </div>
+                    
                     <div class="phase-details">
                         <div class="phase-detail">
-                            <span class="detail-label">Training Days</span>
-                            <span class="detail-value">2200 calories</span>
-                        </div>
-                        <div class="phase-detail">
-                            <span class="detail-label">Rest Days</span>
-                            <span class="detail-value">1800 calories</span>
-                        </div>
-                        <div class="phase-detail">
                             <span class="detail-label">Cardio</span>
-                            <span class="detail-value">2x per week, 20min</span>
+                            <span class="detail-value">2x per week, 20min each</span>
                         </div>
                         <div class="phase-detail">
-                            <span class="detail-label">Protein</span>
-                            <span class="detail-value">152g daily (2g/kg)</span>
+                            <span class="detail-label">Training</span>
+                            <span class="detail-value">4x per week, full body</span>
+                        </div>
+                        <div class="phase-detail">
+                            <span class="detail-label">Refeed</span>
+                            <span class="detail-value">None yet</span>
                         </div>
                     </div>
-                    <div class="phase-note">Lost 4kg in first month. Mostly water and some fat. Hunger was manageable. Energy was fine. This phase felt easy.</div>
+                    
+                    <div class="phase-note">Lost 4kg in first month, mostly water and some fat. Hunger was manageable. Energy stayed high. This phase felt easy because I hadn't been dieting long.</div>
                 </div>
 
                 <div class="phase-card">
                     <div class="phase-header">
                         <div class="phase-title">Weeks 5-8: The Grind</div>
-                        <div class="phase-weight">72kg → 68kg</div>
+                        <div class="phase-weight">72kg → 68kg (-4kg)</div>
                     </div>
+                    
+                    <div class="macro-grid">
+                        <div class="macro-item">
+                            <span class="macro-value">2000</span>
+                            <span class="macro-label">Training Days</span>
+                        </div>
+                        <div class="macro-item">
+                            <span class="macro-value">1700</span>
+                            <span class="macro-label">Rest Days</span>
+                        </div>
+                        <div class="macro-item">
+                            <span class="macro-value">152g</span>
+                            <span class="macro-label">Protein</span>
+                        </div>
+                        <div class="macro-item">
+                            <span class="macro-value">55g</span>
+                            <span class="macro-label">Fat</span>
+                        </div>
+                    </div>
+                    
                     <div class="phase-details">
                         <div class="phase-detail">
-                            <span class="detail-label">Training Days</span>
-                            <span class="detail-value">2000 calories</span>
-                        </div>
-                        <div class="phase-detail">
-                            <span class="detail-label">Rest Days</span>
-                            <span class="detail-value">1700 calories</span>
-                        </div>
-                        <div class="phase-detail">
                             <span class="detail-label">Cardio</span>
-                            <span class="detail-value">3x per week, 30min</span>
+                            <span class="detail-value">3x per week, 30min each</span>
+                        </div>
+                        <div class="phase-detail">
+                            <span class="detail-label">Training</span>
+                            <span class="detail-value">4x per week, upper/lower</span>
                         </div>
                         <div class="phase-detail">
                             <span class="detail-label">Refeed</span>
-                            <span class="detail-value">Every 10 days</span>
+                            <span class="detail-value">Every 10 days (2500 cals)</span>
                         </div>
                     </div>
-                    <div class="phase-note">Progress slowed. This is where most people panic and slash calories harder. I stayed the course. Added one refeed day every 10 days to keep my sanity. Lost another 4kg.</div>
+                    
+                    <div class="phase-note">Progress slowed down. This is where most people panic and slash calories harder. I stayed disciplined, kept protein high, and added a refeed every 10 days. Lost another 4kg but had to fight for it mentally.</div>
                 </div>
 
                 <div class="phase-card">
                     <div class="phase-header">
                         <div class="phase-title">Weeks 9-12: The Finish</div>
-                        <div class="phase-weight">68kg → 63kg</div>
+                        <div class="phase-weight">68kg → 63kg (-5kg)</div>
                     </div>
+                    
+                    <div class="macro-grid">
+                        <div class="macro-item">
+                            <span class="macro-value">1900</span>
+                            <span class="macro-label">Training Days</span>
+                        </div>
+                        <div class="macro-item">
+                            <span class="macro-value">1600</span>
+                            <span class="macro-label">Rest Days</span>
+                        </div>
+                        <div class="macro-item">
+                            <span class="macro-value">152g</span>
+                            <span class="macro-label">Protein</span>
+                        </div>
+                        <div class="macro-item">
+                            <span class="macro-value">50g</span>
+                            <span class="macro-label">Fat</span>
+                        </div>
+                    </div>
+                    
                     <div class="phase-details">
-                        <div class="phase-detail">
-                            <span class="detail-label">Training Days</span>
-                            <span class="detail-value">1900 calories</span>
-                        </div>
-                        <div class="phase-detail">
-                            <span class="detail-label">Rest Days</span>
-                            <span class="detail-value">1600 calories</span>
-                        </div>
                         <div class="phase-detail">
                             <span class="detail-label">Cardio</span>
                             <span class="detail-value">4-5x per week, 40-50min</span>
                         </div>
                         <div class="phase-detail">
+                            <span class="detail-label">Training</span>
+                            <span class="detail-value">4x per week, push/pull/legs</span>
+                        </div>
+                        <div class="phase-detail">
                             <span class="detail-label">Refeed</span>
-                            <span class="detail-value">Every 7 days</span>
+                            <span class="detail-value">Every 7 days (2600 cals)</span>
                         </div>
                     </div>
-                    <div class="phase-note">Hardest phase. I was lean, tired, and hungry most days. But I was close. Refeeds more frequent to keep metabolism going. Final 5kg came off. Worth every minute.</div>
+                    
+                    <div class="phase-note">Hardest phase by far. I was lean, tired, and hungry most days. But I was close to the finish line. Increased refeed frequency to keep metabolism going. Final 5kg came off. Worth every single minute of discomfort.</div>
                 </div>
             </div>
         </div>
 
-        <!-- LOW FRICTION CALCULATOR: Auto-calculates as they type -->
         <div class="card">
-            <h2 style="font-size: 28px; font-weight: 800; margin-bottom: 15px; color: var(--text);">Will This Pace Work For You?</h2>
-            <p style="font-size: 16px; color: var(--muted); margin-bottom: 30px;">Put in your numbers and see if your timeline is realistic. Results appear as you type.</p>
+            <h2 style="font-size: 28px; font-weight: 800; margin-bottom: 15px; color: var(--text);">Get Your Personalised Strategy</h2>
+            <p style="font-size: 16px; color: var(--muted); margin-bottom: 30px;">Put in your numbers below and I'll calculate your exact calories, macros, and cardio for each phase. Results appear as you type.</p>
             
             <form id="calculatorForm">
                 <div class="form-group">
@@ -543,18 +575,18 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="weeksUntil">Weeks You've Got</label>
+                    <label for="weeksUntil">Weeks Until Deadline</label>
                     <input type="number" id="weeksUntil" placeholder="e.g. 12">
                     <div id="weeksFeedback" class="live-feedback"></div>
                 </div>
 
                 <div class="form-group">
-                    <label for="commitment">How Committed Are You?</label>
+                    <label for="commitment">Commitment Level</label>
                     <select id="commitment">
                         <option value="">Select one...</option>
-                        <option value="all-in">All in. Ready to do what it takes.</option>
+                        <option value="all-in">All in. Ready to do whatever it takes.</option>
                         <option value="balanced">I want results but also want balance.</option>
-                        <option value="casual">Just testing the waters.</option>
+                        <option value="casual">Just seeing what's possible.</option>
                     </select>
                     <div id="commitmentFeedback" class="live-feedback"></div>
                 </div>
@@ -581,7 +613,6 @@
 
         const results = document.getElementById('results');
 
-        // Auto-calculate on any input change
         Object.keys(inputs).forEach(key => {
             inputs[key].addEventListener('input', calculate);
             inputs[key].addEventListener('change', calculate);
@@ -593,7 +624,6 @@
             const weeksUntil = parseInt(inputs.weeksUntil.value);
             const commitment = inputs.commitment.value;
 
-            // Live feedback as they type
             if (currentWeight && targetWeight) {
                 const weightToLose = currentWeight - targetWeight;
                 if (weightToLose <= 0) {
@@ -610,7 +640,7 @@
                 const weeklyRate = weightToLose / weeksUntil;
                 
                 if (weeklyRate > 1.2) {
-                    feedbacks.weeks.textContent = `${weeklyRate.toFixed(2)}kg/week - TOO FAST. You'll crash.`;
+                    feedbacks.weeks.textContent = `${weeklyRate.toFixed(2)}kg/week - TOO FAST. You'll crash and burn.`;
                     feedbacks.weeks.className = 'live-feedback show bad';
                 } else if (weeklyRate < 0.3) {
                     feedbacks.weeks.textContent = `${weeklyRate.toFixed(2)}kg/week - You've got plenty of time`;
@@ -620,7 +650,6 @@
                     feedbacks.weeks.className = 'live-feedback show warning';
                 }
 
-                // Show full results
                 generateResults(currentWeight, targetWeight, weeksUntil, commitment);
             }
         }
@@ -629,81 +658,198 @@
             const weightToLose = currentWeight - targetWeight;
             const weeklyRate = weightToLose / weeksUntil;
             
+            // Calculate maintenance (rough estimate: bodyweight x 33)
+            const maintenance = Math.round(currentWeight * 33);
+            const protein = Math.round(targetWeight * 2);
+            const fat = Math.round(targetWeight * 0.8);
+            
+            // Phase 1 calories (500 cal deficit)
+            const phase1Training = Math.round((maintenance - 500) / 50) * 50;
+            const phase1Rest = Math.round((maintenance - 700) / 50) * 50;
+            
+            // Phase 2 calories (700 cal deficit)
+            const phase2Training = Math.round((maintenance - 700) / 50) * 50;
+            const phase2Rest = Math.round((maintenance - 900) / 50) * 50;
+            
+            // Phase 3 calories (850 cal deficit)
+            const phase3Training = Math.round((maintenance - 850) / 50) * 50;
+            const phase3Rest = Math.round((maintenance - 1050) / 50) * 50;
+            
             let html = '';
             
             if (weeklyRate > 1.2) {
                 html = `
                     <div class="reality-check">
-                        <h3>This Isn't Happening</h3>
+                        <h3>This Timeline Isn't Realistic</h3>
                         <p>You want to lose <strong>${weightToLose.toFixed(1)}kg in ${weeksUntil} weeks</strong>. That's <strong>${weeklyRate.toFixed(2)}kg per week</strong>.</p>
-                        <p>That rate is not sustainable. You'll lose muscle, feel terrible, and rebound worse than where you started.</p>
+                        <p>That rate will destroy you. You'll lose muscle, feel terrible, tank your metabolism, and rebound worse than where you started.</p>
                         <p><strong>What you should actually do:</strong> Give yourself <strong>${Math.ceil(weightToLose / 0.8)} weeks minimum</strong>, or adjust your target to <strong>${(currentWeight - (weeksUntil * 0.8)).toFixed(1)}kg</strong>.</p>
-                    </div>
-                `;
-            } else if (weeklyRate < 0.3) {
-                html = `
-                    <div class="reality-check">
-                        <h3>You've Got More Than Enough Time</h3>
-                        <p>You're looking to lose <strong>${weightToLose.toFixed(1)}kg in ${weeksUntil} weeks</strong>. That's only <strong>${weeklyRate.toFixed(2)}kg per week</strong>.</p>
-                        <p>You've got plenty of runway. Stay consistent and you'll get there without suffering.</p>
-                    </div>
-                    
-                    <div class="timeline-card">
-                        <div class="timeline-week">Your Phase 1 (Weeks 1-4)</div>
-                        <div class="timeline-content">Start with a moderate deficit. Protein at 2g per kg (${(targetWeight * 2).toFixed(0)}g for you). Add 2-3 cardio sessions. You'll drop around ${(weeklyRate * 4).toFixed(1)}kg easily.</div>
-                    </div>
-                    
-                    <div class="timeline-card">
-                        <div class="timeline-week">Your Phase 2 (Weeks 5-${Math.min(weeksUntil, 8)})</div>
-                        <div class="timeline-content">Progress slows. This is normal. Keep your deficit consistent. Maybe add one more cardio session. Another ${(weeklyRate * 4).toFixed(1)}kg comes off.</div>
                     </div>
                 `;
             } else {
                 html = `
                     <div class="reality-check">
-                        <h3>This Is Doable If You Commit</h3>
-                        <p>You're looking to lose <strong>${weightToLose.toFixed(1)}kg in ${weeksUntil} weeks</strong>. That's <strong>${weeklyRate.toFixed(2)}kg per week</strong>.</p>
-                        <p>This is realistic if you show up every day. It won't be comfortable, but it's doable.</p>
+                        <h3>Your Personalised 12-Week Strategy</h3>
+                        <p>Based on your numbers, here's your phase-by-phase nutrition and cardio prescription to lose <strong>${weightToLose.toFixed(1)}kg in ${weeksUntil} weeks</strong>.</p>
                     </div>
                     
-                    <div class="timeline-card">
-                        <div class="timeline-week">Your Phase 1 (Weeks 1-4)</div>
-                        <div class="timeline-content">Solid deficit (400-600 cals). Protein at 2g/kg (${(targetWeight * 2).toFixed(0)}g). Track everything. 2-3 cardio sessions. Expect ${(weeklyRate * 4).toFixed(1)}kg off in first month.</div>
+                    <div class="phase-card">
+                        <div class="phase-header">
+                            <div class="phase-title">Your Phase 1 (Weeks 1-4)</div>
+                            <div class="phase-weight">${currentWeight.toFixed(1)}kg → ${(currentWeight - (weeklyRate * 4)).toFixed(1)}kg</div>
+                        </div>
+                        
+                        <div class="macro-grid">
+                            <div class="macro-item">
+                                <span class="macro-value">${phase1Training}</span>
+                                <span class="macro-label">Training Days</span>
+                            </div>
+                            <div class="macro-item">
+                                <span class="macro-value">${phase1Rest}</span>
+                                <span class="macro-label">Rest Days</span>
+                            </div>
+                            <div class="macro-item">
+                                <span class="macro-value">${protein}g</span>
+                                <span class="macro-label">Protein Daily</span>
+                            </div>
+                            <div class="macro-item">
+                                <span class="macro-value">${fat}g</span>
+                                <span class="macro-label">Fat Daily</span>
+                            </div>
+                        </div>
+                        
+                        <div class="phase-details">
+                            <div class="phase-detail">
+                                <span class="detail-label">Cardio</span>
+                                <span class="detail-value">2x per week, 20min moderate</span>
+                            </div>
+                            <div class="phase-detail">
+                                <span class="detail-label">Training</span>
+                                <span class="detail-value">4x per week minimum</span>
+                            </div>
+                            <div class="phase-detail">
+                                <span class="detail-label">Refeed</span>
+                                <span class="detail-value">None needed yet</span>
+                            </div>
+                        </div>
+                        
+                        <div class="phase-note">Foundation phase. Get used to tracking macros daily. Protein is NON-NEGOTIABLE at ${protein}g. Fill remaining calories with carbs around training. This should feel relatively easy.</div>
                     </div>
                     
-                    <div class="timeline-card">
-                        <div class="timeline-week">Your Phase 2 (Weeks 5-8)</div>
-                        <div class="timeline-content">The mental grind. Progress slows. Stay consistent. Don't panic slash calories. Add one more cardio session if needed. Another ${(weeklyRate * 4).toFixed(1)}kg.</div>
+                    <div class="phase-card">
+                        <div class="phase-header">
+                            <div class="phase-title">Your Phase 2 (Weeks 5-8)</div>
+                            <div class="phase-weight">${(currentWeight - (weeklyRate * 4)).toFixed(1)}kg → ${(currentWeight - (weeklyRate * 8)).toFixed(1)}kg</div>
+                        </div>
+                        
+                        <div class="macro-grid">
+                            <div class="macro-item">
+                                <span class="macro-value">${phase2Training}</span>
+                                <span class="macro-label">Training Days</span>
+                            </div>
+                            <div class="macro-item">
+                                <span class="macro-value">${phase2Rest}</span>
+                                <span class="macro-label">Rest Days</span>
+                            </div>
+                            <div class="macro-item">
+                                <span class="macro-value">${protein}g</span>
+                                <span class="macro-label">Protein Daily</span>
+                            </div>
+                            <div class="macro-item">
+                                <span class="macro-value">${Math.round(fat * 0.9)}g</span>
+                                <span class="macro-label">Fat Daily</span>
+                            </div>
+                        </div>
+                        
+                        <div class="phase-details">
+                            <div class="phase-detail">
+                                <span class="detail-label">Cardio</span>
+                                <span class="detail-value">3x per week, 30min moderate</span>
+                            </div>
+                            <div class="phase-detail">
+                                <span class="detail-label">Training</span>
+                                <span class="detail-value">4x per week, intensity maintained</span>
+                            </div>
+                            <div class="phase-detail">
+                                <span class="detail-label">Refeed</span>
+                                <span class="detail-value">Every 10 days (${maintenance} cals)</span>
+                            </div>
+                        </div>
+                        
+                        <div class="phase-note">The mental grind. Progress slows. You'll want to quit. DON'T. Keep protein at ${protein}g minimum. Add refeed days every 10 days to keep sanity and metabolism healthy. This is where discipline beats motivation.</div>
+                    </div>
+                    
+                    <div class="phase-card">
+                        <div class="phase-header">
+                            <div class="phase-title">Your Phase 3 (Weeks 9-12)</div>
+                            <div class="phase-weight">${(currentWeight - (weeklyRate * 8)).toFixed(1)}kg → ${targetWeight.toFixed(1)}kg</div>
+                        </div>
+                        
+                        <div class="macro-grid">
+                            <div class="macro-item">
+                                <span class="macro-value">${phase3Training}</span>
+                                <span class="macro-label">Training Days</span>
+                            </div>
+                            <div class="macro-item">
+                                <span class="macro-value">${phase3Rest}</span>
+                                <span class="macro-label">Rest Days</span>
+                            </div>
+                            <div class="macro-item">
+                                <span class="macro-value">${protein}g</span>
+                                <span class="macro-label">Protein Daily</span>
+                            </div>
+                            <div class="macro-item">
+                                <span class="macro-value">${Math.round(fat * 0.8)}g</span>
+                                <span class="macro-label">Fat Daily</span>
+                            </div>
+                        </div>
+                        
+                        <div class="phase-details">
+                            <div class="phase-detail">
+                                <span class="detail-label">Cardio</span>
+                                <span class="detail-value">4-5x per week, 40-50min</span>
+                            </div>
+                            <div class="phase-detail">
+                                <span class="detail-label">Training</span>
+                                <span class="detail-value">4x per week, maintain strength</span>
+                            </div>
+                            <div class="phase-detail">
+                                <span class="detail-label">Refeed</span>
+                                <span class="detail-value">Every 7 days (${Math.round(maintenance + 100)} cals)</span>
+                            </div>
+                        </div>
+                        
+                        <div class="phase-note">Final push. You're lean, you're tired, you're hungry. But you're CLOSE. Increase refeed frequency to weekly. Keep protein at ${protein}g no matter what. More cardio needed now. Don't quit when you're this close to the finish line.</div>
                     </div>
                 `;
-            }
-            
-            // Commitment feedback
-            if (commitment === 'casual') {
-                html += `
-                    <div class="reality-check" style="background: rgba(255, 82, 82, 0.1); border-color: var(--red);">
-                        <h3 style="color: var(--red);">You Said "Testing The Waters"</h3>
-                        <p>Let me be direct: you're not getting these results with a casual approach.</p>
-                        <p><strong>Either go all in or don't bother.</strong> There's no middle ground when you're chasing real change.</p>
-                    </div>
-                `;
-            } else if (commitment === 'balanced') {
-                html += `
-                    <div class="reality-check" style="background: rgba(196, 107, 228, 0.1); border-color: var(--purple);">
-                        <h3 style="color: var(--purple);">You Want Balance</h3>
-                        <p>Balance means slower progress. If you keep your weekends free, keep drinking, keep eating out, then <strong>add 4-6 weeks to this timeline</strong>.</p>
-                        <p>You can have balance OR fast results. Pick one.</p>
-                    </div>
-                `;
-            } else if (commitment === 'all-in') {
-                html += `
-                    <div class="reality-check" style="background: rgba(76, 175, 80, 0.1); border-color: var(--green);">
-                        <h3 style="color: var(--green);">You're All In</h3>
-                        <p>Good. That's the only way this works.</p>
-                        <p><strong>What "all in" means:</strong> Track every day. Don't skip sessions. No excuses on weekends. Accept hunger as part of it.</p>
-                        <p>Stay locked in like that and you'll hit your target.</p>
-                    </div>
-                `;
+                
+                if (commitment === 'casual') {
+                    html += `
+                        <div class="reality-check" style="background: rgba(255, 82, 82, 0.1); border-color: var(--red);">
+                            <h3 style="color: var(--red);">You Said "Just Seeing What's Possible"</h3>
+                            <p>Let me be direct: you're not getting these results with a casual mindset.</p>
+                            <p>This requires tracking every single day. Hitting your protein target every single day. Doing cardio even when you don't feel like it. No cheat meals. No "I'll start Monday."</p>
+                            <p><strong>Either commit properly or don't waste your time.</strong></p>
+                        </div>
+                    `;
+                } else if (commitment === 'balanced') {
+                    html += `
+                        <div class="reality-check" style="background: rgba(196, 107, 228, 0.1); border-color: var(--purple);">
+                            <h3 style="color: var(--purple);">You Want Balance</h3>
+                            <p>Balance is fine, but it slows everything down. If you want to keep drinking on weekends, eating out regularly, skipping sessions when you're busy, then <strong>add 4-6 weeks to this timeline</strong>.</p>
+                            <p>You can have balance OR you can hit ${targetWeight.toFixed(1)}kg in ${weeksUntil} weeks. You cannot have both. Pick one and own it.</p>
+                        </div>
+                    `;
+                } else if (commitment === 'all-in') {
+                    html += `
+                        <div class="reality-check" style="background: rgba(76, 175, 80, 0.1); border-color: var(--green);">
+                            <h3 style="color: var(--green);">You're All In</h3>
+                            <p>Good. That's the only way this works in ${weeksUntil} weeks.</p>
+                            <p><strong>What "all in" actually means:</strong> Track every day. Hit ${protein}g protein minimum every day. Don't skip cardio sessions. No excuses on weekends. Accept hunger as part of the process.</p>
+                            <p>If you do that, you'll hit ${targetWeight.toFixed(1)}kg. Most people won't. Be different.</p>
+                        </div>
+                    `;
+                }
             }
             
             results.innerHTML = html;

@@ -407,6 +407,7 @@
     </script>
 </body>
 </html>
+<script>
 document.querySelector('.send-btn').addEventListener('click', async function(e) {
   e.preventDefault();
 
@@ -424,7 +425,6 @@ document.querySelector('.send-btn').addEventListener('click', async function(e) 
     return;
   }
 
-  // Auto grab all calculator inputs so you capture full lead context
   const leadData = { email: email, tool: 'summer-body-calculator' };
   document.querySelectorAll('input, select').forEach(field => {
     if (field.id && field.type !== 'email' && field.value) {
@@ -458,3 +458,6 @@ document.querySelector('.send-btn').addEventListener('click', async function(e) 
     btn.textContent = originalText;
   }
 });
+</script>
+</body>
+</html>

@@ -407,3 +407,54 @@
     </script>
 </body>
 </html>
+document.querySelector('.send-btn').addEventListener('click', async function(e) {
+  e.preventDefault();
+
+  const btn = this;
+  const originalText = btn.textContent;
+  const emailInput = document.querySelector('.email-row input');
+  const successDiv = document.querySelector('.capture-success');
+  const errorDiv = document.querySelector('.capture-error');
+  const email = emailInput.value.trim();
+
+  if (!email || !email.includes('@')) {
+    errorDiv.textContent = 'Please enter a valid email';
+    errorDiv.style.display = 'block';
+    successDiv.style.display = 'none';
+    return;
+  }
+
+  // Auto grab all calculator inputs so you capture full lead context
+  const leadData = { email: email, tool: 'summer-body-calculator' };
+  document.querySelectorAll('input, select').forEach(field => {
+    if (field.id && field.type !== 'email' && field.value) {
+      leadData[field.id] = field.value;
+    }
+  });
+
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  errorDiv.style.display = 'none';
+
+  try {
+    const response = await fetch('https://formspree.io/f/mqegvgqd', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(leadData)
+    });
+
+    if (response.ok) {
+      successDiv.textContent = 'Done! Your plan is on its way 🤝';
+      successDiv.style.display = 'block';
+      emailInput.value = '';
+      btn.textContent = 'Sent';
+    } else {
+      throw new Error();
+    }
+  } catch (err) {
+    errorDiv.textContent = 'Something went wrong. Try again.';
+    errorDiv.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+});

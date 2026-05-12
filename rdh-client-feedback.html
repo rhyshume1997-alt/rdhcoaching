@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RDH Coaching | Client Feedback</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #5271FF;
+    --purple: #C46BE4;
+    --gold: #AB8B00;
+    --gold-bright: #D4AF37;
+    --white: #FDFDFD;
+    --dark: #09090E;
+    --card: #13131C;
+    --card2: #16161F;
+    --border: rgba(255,255,255,0.07);
+    --muted: rgba(253,253,253,0.42);
+    --radius: 16px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--dark);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(130px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .orb-a { width: 460px; height: 460px; background: var(--purple); top: -120px; left: -80px; opacity: 0.13; }
+  .orb-b { width: 380px; height: 380px; background: var(--blue);   bottom: 0;    right: -80px; opacity: 0.15; }
+  .orb-c { width: 260px; height: 260px; background: var(--gold-bright); top: 50%; left: 50%; transform: translate(-50%,-50%); opacity: 0.06; }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 620px;
+    margin: 0 auto;
+    padding: 56px 22px 80px;
+  }
+
+  /* ---------- HEADER ---------- */
+  .header {
+    text-align: center;
+    margin-bottom: 48px;
+    animation: up 0.55s ease both;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(196,107,228,0.1);
+    border: 1px solid rgba(196,107,228,0.22);
+    border-radius: 999px;
+    padding: 6px 18px 6px 10px;
+    margin-bottom: 26px;
+    font-family: 'Anton', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--purple);
+  }
+
+  .badge-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--purple);
+    animation: blink 2.4s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.75)} }
+
+  h1 {
+    font-family: 'Anton', sans-serif;
+    font-size: clamp(28px, 6vw, 40px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    margin-bottom: 14px;
+  }
+
+  .grad { background: linear-gradient(135deg, var(--purple) 0%, var(--blue) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+  .sub {
+    color: var(--muted);
+    font-size: 14.5px;
+    line-height: 1.65;
+    font-weight: 300;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+
+  /* ---------- PROGRESS STRIP ---------- */
+  .progress-strip {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 36px;
+    animation: up 0.55s 0.08s ease both;
+  }
+
+  .step-pip {
+    flex: 1;
+    height: 3px;
+    border-radius: 999px;
+    background: var(--border);
+    transition: background 0.4s;
+  }
+
+  .step-pip.active { background: linear-gradient(90deg, var(--blue), var(--purple)); }
+
+  /* ---------- CARD ---------- */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 30px 28px;
+    margin-bottom: 14px;
+    animation: up 0.45s ease both;
+  }
+  .card:nth-child(1){animation-delay:0.0s}
+  .card:nth-child(2){animation-delay:0.06s}
+  .card:nth-child(3){animation-delay:0.12s}
+  .card:nth-child(4){animation-delay:0.18s}
+  .card:nth-child(5){animation-delay:0.24s}
+
+  @keyframes up { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+
+  .sec-label {
+    font-family: 'Anton', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--purple);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .sec-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  /* ---------- FIELDS ---------- */
+  .field { margin-bottom: 20px; }
+  .field:last-child { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--white);
+    margin-bottom: 8px;
+  }
+  label .req { color: var(--purple); margin-left: 3px; }
+  label .hint { color: var(--muted); font-weight: 300; font-size: 12px; margin-left: 4px; }
+
+  input[type="text"],
+  input[type="email"],
+  select,
+  textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.035);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 15px;
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 300;
+    transition: border-color 0.2s, background 0.2s;
+    outline: none;
+    appearance: none;
+  }
+  input::placeholder, textarea::placeholder { color: rgba(253,253,253,0.22); }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--purple);
+    background: rgba(196,107,228,0.06);
+  }
+
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(253,253,253,0.35)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+    cursor: pointer;
+  }
+  select option { background: #1c1c28; }
+  textarea { resize: vertical; min-height: 96px; line-height: 1.65; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media(max-width:480px){ .grid-2{grid-template-columns:1fr} }
+
+  /* ---------- PILLS ---------- */
+  .pills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pills input { display: none; }
+  .pills label {
+    margin: 0;
+    padding: 8px 15px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.18s;
+    user-select: none;
+  }
+  .pills input:checked + label { background: var(--purple); border-color: var(--purple); color: var(--white); }
+  .pills label:hover { border-color: var(--purple); color: var(--white); }
+
+  /* ---------- STARS ---------- */
+  .stars { display: flex; flex-direction: row-reverse; justify-content: flex-end; gap: 5px; }
+  .stars input { display: none; }
+  .stars label {
+    margin: 0;
+    font-size: 30px;
+    cursor: pointer;
+    color: rgba(255,255,255,0.12);
+    transition: color 0.14s, transform 0.14s;
+    line-height: 1;
+    user-select: none;
+  }
+  .stars label:hover,
+  .stars label:hover ~ label,
+  .stars input:checked ~ label { color: var(--gold-bright) !important; }
+  .stars label:hover { transform: scale(1.18); }
+
+  /* ---------- SLIDERS ---------- */
+  .slider-group { display: flex; flex-direction: column; gap: 14px; }
+
+  .slider-row { display: flex; flex-direction: column; gap: 6px; }
+  .slider-meta { display: flex; justify-content: space-between; align-items: center; }
+  .slider-name { font-size: 13px; font-weight: 400; color: var(--white); }
+  .slider-val {
+    font-family: 'Anton', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--purple);
+    min-width: 28px;
+    text-align: right;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--border);
+    outline: none;
+    appearance: none;
+    cursor: pointer;
+    padding: 0;
+    border: none;
+    transition: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--purple);
+    box-shadow: 0 0 0 3px rgba(196,107,228,0.25);
+    cursor: pointer;
+    transition: box-shadow 0.18s, transform 0.18s;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover {
+    box-shadow: 0 0 0 6px rgba(196,107,228,0.2);
+    transform: scale(1.15);
+  }
+  input[type="range"]:focus { border: none; background: var(--border); }
+
+  .slider-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-top: 1px; }
+
+  /* ---------- TESTIMONIAL CARD ---------- */
+  .testi-card {
+    background: linear-gradient(135deg, rgba(82,113,255,0.08) 0%, rgba(196,107,228,0.08) 100%);
+    border: 1px solid rgba(196,107,228,0.18);
+    border-radius: var(--radius);
+    padding: 30px 28px;
+    margin-bottom: 14px;
+    animation: up 0.45s 0.3s ease both;
+  }
+
+  .testi-intro {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .quote-icon {
+    font-size: 40px;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    flex-shrink: 0;
+    margin-top: -4px;
+  }
+
+  .testi-intro-text h3 {
+    font-family: 'Anton', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .testi-intro-text p { color: var(--muted); font-size: 13px; font-weight: 300; line-height: 1.5; }
+
+  /* ---------- CHAR COUNT ---------- */
+  .char-count { text-align: right; font-size: 11px; color: var(--muted); margin-top: 5px; }
+
+  /* ---------- ERRORS ---------- */
+  .ferr { color: #f47; font-size: 12px; margin-top: 5px; display: none; }
+  .invalid { border-color: #f47 !important; }
+
+  /* ---------- SUBMIT ---------- */
+  .submit-wrap {
+    text-align: center;
+    margin-top: 28px;
+    animation: up 0.45s 0.36s ease both;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, var(--purple) 0%, var(--blue) 100%);
+    color: var(--white);
+    border: none;
+    border-radius: 12px;
+    padding: 15px 38px;
+    font-family: 'Anton', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 8px 30px rgba(196,107,228,0.28);
+    letter-spacing: 0.01em;
+  }
+  .btn:hover { opacity: 0.88; transform: translateY(-2px); box-shadow: 0 14px 40px rgba(196,107,228,0.38); }
+  .btn:active { transform: translateY(0); }
+  .btn svg { transition: transform 0.2s; }
+  .btn:hover svg { transform: translateX(4px); }
+  .submit-note { color: var(--muted); font-size: 12px; font-weight: 300; margin-top: 12px; }
+
+  /* ---------- SUCCESS ---------- */
+  .success {
+    display: none;
+    text-align: center;
+    padding: 80px 24px;
+    animation: up 0.5s ease both;
+  }
+  .success-ring {
+    width: 76px; height: 76px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--purple), var(--blue));
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 24px;
+    font-size: 30px;
+    box-shadow: 0 12px 40px rgba(196,107,228,0.35);
+  }
+  .success h2 { font-family: 'Anton', sans-serif; font-size: 26px; font-weight: 800; margin-bottom: 12px; }
+  .success p { color: var(--muted); font-size: 15px; line-height: 1.7; max-width: 360px; margin: 0 auto; font-weight: 300; }
+</style>
+</head>
+<body>
+
+<div class="orb orb-a"></div>
+<div class="orb orb-b"></div>
+<div class="orb orb-c"></div>
+
+<!-- ===== FORM ===== -->
+<div class="wrap" id="page-form">
+
+  <div class="header">
+    <div class="badge"><span class="badge-dot"></span>RDH Coaching</div>
+    <h1>How's it going <span class="grad">so far?</span></h1>
+    <p class="sub">3 minutes of honesty helps me coach you better. Tell me what's landing, what's not, and how you'd describe this to a mate.</p>
+  </div>
+
+  <div class="progress-strip">
+    <div class="step-pip active"></div>
+    <div class="step-pip active"></div>
+    <div class="step-pip active"></div>
+    <div class="step-pip active"></div>
+    <div class="step-pip active"></div>
+  </div>
+
+  <form id="form" action="https://formspree.io/f/xwvadgzw" method="POST" novalidate>
+
+    <input type="hidden" name="_subject" value="RDH Coaching Client Feedback">
+    <input type="hidden" name="_template" value="table">
+
+    <!-- 01 Your details -->
+    <div class="card">
+      <div class="sec-label">01 Your details</div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="name">Your name <span class="req">*</span></label>
+          <input type="text" id="name" name="name" placeholder="First name" required>
+          <div class="ferr" id="name-err">Required</div>
+        </div>
+        <div class="field">
+          <label for="email">Email <span class="req">*</span></label>
+          <input type="email" id="email" name="email" placeholder="your@email.com" required>
+          <div class="ferr" id="email-err">Valid email required</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="weeks">How long have you been coaching with RDH?</label>
+        <select id="weeks" name="time_coaching">
+          <option value="" disabled selected>Select</option>
+          <option>Less than 1 month</option>
+          <option>1 to 3 months</option>
+          <option>3 to 6 months</option>
+          <option>6 to 12 months</option>
+          <option>Over a year</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>What was your main goal when you started?</label>
+        <div class="pills">
+          <input type="radio" name="main_goal" id="g1" value="Build muscle / bulk"><label for="g1">Build muscle</label>
+          <input type="radio" name="main_goal" id="g2" value="Lose body fat / cut"><label for="g2">Lose body fat</label>
+          <input type="radio" name="main_goal" id="g3" value="Body recomposition"><label for="g3">Recomposition</label>
+          <input type="radio" name="main_goal" id="g4" value="Get stronger"><label for="g4">Get stronger</label>
+          <input type="radio" name="main_goal" id="g5" value="Improve performance"><label for="g5">Performance</label>
+          <input type="radio" name="main_goal" id="g6" value="General health"><label for="g6">General health</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- 02 Rate the service -->
+    <div class="card">
+      <div class="sec-label">02 Rate the service</div>
+
+      <div class="field">
+        <label>Overall satisfaction</label>
+        <div class="stars">
+          <input type="radio" name="overall_rating" id="s5" value="5 stars"><label for="s5">★</label>
+          <input type="radio" name="overall_rating" id="s4" value="4 stars"><label for="s4">★</label>
+          <input type="radio" name="overall_rating" id="s3" value="3 stars"><label for="s3">★</label>
+          <input type="radio" name="overall_rating" id="s2" value="2 stars"><label for="s2">★</label>
+          <input type="radio" name="overall_rating" id="s1" value="1 star"><label for="s1">★</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Rate each area <span class="hint">drag the slider</span></label>
+        <div class="slider-group">
+
+          <div class="slider-row">
+            <div class="slider-meta">
+              <span class="slider-name">Programme quality</span>
+              <span class="slider-val" id="v-prog">5</span>
+            </div>
+            <input type="range" min="1" max="10" value="5" name="programme_quality" id="r-prog" oninput="document.getElementById('v-prog').textContent=this.value">
+            <div class="slider-labels"><span>Poor</span><span>Outstanding</span></div>
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-meta">
+              <span class="slider-name">Nutrition guidance</span>
+              <span class="slider-val" id="v-nut">5</span>
+            </div>
+            <input type="range" min="1" max="10" value="5" name="nutrition_guidance" id="r-nut" oninput="document.getElementById('v-nut').textContent=this.value">
+            <div class="slider-labels"><span>Poor</span><span>Outstanding</span></div>
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-meta">
+              <span class="slider-name">Check-in communication</span>
+              <span class="slider-val" id="v-com">5</span>
+            </div>
+            <input type="range" min="1" max="10" value="5" name="communication" id="r-com" oninput="document.getElementById('v-com').textContent=this.value">
+            <div class="slider-labels"><span>Poor</span><span>Outstanding</span></div>
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-meta">
+              <span class="slider-name">Results so far</span>
+              <span class="slider-val" id="v-res">5</span>
+            </div>
+            <input type="range" min="1" max="10" value="5" name="results_so_far" id="r-res" oninput="document.getElementById('v-res').textContent=this.value">
+            <div class="slider-labels"><span>Poor</span><span>Outstanding</span></div>
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-meta">
+              <span class="slider-name">Value for money</span>
+              <span class="slider-val" id="v-val">5</span>
+            </div>
+            <input type="range" min="1" max="10" value="5" name="value_for_money" id="r-val" oninput="document.getElementById('v-val').textContent=this.value">
+            <div class="slider-labels"><span>Poor</span><span>Outstanding</span></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 What's working / what's not -->
+    <div class="card">
+      <div class="sec-label">03 The honest part</div>
+
+      <div class="field">
+        <label for="working">What's been working best for you? <span class="req">*</span></label>
+        <textarea id="working" name="whats_working" placeholder="The training, the check-ins, the nutrition, your mindset whatever's clicking right now..." required maxlength="600"></textarea>
+        <div class="char-count"><span id="wc-work">0</span>/600</div>
+        <div class="ferr" id="working-err">This field is required</div>
+      </div>
+
+      <div class="field">
+        <label for="notworking">What could I do better for you? <span class="req">*</span></label>
+        <textarea id="notworking" name="what_could_improve" placeholder="Be straight with me I can only fix what I know about..." required maxlength="600"></textarea>
+        <div class="char-count"><span id="wc-not">0</span>/600</div>
+        <div class="ferr" id="notworking-err">This field is required</div>
+      </div>
+
+      <div class="field">
+        <label>Which parts of the service do you value most? <span class="hint">pick as many as apply</span></label>
+        <div class="pills">
+          <input type="checkbox" name="most_valued" id="mv1" value="The training programme"><label for="mv1">The programme</label>
+          <input type="checkbox" name="most_valued" id="mv2" value="Nutrition guidance"><label for="mv2">Nutrition</label>
+          <input type="checkbox" name="most_valued" id="mv3" value="Weekly check-ins"><label for="mv3">Check-ins</label>
+          <input type="checkbox" name="most_valued" id="mv4" value="Direct access to Rhys"><label for="mv4">Direct access</label>
+          <input type="checkbox" name="most_valued" id="mv5" value="Accountability"><label for="mv5">Accountability</label>
+          <input type="checkbox" name="most_valued" id="mv6" value="The education side"><label for="mv6">Education</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>What would make the service even better?</label>
+        <div class="pills">
+          <input type="checkbox" name="improvement" id="im1" value="More frequent check-ins"><label for="im1">More check-ins</label>
+          <input type="checkbox" name="improvement" id="im2" value="More detailed nutrition guidance"><label for="im2">Deeper nutrition</label>
+          <input type="checkbox" name="improvement" id="im3" value="More exercise explanations"><label for="im3">Exercise breakdowns</label>
+          <input type="checkbox" name="improvement" id="im4" value="A community or group element"><label for="im4">Community</label>
+          <input type="checkbox" name="improvement" id="im5" value="More content / education"><label for="im5">More content</label>
+          <input type="checkbox" name="improvement" id="im6" value="Faster replies"><label for="im6">Faster replies</label>
+          <input type="checkbox" name="improvement" id="im7" value="An app to track progress"><label for="im7">Tracking app</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- 04 NPS + referral -->
+    <div class="card">
+      <div class="sec-label">04 Would you recommend us?</div>
+
+      <div class="field">
+        <label>How likely are you to recommend RDH Coaching to a friend? <span class="hint">0 = not at all, 10 = 100%</span></label>
+        <div class="pills" id="nps-row" style="gap:6px;">
+          <input type="radio" name="nps" id="n0" value="0"><label for="n0" style="padding:8px 12px;border-radius:10px;font-weight:500;">0</label>
+          <input type="radio" name="nps" id="n1" value="1"><label for="n1" style="padding:8px 12px;border-radius:10px;font-weight:500;">1</label>
+          <input type="radio" name="nps" id="n2" value="2"><label for="n2" style="padding:8px 12px;border-radius:10px;font-weight:500;">2</label>
+          <input type="radio" name="nps" id="n3" value="3"><label for="n3" style="padding:8px 12px;border-radius:10px;font-weight:500;">3</label>
+          <input type="radio" name="nps" id="n4" value="4"><label for="n4" style="padding:8px 12px;border-radius:10px;font-weight:500;">4</label>
+          <input type="radio" name="nps" id="n5" value="5"><label for="n5" style="padding:8px 12px;border-radius:10px;font-weight:500;">5</label>
+          <input type="radio" name="nps" id="n6" value="6"><label for="n6" style="padding:8px 12px;border-radius:10px;font-weight:500;">6</label>
+          <input type="radio" name="nps" id="n7" value="7"><label for="n7" style="padding:8px 12px;border-radius:10px;font-weight:500;">7</label>
+          <input type="radio" name="nps" id="n8" value="8"><label for="n8" style="padding:8px 12px;border-radius:10px;font-weight:500;">8</label>
+          <input type="radio" name="nps" id="n9" value="9"><label for="n9" style="padding:8px 12px;border-radius:10px;font-weight:500;">9</label>
+          <input type="radio" name="nps" id="n10" value="10"><label for="n10" style="padding:8px 12px;border-radius:10px;font-weight:500;">10</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Have you recommended RDH Coaching to anyone?</label>
+        <div class="pills">
+          <input type="radio" name="has_referred" id="ref1" value="Yes"><label for="ref1">Yes</label>
+          <input type="radio" name="has_referred" id="ref2" value="Not yet but I would"><label for="ref2">Not yet but I would</label>
+          <input type="radio" name="has_referred" id="ref3" value="Probably not at this stage"><label for="ref3">Probably not yet</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05 Testimonial -->
+    <div class="testi-card">
+      <div class="sec-label">05 Your testimonial</div>
+
+      <div class="testi-intro">
+        <div class="quote-icon">"</div>
+        <div class="testi-intro-text">
+          <h3>Say it how you'd say it to a mate</h3>
+          <p>What would you tell someone who was on the fence about RDH Coaching? This is the real stuff that gets people started.</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="testi">Your words <span class="hint">optional but gold</span></label>
+        <textarea id="testi" name="testimonial" placeholder="e.g. "I was sceptical at first, but within 8 weeks I was hitting numbers I'd never hit before. The check-ins kept me honest and the programming was actually built for me..."" maxlength="800" style="min-height:130px;"></textarea>
+        <div class="char-count"><span id="wc-testi">0</span>/800</div>
+      </div>
+
+      <div class="field">
+        <label>Can we share this?</label>
+        <div class="pills">
+          <input type="radio" name="permission" id="p1" value="Yes use my full name"><label for="p1">Yes full name</label>
+          <input type="radio" name="permission" id="p2" value="Yes first name only"><label for="p2">First name only</label>
+          <input type="radio" name="permission" id="p3" value="No keep it private"><label for="p3">Keep it private</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="result">What's your best result so far? <span class="hint">numbers always win</span></label>
+        <input type="text" id="result" name="best_result" placeholder="e.g. Lost 6kg in 10 weeks, added 20kg to my bench, went from 18% to 13% body fat...">
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="submit-wrap">
+      <button type="submit" class="btn">
+        Send my feedback
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <p class="submit-note">Goes straight to Rhys. Takes 3 minutes, makes a real difference.</p>
+    </div>
+
+  </form>
+</div>
+
+<!-- ===== SUCCESS ===== -->
+<div class="wrap success" id="success">
+  <div class="success-ring">🤝</div>
+  <h2>Appreciate you.</h2>
+  <p>This genuinely helps. I'll use this to keep improving the service and make sure every client gets the best experience possible. Now go train.</p>
+</div>
+
+<script>
+  // Char counters
+  [['working','wc-work'],['notworking','wc-not'],['testi','wc-testi']].forEach(([id,cid])=>{
+    const el = document.getElementById(id);
+    const c  = document.getElementById(cid);
+    if(el && c) el.addEventListener('input', ()=> c.textContent = el.value.length);
+  });
+
+  // Validation
+  function validate(){
+    let ok = true;
+
+    const name  = document.getElementById('name');
+    const nameE = document.getElementById('name-err');
+    if(!name.value.trim()){ name.classList.add('invalid'); nameE.style.display='block'; ok=false; }
+    else { name.classList.remove('invalid'); nameE.style.display='none'; }
+
+    const email  = document.getElementById('email');
+    const emailE = document.getElementById('email-err');
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)){ email.classList.add('invalid'); emailE.style.display='block'; ok=false; }
+    else { email.classList.remove('invalid'); emailE.style.display='none'; }
+
+    const work  = document.getElementById('working');
+    const workE = document.getElementById('working-err');
+    if(!work.value.trim()){ work.classList.add('invalid'); workE.style.display='block'; ok=false; }
+    else { work.classList.remove('invalid'); workE.style.display='none'; }
+
+    const notw  = document.getElementById('notworking');
+    const notwE = document.getElementById('notworking-err');
+    if(!notw.value.trim()){ notw.classList.add('invalid'); notwE.style.display='block'; ok=false; }
+    else { notw.classList.remove('invalid'); notwE.style.display='none'; }
+
+    return ok;
+  }
+
+  document.getElementById('form').addEventListener('submit', async function(e){
+    e.preventDefault();
+    if(!validate()){
+      document.querySelector('.invalid')?.scrollIntoView({behavior:'smooth',block:'center'});
+      return;
+    }
+
+    const btn = document.querySelector('.btn');
+    btn.textContent = 'Sending...';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch(this.action,{
+        method:'POST',
+        body: new FormData(this),
+        headers:{'Accept':'application/json'}
+      });
+      if(res.ok){
+        document.getElementById('page-form').style.display='none';
+        const s = document.getElementById('success');
+        s.style.display='block';
+        window.scrollTo({top:0,behavior:'smooth'});
+      } else {
+        btn.textContent='Send my feedback';
+        btn.disabled=false;
+        alert('Something went wrong try again or message Rhys directly.');
+      }
+    } catch {
+      btn.textContent='Send my feedback';
+      btn.disabled=false;
+      alert('Something went wrong try again.');
+    }
+  });
+</script>
+</body>
+</html>

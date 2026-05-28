@@ -236,26 +236,36 @@
       if(ch==='"')q=!q; else if(ch===','&&!q){out.push(cur);cur="";} else cur+=ch;}
     out.push(cur); return out.map(s=>s.replace(/^"|"$/g,"").trim());
   }
+  // Find the header row (the sheet has title/instruction rows above it)
+  function findHeader(lines, needles){
+    for(let i=0;i<lines.length;i++){
+      const low=lines[i].toLowerCase();
+      if(needles.every(n=>low.includes(n))) return i;
+    }
+    return 0;
+  }
   function parseDraw(text){
     const lines=text.trim().split(/\r?\n/);
-    const h=lines[0].split(",").map(x=>x.trim().toLowerCase().replace(/"/g,""));
+    const hi=findHeader(lines,["team","status"]);
+    const h=splitCSVLine(lines[hi]).map(x=>x.toLowerCase());
     const iT=h.findIndex(x=>x.includes("team")), iE=h.findIndex(x=>x.includes("entrant")),
       iS=h.findIndex(x=>x.includes("status")), iG=h.findIndex(x=>x.includes("stage")), iGr=h.findIndex(x=>x.includes("group"));
     const rows=[];
-    for(let i=1;i<lines.length;i++){const c=splitCSVLine(lines[i]); const team=c[iT]||"";
+    for(let i=hi+1;i<lines.length;i++){const c=splitCSVLine(lines[i]); const team=(iT>=0?c[iT]:"")||"";
       if(!team||team==="—")continue;
-      rows.push({team, entrant:c[iE]||"", status:((c[iS]||"IN").toUpperCase()==="OUT")?"OUT":"IN", stage:c[iG]||"Group Stage", group:(iGr>=0?(c[iGr]||""):"")});}
+      rows.push({team, entrant:(iE>=0?c[iE]:"")||"", status:(((iS>=0?c[iS]:"IN")||"IN").toUpperCase()==="OUT")?"OUT":"IN", stage:(iG>=0?c[iG]:"")||"Group Stage", group:(iGr>=0?(c[iGr]||""):"")});}
     return rows;
   }
   function parseBracket(text){
     const lines=text.trim().split(/\r?\n/);
-    const h=lines[0].split(",").map(x=>x.trim().toLowerCase().replace(/"/g,""));
+    const hi=findHeader(lines,["round","team a"]);
+    const h=splitCSVLine(lines[hi]).map(x=>x.toLowerCase());
     const iR=h.findIndex(x=>x.includes("round")), iA=h.findIndex(x=>x.includes("team a")),
       iB=h.findIndex(x=>x.includes("team b")), iW=h.findIndex(x=>x.includes("winner"));
     const rows=[];
-    for(let i=1;i<lines.length;i++){const c=splitCSVLine(lines[i]); const rnd=c[iR]||"";
+    for(let i=hi+1;i<lines.length;i++){const c=splitCSVLine(lines[i]); const rnd=(iR>=0?c[iR]:"")||"";
       if(!rnd)continue;
-      rows.push({round:rnd, a:c[iA]||"", b:c[iB]||"", winner:c[iW]||""});}
+      rows.push({round:rnd, a:(iA>=0?c[iA]:"")||"", b:(iB>=0?c[iB]:"")||"", winner:(iW>=0?c[iW]:"")||""});}
     return rows;
   }
 

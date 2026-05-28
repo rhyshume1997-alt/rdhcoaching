@@ -157,14 +157,28 @@
     <div class="grid" id="grid"></div>
 
     <div class="cfg">
-      <label>1 · Teams + entrants (DRAW tab CSV)</label>
-      <div class="row"><input id="drawUrl" type="text" placeholder="Published CSV link for the DRAW tab" /></div>
-      <label>2 · Bracket matchups (BRACKET tab CSV) — optional</label>
-      <div class="row">
-        <input id="brUrl" type="text" placeholder="Published CSV link for the BRACKET tab" />
-        <button id="loadBtn">Load</button>
-      </div>
-      <div class="hint">In Google Sheets: <b>File → Share → Publish to web</b>. Publish the <b>DRAW</b> tab as CSV into box 1, the <b>BRACKET</b> tab into box 2. In the BRACKET tab the first half of each round's matches sit on the left of the chart, the second half on the right. You can also bake both links into the <b>DRAW_CSV_URL</b> and <b>BRACKET_CSV_URL</b> lines in the code.</div>
+      <div style="font-size:0.9rem; font-weight:800; color:var(--gold-bright); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;">Load your teams</div>
+      <div class="hint" style="margin-top:0; margin-bottom:14px;">In your sheet, DRAW tab: click the <b>Team header</b> cell, drag down to select Team, Entrant, Status and Stage for all 48 teams (or just select the whole used area). Copy it, paste in the box below, hit Load. Re-paste whenever you update results.</div>
+
+      <label>Teams + entrants (paste from the DRAW tab)</label>
+      <textarea id="drawPaste" placeholder="Paste the copied cells here" style="width:100%; min-height:120px; padding:12px; border-radius:10px; border:1px solid var(--line); background:rgba(7,7,13,0.6); color:var(--paper); font-family:monospace; font-size:0.85rem; line-height:1.5;"></textarea>
+
+      <label style="margin-top:14px;">Bracket matchups (paste from the BRACKET tab) — optional</label>
+      <textarea id="brPaste" placeholder="Paste the copied bracket cells here once the knockouts begin" style="width:100%; min-height:90px; padding:12px; border-radius:10px; border:1px solid var(--line); background:rgba(7,7,13,0.6); color:var(--paper); font-family:monospace; font-size:0.85rem; line-height:1.5;"></textarea>
+
+      <button id="pasteBtn" style="margin-top:14px; border:none; cursor:pointer; padding:13px 26px; border-radius:10px; font-family:'Anton'; font-size:1.1rem; text-transform:uppercase; letter-spacing:0.03em; color:#0a0a12; background:linear-gradient(100deg,var(--gold-bright),#ffd86b);">Load the board</button>
+
+      <details style="margin-top:18px;">
+        <summary style="cursor:pointer; color:var(--muted); font-size:0.82rem; font-weight:700;">Advanced: auto load from a published CSV link</summary>
+        <div style="margin-top:12px;">
+          <label>DRAW tab CSV link</label>
+          <div class="row"><input id="drawUrl" type="text" placeholder="Published CSV link for the DRAW tab" /></div>
+          <label style="margin-top:10px;">BRACKET tab CSV link (optional)</label>
+          <div class="row"><input id="brUrl" type="text" placeholder="Published CSV link for the BRACKET tab" /><button id="loadBtn">Load</button></div>
+          <div class="hint">Auto loading needs the sheet published to web as CSV, and only works if Google allows the cross site request, which it often blocks. If it errors, use the paste boxes above instead, they always work.</div>
+        </div>
+      </details>
+
       <div class="status" id="status">Showing demo data so you can see how it works.</div>
     </div>
   </div>
@@ -231,11 +245,13 @@
     ];
   }
 
-  function splitCSVLine(line){ const out=[];let cur="";let q=false;
+  function splitCSVLine(line, delim){ const d=delim||","; const out=[];let cur="";let q=false;
     for(let i=0;i<line.length;i++){const ch=line[i];
-      if(ch==='"')q=!q; else if(ch===','&&!q){out.push(cur);cur="";} else cur+=ch;}
+      if(ch==='"')q=!q; else if(ch===d&&!q){out.push(cur);cur="";} else cur+=ch;}
     out.push(cur); return out.map(s=>s.replace(/^"|"$/g,"").trim());
   }
+  // pasted cells from Google Sheets are tab separated; published CSV is comma separated
+  function detectDelim(text){ const first=(text.split(/\r?\n/)[0]||""); return first.indexOf("\t")>=0 ? "\t" : ","; }
   // Find the header row (the sheet has title/instruction rows above it)
   function findHeader(lines, needles){
     for(let i=0;i<lines.length;i++){
@@ -246,25 +262,27 @@
   }
   function parseDraw(text){
     const lines=text.trim().split(/\r?\n/);
-    const hi=findHeader(lines,["team","status"]);
-    const h=splitCSVLine(lines[hi]).map(x=>x.toLowerCase());
+    const d=detectDelim(text);
+    const hi=findHeader(lines,["team"]);
+    const h=splitCSVLine(lines[hi],d).map(x=>x.toLowerCase());
     const iT=h.findIndex(x=>x.includes("team")), iE=h.findIndex(x=>x.includes("entrant")),
       iS=h.findIndex(x=>x.includes("status")), iG=h.findIndex(x=>x.includes("stage")), iGr=h.findIndex(x=>x.includes("group"));
     const rows=[];
-    for(let i=hi+1;i<lines.length;i++){const c=splitCSVLine(lines[i]); const team=(iT>=0?c[iT]:"")||"";
-      if(!team||team==="—")continue;
+    for(let i=hi+1;i<lines.length;i++){const c=splitCSVLine(lines[i],d); const team=(iT>=0?c[iT]:"")||"";
+      if(!team||team==="—"||team.toLowerCase()==="team")continue;
       rows.push({team, entrant:(iE>=0?c[iE]:"")||"", status:(((iS>=0?c[iS]:"IN")||"IN").toUpperCase()==="OUT")?"OUT":"IN", stage:(iG>=0?c[iG]:"")||"Group Stage", group:(iGr>=0?(c[iGr]||""):"")});}
     return rows;
   }
   function parseBracket(text){
     const lines=text.trim().split(/\r?\n/);
-    const hi=findHeader(lines,["round","team a"]);
-    const h=splitCSVLine(lines[hi]).map(x=>x.toLowerCase());
+    const d=detectDelim(text);
+    const hi=findHeader(lines,["round"]);
+    const h=splitCSVLine(lines[hi],d).map(x=>x.toLowerCase());
     const iR=h.findIndex(x=>x.includes("round")), iA=h.findIndex(x=>x.includes("team a")),
       iB=h.findIndex(x=>x.includes("team b")), iW=h.findIndex(x=>x.includes("winner"));
     const rows=[];
-    for(let i=hi+1;i<lines.length;i++){const c=splitCSVLine(lines[i]); const rnd=(iR>=0?c[iR]:"")||"";
-      if(!rnd)continue;
+    for(let i=hi+1;i<lines.length;i++){const c=splitCSVLine(lines[i],d); const rnd=(iR>=0?c[iR]:"")||"";
+      if(!rnd||rnd.toLowerCase()==="round")continue;
       rows.push({round:rnd, a:(iA>=0?c[iA]:"")||"", b:(iB>=0?c[iB]:"")||"", winner:(iW>=0?c[iW]:"")||""});}
     return rows;
   }
@@ -366,10 +384,24 @@
   }
   function renderAll(){ renderStats(); renderBracket(); renderGroups(); renderGrid(); }
 
-  async function load(drawUrl, brUrl, quiet){
+  // Accept either a published CSV link (output=csv) OR a normal Google Sheets
+  // share link. For a share link we build a CSV export for the named tab.
+  function resolveUrl(url, sheet){
+    url=(url||"").trim();
+    if(!url) return "";
+    if(url.includes("output=csv")) return url;            // already a published CSV link
+    const m=url.match(/\/spreadsheets\/d\/(?:e\/)?([a-zA-Z0-9-_]+)/);
+    if(m){ return "https://docs.google.com/spreadsheets/d/"+m[1]+"/gviz/tq?tqx=out:csv&sheet="+encodeURIComponent(sheet); }
+    return url;
+  }
+
+  async function load(rawDraw, rawBr, quiet){
     try{
       $("status").className="status"; $("status").textContent="Loading...";
-      const dRes=await fetch(drawUrl); if(!dRes.ok) throw new Error("draw fetch");
+      const drawUrl=resolveUrl(rawDraw,"DRAW");
+      // if no separate bracket link given, derive it from the same sheet
+      const brUrl = rawBr ? resolveUrl(rawBr,"BRACKET") : resolveUrl(rawDraw,"BRACKET");
+      const dRes=await fetch(drawUrl); if(!dRes.ok) throw new Error("draw fetch "+dRes.status);
       TEAMDATA=parseDraw(await dRes.text());
       if(!TEAMDATA.length) throw new Error("no teams");
       if(brUrl){ try{ const bRes=await fetch(brUrl); if(bRes.ok) BRACKETDATA=parseBracket(await bRes.text()); }catch(e){ BRACKETDATA=[]; } }
@@ -378,11 +410,29 @@
       $("status").textContent="Live. "+TEAMDATA.length+" teams loaded"+(BRACKETDATA.length?" + bracket":"")+". Refresh to pull the latest.";
     }catch(e){
       $("status").className="status bad";
-      $("status").textContent="Could not read the DRAW sheet. Check it is published to web as CSV (link ends in output=csv).";
+      $("status").textContent="Could not read the sheet. Make sure it is shared (Anyone with the link can view) or published to web, and that you are viewing this on the live site, not the chat preview.";
       if(!quiet) console.error(e);
     }
   }
   $("loadBtn").addEventListener("click",()=>{ const d=$("drawUrl").value.trim(), b=$("brUrl").value.trim(); if(d) load(d,b,false); });
+
+  // Primary: load from pasted cells. No fetching, works everywhere.
+  $("pasteBtn").addEventListener("click",()=>{
+    const draw=$("drawPaste").value.trim();
+    const br=$("brPaste").value.trim();
+    if(!draw){ $("status").className="status bad"; $("status").textContent="Paste your DRAW tab cells into the first box, then hit Load the board."; return; }
+    try{
+      TEAMDATA=parseDraw(draw);
+      if(!TEAMDATA.length) throw new Error("no teams");
+      BRACKETDATA = br ? parseBracket(br) : [];
+      renderAll();
+      $("status").className="status ok";
+      $("status").textContent="Loaded "+TEAMDATA.length+" teams"+(BRACKETDATA.length?" + bracket":"")+". Re-paste to update.";
+    }catch(e){
+      $("status").className="status bad";
+      $("status").textContent="Could not read that paste. Make sure you copied the rows including the Team header. Try selecting the whole table and copying again.";
+    }
+  });
 
   if(DRAW_CSV_URL){ $("drawUrl").value=DRAW_CSV_URL; $("brUrl").value=BRACKET_CSV_URL; load(DRAW_CSV_URL, BRACKET_CSV_URL, true); }
   else { TEAMDATA=demoTeams(); BRACKETDATA=demoBracket(); renderAll(); }

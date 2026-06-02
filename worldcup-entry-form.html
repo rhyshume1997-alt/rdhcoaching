@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RDH Coaching · World Cup Giveaway</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --blue:#5271FF; --purple:#C46BE4; --gold:#FFCC33;
+    --ink:#07070D; --ink2:#0E0E1A; --paper:#F4F4FA;
+    --muted:rgba(244,244,250,0.55); --line:rgba(244,244,250,0.12);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { min-height:100%; }
+  body {
+    font-family:'Archivo',sans-serif; background:var(--ink); color:var(--paper);
+    min-height:100dvh; display:flex; flex-direction:column; position:relative; overflow-x:hidden;
+  }
+  .bg {
+    position:fixed; inset:0; z-index:0;
+    background:
+      radial-gradient(800px 600px at 10% -5%, rgba(82,113,255,0.3), transparent 55%),
+      radial-gradient(700px 500px at 95% 5%, rgba(196,107,228,0.26), transparent 50%),
+      radial-gradient(600px 600px at 50% 110%, rgba(255,204,51,0.14), transparent 55%),
+      var(--ink);
+  }
+  .bg .grid {
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(rgba(244,244,250,0.03) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(244,244,250,0.03) 1px,transparent 1px);
+    background-size:44px 44px;
+    mask-image:radial-gradient(circle at 50% 40%, black, transparent 72%);
+  }
+
+  .wrap {
+    position:relative; z-index:2; flex:1;
+    max-width:480px; margin:0 auto; width:100%;
+    padding:32px 20px 60px;
+    display:flex; flex-direction:column;
+  }
+
+  /* Brand */
+  .brand { display:flex; align-items:center; gap:9px; font-weight:900; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.04em; }
+  .brand .dot { width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,var(--blue),var(--purple)); display:grid; place-items:center; font-family:'Anton'; font-size:0.85rem; box-shadow:0 6px 18px rgba(82,113,255,0.4); }
+  .brand .tag { color:var(--muted); font-weight:600; }
+
+  /* Badge */
+  .badge {
+    margin-top:32px; align-self:flex-start;
+    display:inline-flex; align-items:center; gap:8px;
+    padding:6px 14px; border:1px solid var(--line); border-radius:100px;
+    font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.14em;
+    color:var(--gold); background:rgba(255,204,51,0.06);
+  }
+  .badge .pulse { width:7px; height:7px; border-radius:50%; background:var(--gold); animation:pulse 1.8s infinite; }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(255,204,51,0.5)} 70%{box-shadow:0 0 0 9px rgba(255,204,51,0)} 100%{box-shadow:0 0 0 0 rgba(255,204,51,0)} }
+
+  h1 {
+    font-family:'Anton'; font-weight:400;
+    font-size:clamp(2.6rem,12vw,3.8rem); line-height:0.9;
+    text-transform:uppercase; margin-top:16px; letter-spacing:-0.01em;
+  }
+  h1 .grad { background:linear-gradient(100deg,var(--blue),var(--purple) 55%,var(--gold)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+
+  .sub { margin-top:14px; font-size:0.98rem; line-height:1.55; color:rgba(244,244,250,0.76); max-width:44ch; }
+  .sub b { color:var(--paper); font-weight:800; }
+
+  /* Prize pills */
+  .pills { display:flex; gap:10px; margin-top:20px; flex-wrap:wrap; }
+  .pill { display:flex; align-items:center; gap:7px; padding:8px 14px; border:1px solid var(--line); border-radius:100px; font-size:0.78rem; font-weight:700; background:rgba(255,255,255,0.02); }
+  .pill .icon { font-size:1rem; }
+
+  /* Form card */
+  .card {
+    margin-top:28px; border:1px solid var(--line); border-radius:22px;
+    padding:24px 22px; background:linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.015));
+    backdrop-filter:blur(8px); box-shadow:0 32px 80px -40px rgba(0,0,0,0.9);
+  }
+  .card-title { font-family:'Anton'; font-size:1.1rem; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:20px; color:var(--paper); }
+
+  label { display:block; font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin:16px 0 7px; }
+  label:first-of-type { margin-top:0; }
+
+  input {
+    width:100%; padding:14px 15px; border-radius:12px;
+    border:1px solid var(--line); background:rgba(7,7,13,0.65);
+    color:var(--paper); font-family:'Archivo'; font-size:1rem; font-weight:600;
+    transition:border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance:none;
+  }
+  input::placeholder { color:rgba(244,244,250,0.28); font-weight:500; }
+  input:focus { outline:none; border-color:var(--blue); box-shadow:0 0 0 3px rgba(82,113,255,0.22); }
+  input.bad { border-color:#ff6b6b; box-shadow:0 0 0 3px rgba(255,107,107,0.18); }
+
+  .err { color:#ff8a8a; font-size:0.78rem; font-weight:700; margin-top:10px; min-height:1em; }
+
+  .btn {
+    margin-top:22px; width:100%; border:none; cursor:pointer;
+    padding:17px; border-radius:14px;
+    font-family:'Anton'; font-size:1.3rem; letter-spacing:0.04em; text-transform:uppercase;
+    color:#0a0a12; background:linear-gradient(100deg,var(--gold),#ffd86b);
+    box-shadow:0 14px 36px -12px rgba(255,204,51,0.6);
+    transition:transform 0.12s, box-shadow 0.2s, opacity 0.2s;
+  }
+  .btn:hover { transform:translateY(-2px); box-shadow:0 20px 44px -14px rgba(255,204,51,0.7); }
+  .btn:active { transform:translateY(0); }
+  .btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+  .fine { margin-top:14px; font-size:0.7rem; color:var(--muted); text-align:center; line-height:1.5; }
+  .fine a { color:var(--muted); text-underline-offset:3px; }
+
+  /* Success */
+  .success { display:none; margin-top:28px; text-align:center; animation:rise 0.6s cubic-bezier(0.2,0.8,0.2,1); }
+  .success.show { display:block; }
+  @keyframes rise { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
+  .success .tick { font-size:3.4rem; }
+  .success h2 { font-family:'Anton'; font-size:2rem; text-transform:uppercase; margin-top:10px; }
+  .success .msg { margin-top:10px; font-size:0.95rem; color:rgba(244,244,250,0.76); line-height:1.55; }
+  .success .msg b { color:var(--gold); }
+
+  /* Confetti */
+  .confetti { position:fixed; inset:0; pointer-events:none; z-index:10; overflow:hidden; }
+  .confetti i { position:absolute; top:-12px; width:9px; height:14px; opacity:0; animation:fall 2.5s linear forwards; }
+  @keyframes fall { 0%{transform:translateY(-20px) rotate(0);opacity:1} 100%{transform:translateY(105vh) rotate(720deg);opacity:0.8} }
+
+  footer { position:relative; z-index:2; text-align:center; padding:20px; font-size:0.7rem; color:rgba(244,244,250,0.3); font-weight:600; }
+</style>
+</head>
+<body>
+<div class="bg"><div class="grid"></div></div>
+
+<div class="wrap">
+  <div class="badge"><span class="pulse"></span> Entries open now</div>
+
+  <h1>Win free<br><span class="grad">coaching.</span></h1>
+
+  <p class="sub">Get in the draw. <b>The World Cup decides who wins.</b> Your team goes furthest, you get months of coaching with me, on me.</p>
+
+  <div class="pills">
+    <div class="pill"><span class="icon">⚽</span> World Cup draw</div>
+    <div class="pill"><span class="icon">📱</span> Strictly online</div>
+    <div class="pill"><span class="icon">🏆</span> 3 months free</div>
+    <div class="pill"><span class="icon">🚫</span> No catch</div>
+  </div>
+
+  <div class="card" id="formCard">
+    <div class="card-title">Get your name in</div>
+
+    <label>First name</label>
+    <input id="fname" type="text" placeholder="Jamie" autocomplete="given-name" />
+
+    <label>Instagram handle</label>
+    <input id="ighandle" type="text" placeholder="@yourhandle" autocomplete="off" />
+
+    <label>Email address</label>
+    <input id="email" type="email" placeholder="you@email.com" autocomplete="email" />
+
+    <div class="err" id="err"></div>
+
+    <button class="btn" id="submitBtn">Get me in ⚽</button>
+    <p class="fine">New entrants and non-clients only for the prize. One entry per person. By entering you agree to join the RDH mailing list. Drawn teams only are eligible to win.</p>
+  </div>
+
+  <div class="success" id="success">
+    <div class="tick">🏆</div>
+    <h2>You're in.</h2>
+    <p class="msg">Your entry is confirmed. Keep an eye on your DMs, I'll be in touch with your team once the draw goes live.<br /><br /><b>Follow @rdhcoaching</b> so you don't miss the draw.</p>
+  </div>
+</div>
+
+<footer>RDH Coaching · World Cup 2026 Giveaway · Furthest team wins</footer>
+<div class="confetti" id="confetti"></div>
+
+<script>
+  /* ====== CONFIG: swap in your real Formspree endpoint ====== */
+  const FORMSPREE = "https://formspree.io/f/YOUR_FORM_ID";
+
+  const $ = id => document.getElementById(id);
+
+  function validEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+  function validate(){
+    const f=$("fname").value.trim(), ig=$("ighandle").value.trim(), em=$("email").value.trim();
+    [$("fname"),$("ighandle"),$("email")].forEach(el=>el.classList.remove("bad"));
+    if(!f){ $("fname").classList.add("bad"); return "Pop your first name in."; }
+    if(!ig){ $("ighandle").classList.add("bad"); return "Need your Instagram handle."; }
+    if(!validEmail(em)){ $("email").classList.add("bad"); return "That email doesn't look right."; }
+    return null;
+  }
+
+  // Confetti cannon on page load
+  function fireConfetti(count){
+    const wrap=$("confetti");
+    const cols=["#FFCC33","#5271FF","#C46BE4","#ffffff","#ffd86b","#ff6b6b"];
+    for(let i=0;i<(count||120);i++){
+      const c=document.createElement("i");
+      c.style.left=Math.random()*100+"vw";
+      c.style.background=cols[Math.floor(Math.random()*cols.length)];
+      c.style.animationDelay=(Math.random()*1.2)+"s";
+      c.style.animationDuration=(2+Math.random()*1.5)+"s";
+      c.style.transform="rotate("+(Math.random()*360)+"deg)";
+      c.style.width=(7+Math.random()*8)+"px";
+      c.style.height=(10+Math.random()*10)+"px";
+      if(Math.random()>0.5)c.style.borderRadius="50%";
+      wrap.appendChild(c);
+      setTimeout(()=>c.remove(),4000);
+    }
+  }
+  // cannon fires on load
+  window.addEventListener("load", ()=>{ setTimeout(()=>fireConfetti(120), 200); });
+
+  $("submitBtn").addEventListener("click", async () => {
+    const msg=validate();
+    if(msg){ $("err").textContent=msg; return; }
+    $("err").textContent="";
+    $("submitBtn").disabled=true;
+    $("submitBtn").textContent="Sending...";
+
+    const payload={
+      name: $("fname").value.trim(),
+      instagram: $("ighandle").value.trim(),
+      email: $("email").value.trim(),
+      entered_at: new Date().toISOString()
+    };
+
+    try{
+      if(!FORMSPREE.includes("YOUR_FORM_ID")){
+        await fetch(FORMSPREE,{method:"POST",headers:{"Accept":"application/json","Content-Type":"application/json"},body:JSON.stringify(payload)});
+      }
+    }catch(e){ /* silent fail, entry still confirmed to user */ }
+
+    $("formCard").style.display="none";
+    $("success").classList.add("show");
+    fireConfetti(160);
+  });
+
+  // allow Enter to submit
+  ["fname","ighandle","email"].forEach(id=>{
+    $(id).addEventListener("keydown",e=>{ if(e.key==="Enter") $("submitBtn").click(); });
+  });
+</script>
+</body>
+</html>

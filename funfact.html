@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RDH | One quick fact</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#5271FF;
+    --lilac:#C46BE4;
+    --gold:#AB8B00;
+    --pink:#F8CAFF;
+    --off:#FDFDFD;
+    --ink:#15151B;
+    --bg:#0E0E12;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    font-family:'Inter',system-ui,sans-serif;
+    background:
+      radial-gradient(120% 90% at 50% -10%, rgba(82,113,255,.28), transparent 60%),
+      radial-gradient(100% 80% at 80% 110%, rgba(196,107,228,.22), transparent 55%),
+      var(--bg);
+    color:var(--off);
+    min-height:100dvh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:24px 20px 32px;
+    overflow-x:hidden;
+  }
+  .wrap{width:100%;max-width:440px;display:flex;flex-direction:column;gap:22px}
+
+  .eyebrow{
+    text-align:center;
+    font-family:'Space Mono',monospace;
+    font-size:12px;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:rgba(253,253,253,.55);
+  }
+
+  /* TICKET */
+  .ticket{
+    position:relative;
+    background:var(--off);
+    color:var(--ink);
+    border-radius:18px;
+    padding:26px 24px 24px;
+    box-shadow:0 24px 60px -20px rgba(0,0,0,.7);
+    animation:rise .5s cubic-bezier(.2,.8,.2,1) both;
+  }
+  .ticket-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:rgba(21,21,27,.55);
+    padding-bottom:16px;
+  }
+  .ticket-no b{color:var(--gold)}
+  .brand{
+    font-family:'Bricolage Grotesque',sans-serif;
+    font-weight:800;
+    letter-spacing:.02em;
+    color:var(--ink);
+  }
+  .perf{
+    position:relative;
+    border-top:2px dashed rgba(21,21,27,.22);
+    margin:0 -24px;
+    height:0;
+  }
+  .perf::before,.perf::after{
+    content:"";
+    position:absolute;
+    top:-12px;
+    width:24px;height:24px;border-radius:50%;
+    background:var(--bg);
+  }
+  .perf::before{left:-12px}
+  .perf::after{right:-12px}
+
+  .fact-label{
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    color:var(--blue);
+    margin-top:22px;
+  }
+  .fact{
+    font-family:'Bricolage Grotesque',sans-serif;
+    font-weight:600;
+    font-size:clamp(22px,6.4vw,28px);
+    line-height:1.22;
+    margin-top:10px;
+    color:var(--ink);
+    min-height:96px;
+  }
+  .fact.swap{animation:flip .42s ease both}
+
+  .another{
+    margin-top:20px;
+    width:100%;
+    background:transparent;
+    border:1.5px solid rgba(21,21,27,.2);
+    color:var(--ink);
+    font-family:'Inter';
+    font-weight:600;
+    font-size:15px;
+    padding:13px;
+    border-radius:12px;
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  .another:active{background:rgba(21,21,27,.05)}
+  .another:hover{border-color:rgba(21,21,27,.4)}
+
+  /* CTA BLOCK */
+  .more{display:flex;flex-direction:column;gap:12px}
+  .more-line{
+    text-align:center;
+    font-size:15px;
+    line-height:1.5;
+    color:rgba(253,253,253,.82);
+  }
+  .more-line b{color:var(--off);font-weight:600}
+
+  .follow{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    text-decoration:none;
+    background:linear-gradient(135deg,var(--blue),var(--lilac));
+    color:#fff;
+    font-family:'Bricolage Grotesque',sans-serif;
+    font-weight:800;
+    font-size:17px;
+    padding:17px;
+    border-radius:14px;
+    box-shadow:0 14px 30px -10px rgba(82,113,255,.6);
+    transition:transform .12s;
+  }
+  .follow:active{transform:scale(.985)}
+  .follow svg{width:20px;height:20px;flex:none}
+
+  .or{
+    display:flex;align-items:center;gap:12px;
+    color:rgba(253,253,253,.4);
+    font-size:12px;
+    font-family:'Space Mono',monospace;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+  }
+  .or::before,.or::after{content:"";flex:1;height:1px;background:rgba(253,253,253,.14)}
+
+  .email{display:flex;flex-direction:column;gap:8px}
+  .email p{font-size:13px;color:rgba(253,253,253,.6);text-align:center;line-height:1.45}
+  .email-row{display:flex;gap:8px}
+  .email input{
+    flex:1;
+    background:rgba(253,253,253,.06);
+    border:1.5px solid rgba(253,253,253,.16);
+    border-radius:12px;
+    padding:14px;
+    color:var(--off);
+    font-family:'Inter';
+    font-size:15px;
+    outline:none;
+    transition:border-color .15s;
+  }
+  .email input::placeholder{color:rgba(253,253,253,.35)}
+  .email input:focus{border-color:var(--lilac)}
+  .email button{
+    background:var(--off);
+    color:var(--ink);
+    border:none;
+    border-radius:12px;
+    padding:0 18px;
+    font-family:'Inter';
+    font-weight:700;
+    font-size:15px;
+    cursor:pointer;
+    transition:transform .12s;
+  }
+  .email button:active{transform:scale(.96)}
+  .email .msg{text-align:center;font-size:13px;min-height:18px;color:var(--pink)}
+
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @keyframes flip{
+    0%{opacity:0;transform:translateY(8px)}
+    100%{opacity:1;transform:none}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <p class="eyebrow">Bored at the stop?</p>
+
+    <div class="ticket">
+      <div class="ticket-top">
+        <span class="ticket-no">No.<b id="ticketNo">07</b></span>
+        <span class="brand">RDH</span>
+      </div>
+      <div class="perf"></div>
+      <p class="fact-label">Did you know</p>
+      <p class="fact" id="fact">Loading a good one...</p>
+      <button class="another" id="another">Give me another</button>
+    </div>
+
+    <div class="more">
+      <p class="more-line"><b>Liked that?</b> I dig these up all the time.</p>
+
+      <a class="follow" id="follow" href="https://instagram.com/rdhcoaching" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2c3.2 0 3.6 0 4.9.07 1.2.06 1.8.25 2.2.42.6.22 1 .48 1.4.9.42.4.68.8.9 1.4.17.4.36 1 .42 2.2.06 1.3.07 1.7.07 4.9s0 3.6-.07 4.9c-.06 1.2-.25 1.8-.42 2.2-.22.6-.48 1-.9 1.4-.4.42-.8.68-1.4.9-.4.17-1 .36-2.2.42-1.3.06-1.7.07-4.9.07s-3.6 0-4.9-.07c-1.2-.06-1.8-.25-2.2-.42-.6-.22-1-.48-1.4-.9-.42-.4-.68-.8-.9-1.4-.17-.4-.36-1-.42-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.07-4.9c.06-1.2.25-1.8.42-2.2.22-.6.48-1 .9-1.4.4-.42.8-.68 1.4-.9.4-.17 1-.36 2.2-.42C8.4 2.2 8.8 2.2 12 2.2zm0 1.95c-3.15 0-3.5 0-4.75.07-.9.04-1.4.2-1.7.32-.43.17-.74.37-1.06.7-.32.31-.52.62-.69 1.05-.12.3-.28.8-.32 1.7-.06 1.25-.07 1.6-.07 4.75s0 3.5.07 4.75c.04.9.2 1.4.32 1.7.17.43.37.74.7 1.06.31.32.62.52 1.05.69.3.12.8.28 1.7.32 1.25.06 1.6.07 4.75.07s3.5 0 4.75-.07c.9-.04 1.4-.2 1.7-.32.43-.17.74-.37 1.06-.7.32-.31.52-.62.69-1.05.12-.3.28-.8.32-1.7.06-1.25.07-1.6.07-4.75s0-3.5-.07-4.75c-.04-.9-.2-1.4-.32-1.7-.17-.43-.37-.74-.7-1.06-.31-.32-.62-.52-1.05-.69-.3-.12-.8-.28-1.7-.32-1.25-.06-1.6-.07-4.75-.07zm0 3.32a4.53 4.53 0 110 9.06 4.53 4.53 0 010-9.06zm0 7.47a2.94 2.94 0 100-5.88 2.94 2.94 0 000 5.88zm5.77-7.67a1.06 1.06 0 11-2.12 0 1.06 1.06 0 012.12 0z"/></svg>
+        Follow for one most days
+      </a>
+
+      <div class="or">or</div>
+
+      <div class="email">
+        <p>Want the best ones sent over? The stuff too good for a caption, one a week.</p>
+        <div class="email-row">
+          <input id="email" type="email" inputmode="email" placeholder="your email" autocomplete="email">
+          <button id="emailBtn">Send me them</button>
+        </div>
+        <div class="msg" id="emailMsg"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ============================================================
+  //  SET THIS ONE LINE BEFORE YOU DEPLOY
+  //  Paste your Formspree form URL or Mailchimp form action here.
+  //  Until you do, the email box shows a friendly message instead.
+  // ============================================================
+  const EMAIL_ENDPOINT = ""; // e.g. "https://formspree.io/f/xxxxxxx"
+
+  const IG_HANDLE = "rdhcoaching";
+  document.getElementById('follow').href = "https://instagram.com/" + IG_HANDLE;
+
+  // ---- THE FACT BANK (no hyphens, no ellipses, true, punchy) ----
+  const FACTS = [
+    // Time and scale benders
+    "A T rex lived closer in time to you than it did to a Stegosaurus. The gap between the two dinosaurs is bigger than the gap between T rex and now.",
+    "Cleopatra lived closer to the Moon landing than to the building of the Great Pyramid. The pyramids were ancient history to her too.",
+    "Woolly mammoths were still walking the earth while the Egyptians were building the pyramids. The two actually overlapped.",
+    "Harvard University is older than calculus. Students were enrolling there before the maths had even been invented.",
+    "Vikings reached North America around 500 years before Columbus did. They just never bragged about it.",
+    "France was still executing people by guillotine the year Star Wars came out in 1977.",
+    // Space
+    "There are more stars in the universe than there are grains of sand on every beach on Earth.",
+    "The sunlight hitting your face is eight minutes old. If the sun vanished, you would keep sunbathing for eight minutes before you had any idea.",
+    "There are more trees on Earth than there are stars in our entire galaxy. Roughly three trillion trees to a few hundred billion stars.",
+    "Footprints left on the Moon will last millions of years. There is no wind or rain up there to wipe them away.",
+    "The Moon drifts about 3.8cm further from Earth every year, roughly the speed your fingernails grow.",
+    "The sun makes up about 99.8% of all the mass in the solar system. Every planet, moon and asteroid is fighting over the last 0.2%.",
+    "Drive a car to the sun at motorway speed and it would take you over 150 years without a single stop.",
+    "Mars has a volcano more than two and a half times the height of Everest.",
+    "Jupiter is so vast that every other planet in the solar system could fit inside it with room to spare.",
+    "Pluto has not finished a single orbit of the sun since it was discovered in 1930. One Pluto year is 248 of ours.",
+    "Some of the stars you see at night burned out thousands of years ago. You are looking at light from things that no longer exist.",
+    "A day on Earth is slowly getting longer. Back when the dinosaurs walked, a day lasted only about 23 hours.",
+    "Venus is the hottest planet in the solar system even though Mercury sits closer to the sun. Its thick air traps the heat like a blanket.",
+    "A day on Venus is longer than a year on Venus. It spins so slowly that it laps its own trip around the sun.",
+    "Scientists reckon it rains diamonds on Jupiter and Saturn, where crushing pressure turns carbon in the air into the real thing.",
+    "Saturn is so light for its size that if you found a bath big enough, the whole planet would float.",
+    "A single teaspoon of a neutron star would weigh around a billion tonnes. Space genuinely does not mess about.",
+    // Atoms and physics
+    "Strip the empty space out of the atoms in every human on Earth and the whole species would fit inside a single sugar cube. Atoms are almost entirely nothing.",
+    "You have never actually touched anything. The atoms in you and the atoms in your chair repel each other, so you are hovering a hair above every seat you have ever sat in.",
+    "Every breath you take probably contains a few atoms from the very last breath Julius Caesar ever exhaled. Air gets around.",
+    "Shuffle a deck of cards properly and you have almost certainly made an order that has never existed before in the history of the universe.",
+    "Fold a single sheet of paper 42 times and it would be thick enough to reach the Moon.",
+    "A bolt of lightning burns at about 30,000 degrees, roughly five times hotter than the surface of the sun.",
+    // Earth and nature
+    "Antarctica is the largest desert on Earth. A desert is about how little rain falls, not about sand.",
+    "The deepest point in the ocean is deeper than Everest is tall. You could sink the whole mountain and still not reach the bottom.",
+    "We have better maps of the surface of Mars than we do of our own ocean floor.",
+    "More than 80% of the ocean has never been explored or even mapped.",
+    "Everest is the highest mountain, but measured from base to peak the tallest is Mauna Kea in Hawaii. Most of it just hides underwater.",
+    "There is enough gold in the Earth's core to coat the entire surface of the planet knee deep.",
+    "The largest waterfall on Earth is underwater, hidden in the ocean between Greenland and Iceland.",
+    "A teaspoon of soil holds more living organisms than there are people on Earth.",
+    "Honey never spoils. Sealed pots found in Egyptian tombs over 3,000 years old were still good to eat.",
+    // Body
+    "Your stomach acid is strong enough to dissolve metal. Your stomach just rebuilds its own lining fast enough to survive it.",
+    "You have around 60,000 miles of blood vessels inside you, enough to wrap around the Earth more than twice.",
+    "Your heart will beat roughly 2.5 billion times across your life and never once take a break.",
+    "You are about 1cm taller in the morning than at night. Your spine slowly compresses as the day goes on.",
+    "Your brain is about 2% of your weight but burns around 20% of your energy. Thinking is genuinely expensive.",
+    "Ounce for ounce, your bones are stronger than steel.",
+    "Babies are born with around 300 bones. Adults have 206. The rest fuse together as you grow.",
+    "Your nose can tell apart around a trillion different smells.",
+    "A red blood cell does a full lap of your entire body in under a minute.",
+    "You have more bacteria living in your mouth right now than there are people on Earth.",
+    "The strongest muscle in your body for its size is the one in your jaw.",
+    "You share around half of your DNA with a banana.",
+    "Uncoil all the DNA inside your body and it would stretch from the Earth to the sun and back hundreds of times.",
+    "Your body gives off enough heat in half an hour to bring a couple of litres of water to the boil.",
+    // Fat, muscle and energy
+    "The energy stored in 1kg of body fat is about the same as a litre of petrol, roughly enough to drive a car from the city centre out to Glasgow Airport.",
+    "When you lose fat it does not melt or sweat away. You breathe most of it out. Around 84% of it leaves your body as the air you exhale.",
+    "To lose a single pound of fat your body has to burn around 3,500 calories, about 15 Mars bars of energy it has to hunt down and torch.",
+    "A pound of muscle burns only about 6 calories a day at rest, not the 50 you were told. Worth building, just not for the calorie burn.",
+    "The average person walks about 100,000 miles in a lifetime, the same as walking the whole way around the planet four times.",
+    // Animals
+    "An octopus has three hearts, blue blood and nine brains. One main brain, and a smaller one in each arm.",
+    "A wombat poos in neat little cubes. It is the only creature on Earth that does it and nobody fully understands how.",
+    "A shrimp's heart is in its head.",
+    "Sharks are older than trees. They were swimming about 100 million years before the first tree existed.",
+    "A snail can sleep for up to three years at a stretch.",
+    "Sloths can hold their breath longer than dolphins by slowing their own heart right down.",
+    "A cockroach can survive for weeks without its head before it finally starves.",
+    "Tardigrades can survive being frozen, boiled, crushed and even blasted into open space.",
+    "Polar bears are not white. Their fur is actually see through and the skin underneath is black.",
+    "Koalas have fingerprints so close to ours they could smudge a crime scene.",
+    "A mantis shrimp punches so fast it briefly boils the water around its fist.",
+    "Flamingos are not born pink. They turn that colour from the food they eat.",
+    "Dolphins give each other names and call to one another using them.",
+    "Crows remember human faces and will hold a grudge against anyone who wronged them.",
+    "A starfish has no brain and no blood at all.",
+    "An ant can lift around 50 times its own body weight.",
+    // Food
+    "Carrots used to be purple. The orange ones were bred into existence much later by Dutch growers.",
+    "Peanuts are not nuts. They grow underground and are closer to beans and lentils.",
+    "A banana is botanically a berry, but a strawberry is not.",
+    "The red colouring in some sweets and drinks is made from crushed beetles.",
+    "White chocolate is not really chocolate at all. It contains no cocoa solids.",
+    "A pineapple takes around two years to grow a single fruit.",
+    "Ketchup was sold as medicine in the 1830s, pitched as a cure for an upset stomach.",
+    // Hidden origins and language
+    "The word muscle comes from the Latin for little mouse, because the Romans reckoned a flexing bicep looked like a wee mouse moving under the skin.",
+    "Gymnasium comes from the Greek word for naked. The ancient Greeks trained with absolutely nothing on.",
+    "Avocado comes from an old Aztec word for testicle. Enjoy the brunch.",
+    "Quarantine comes from the Italian for forty days, the time plague ships were forced to wait before anyone could come ashore.",
+    "Jeans are named after Genoa in Italy and denim after Nimes in France. Your trousers are two cities stitched together.",
+    "The mare in nightmare was an old word for a demon that sat on your chest as you slept. Nothing to do with horses.",
+    "Disaster literally means bad star, from when people blamed their misfortune on the night sky.",
+    "The word hello barely existed as a greeting until the telephone arrived and people needed something to say when they picked up.",
+    // Myth busters
+    "Bulls are not angry at the colour red. They are colour blind to it and react to the movement of the cape.",
+    "Vikings never wore horned helmets. That image was dreamt up for an opera in the 1800s.",
+    "You do not only use 10% of your brain. You use virtually all of it, just not all at the same time.",
+    "The Great Wall of China cannot be seen from space with the naked eye, no matter what you were told at school.",
+    // Glasgow and Scotland
+    "The river Glasgow was founded on, the Molendinar, still flows through the city today. It is just hidden in a tunnel beneath the streets.",
+    "Sauchiehall Street is named after a willow meadow. It was a soggy field of trees long before it was ever a street.",
+    "The Gallowgate is one of Glasgow's oldest streets and it means exactly what you fear. It was the road that led out to the gallows.",
+    "Glasgow's wee subway is the third oldest underground railway on the planet, beaten only by London and Budapest.",
+    "Loch Ness holds more water than every lake in England and Wales put together. Plenty of room for a monster.",
+    "Glasgow University was already 25 years old before the printing press even reached Britain.",
+    "The Romans built a wall right across central Scotland just north of Glasgow, then gave up on it within a generation.",
+    "Shetland is closer to Oslo in Norway than it is to London."
+  ];
+
+  // ---- NO REPEAT ENGINE (remembers on the person's own phone) ----
+  const KEY = 'rdh_seen_facts_v1';
+  let seen = [];
+  let storageOk = true;
+  try {
+    const raw = localStorage.getItem(KEY);
+    seen = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(seen)) seen = [];
+  } catch (e) { storageOk = false; seen = []; }
+
+  function saveSeen(){
+    if(!storageOk) return;
+    try { localStorage.setItem(KEY, JSON.stringify(seen)); } catch(e){ storageOk = false; }
+  }
+
+  function pickFact(){
+    let pool = FACTS.map((_,i)=>i).filter(i => !seen.includes(i));
+    if(pool.length === 0){           // seen them all, start the deck fresh
+      seen = [];
+      pool = FACTS.map((_,i)=>i);
+    }
+    const idx = pool[Math.floor(Math.random()*pool.length)];
+    seen.push(idx);
+    saveSeen();
+    return idx;
+  }
+
+  const factEl = document.getElementById('fact');
+  const noEl = document.getElementById('ticketNo');
+
+  function show(){
+    const idx = pickFact();
+    factEl.classList.remove('swap');
+    void factEl.offsetWidth;          // restart the animation
+    factEl.textContent = FACTS[idx];
+    factEl.classList.add('swap');
+    noEl.textContent = String(idx + 1).padStart(2,'0');
+  }
+
+  document.getElementById('another').addEventListener('click', show);
+  show(); // fresh fact on every scan / load
+
+  // ---- EMAIL CAPTURE ----
+  const emailBtn = document.getElementById('emailBtn');
+  const emailIn = document.getElementById('email');
+  const emailMsg = document.getElementById('emailMsg');
+
+  emailBtn.addEventListener('click', async () => {
+    const val = (emailIn.value || '').trim();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val)){
+      emailMsg.textContent = "Pop a real email in there first.";
+      return;
+    }
+    if(!EMAIL_ENDPOINT){
+      emailMsg.textContent = "You're in. (Connect your email tool to go live.)";
+      emailIn.value = "";
+      return;
+    }
+    emailBtn.disabled = true;
+    emailMsg.textContent = "Sending...".replace("...","");
+    emailMsg.textContent = "One sec";
+    try {
+      const res = await fetch(EMAIL_ENDPOINT, {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Accept':'application/json'},
+        body: JSON.stringify({ email: val, source: 'bus-stop-funfact' })
+      });
+      if(res.ok){
+        emailMsg.textContent = "Done. Best ones incoming.";
+        emailIn.value = "";
+      } else {
+        emailMsg.textContent = "That didn't send. Try again in a sec.";
+      }
+    } catch(e){
+      emailMsg.textContent = "That didn't send. Try again in a sec.";
+    }
+    emailBtn.disabled = false;
+  });
+
+  emailIn.addEventListener('keydown', e => { if(e.key === 'Enter') emailBtn.click(); });
+</script>
+</body>
+</html>

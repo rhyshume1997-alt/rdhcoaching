@@ -1065,7 +1065,7 @@ form.addEventListener('submit', function(e){
   });
 });
 
-/* ===== COOKIE + GA + MAILCHIMP (consent gated) ===== */
+/* ===== COOKIE + GA (consent gated) ===== */
 var cookie = document.getElementById('cookie');
 function loadGA(){
   var s = document.createElement('script');
@@ -1077,28 +1077,21 @@ function loadGA(){
   gtag('js', new Date());
   gtag('config', GA_ID);
 }
-function loadMailchimp(){
-  if(document.getElementById('mcjs')) return;
-  var m = document.createElement('script');
-  m.id = 'mcjs';
-  m.async = true;
-  m.src = 'https://chimpstatic.com/mcjs-connected/js/users/0dc632ba2006dc705ecbdff53/6dd2b05cebe6f9a6087dbba15.js';
-  document.head.appendChild(m);
-}
 function setConsent(v){
   try{ localStorage.setItem('rdh_consent', v); }catch(e){}
   cookie.classList.remove('show');
-  if(v === 'yes'){ loadGA(); loadMailchimp(); }
+  if(v === 'yes') loadGA();
 }
 (function(){
   var c = null;
   try{ c = localStorage.getItem('rdh_consent'); }catch(e){}
-  if(c === 'yes'){ loadGA(); loadMailchimp(); }
+  if(c === 'yes'){ loadGA(); }
   else if(c !== 'no'){ setTimeout(function(){ cookie.classList.add('show'); }, 1400); }
 })();
 document.getElementById('ckAccept').addEventListener('click', function(){ setConsent('yes'); });
 document.getElementById('ckDecline').addEventListener('click', function(){ setConsent('no'); });
 document.getElementById('ckMore').addEventListener('click', function(e){ e.preventDefault(); setConsent('yes'); });
 </script>
+<script id="mcjs">!function(c,h,i,m,p){m=c.createElement(h),p=c.getElementsByTagName(h)[0],m.async=1,m.src=i,p.parentNode.insertBefore(m,p)}(document,"script","https://chimpstatic.com/mcjs-connected/js/users/0dc632ba2006dc705ecbdff53/6dd2b05cebe6f9a6087dbba15.js");</script>
 </body>
 </html>

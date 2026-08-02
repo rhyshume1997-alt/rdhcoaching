@@ -462,6 +462,69 @@
       .overflow-x-auto table { min-width: 720px; }
     }
 
+    /* ============================================
+       AUTH OVERLAY - blocks the app until signed in
+       ============================================ */
+    .auth-overlay {
+      position: fixed; inset: 0; z-index: 3000;
+      background: linear-gradient(135deg, #1E3472 0%, #152654 100%);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .auth-overlay.hidden { display: none; }
+    .auth-card {
+      background: white; border-radius: 16px;
+      padding: 40px; width: 100%; max-width: 420px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    }
+    .auth-card h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .auth-sub { font-size: 14px; color: #64748B; margin-bottom: 24px; }
+    .auth-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+    .auth-brand-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: linear-gradient(135deg, #1E3472, #2E52B8);
+      color: white; font-weight: 700; font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .auth-brand-name { font-weight: 700; font-size: 16px; }
+    .auth-brand-name span { display: block; font-size: 11px; font-weight: 500; color: #94A3B8; }
+    .auth-error {
+      background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B;
+      font-size: 13px; padding: 10px 14px; border-radius: 8px; margin-top: 12px;
+    }
+    .auth-notice {
+      background: #EFF6FF; border: 1px solid #BFDBFE; color: #1E40AF;
+      font-size: 13px; padding: 10px 14px; border-radius: 8px; margin-top: 12px;
+    }
+    .auth-submit {
+      width: 100%; margin-top: 20px; padding: 12px;
+      background: #1E3472; color: white; border: none; border-radius: 10px;
+      font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit;
+    }
+    .auth-submit:hover { background: #152654; }
+    .auth-submit:disabled { opacity: 0.6; cursor: wait; }
+    .auth-toggle {
+      width: 100%; margin-top: 14px; padding: 8px; background: none; border: none;
+      color: #2E52B8; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit;
+    }
+    .auth-toggle:hover { text-decoration: underline; }
+
+    /* Sidebar account footer */
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .sidebar-user { min-width: 0; }
+    .sidebar-user-email { font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sidebar-user-org { font-size: 11px; opacity: 0.6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sidebar-signout {
+      background: rgba(255,255,255,0.1); border: none; color: white;
+      font-size: 12px; font-weight: 600; padding: 7px 12px; border-radius: 8px;
+      cursor: pointer; font-family: inherit; flex-shrink: 0;
+    }
+    .sidebar-signout:hover { background: rgba(255,255,255,0.2); }
+
   </style>
 
   <!-- Supabase Client Library -->
@@ -469,6 +532,34 @@
 
 </head>
 <body>
+
+  <!-- ============================================
+       AUTH - the app is unreachable until signed in
+       ============================================ -->
+  <div id="authOverlay" class="auth-overlay">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <div class="auth-brand-icon">Q</div>
+        <div class="auth-brand-name">QuoteFlow AI<span>Workshop management</span></div>
+      </div>
+      <h2 id="authTitle">Sign in</h2>
+      <p class="auth-sub" id="authSub">Log in to your company workspace</p>
+      <form id="authForm" onsubmit="submitAuth(event)">
+        <div id="authOrgField" style="display:none; margin-bottom: 12px;">
+          <label class="form-label">Company Name</label>
+          <input type="text" id="authOrgName" class="form-input" placeholder="e.g. JNR Engineering Ltd">
+        </div>
+        <label class="form-label">Email</label>
+        <input type="email" id="authEmail" class="form-input" required autocomplete="email">
+        <label class="form-label" style="margin-top: 12px;">Password</label>
+        <input type="password" id="authPassword" class="form-input" required minlength="8" autocomplete="current-password">
+        <div id="authError" class="auth-error" style="display:none;"></div>
+        <div id="authNotice" class="auth-notice" style="display:none;"></div>
+        <button type="submit" class="auth-submit" id="authSubmitBtn">Sign In</button>
+      </form>
+      <button class="auth-toggle" id="authToggle" onclick="toggleAuthMode()">New company? Create an account</button>
+    </div>
+  </div>
 
   <div class="app-container">
     
@@ -550,6 +641,13 @@
           Machine Maintenance
         </a>
       </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-user-email" id="userEmail"></div>
+          <div class="sidebar-user-org" id="userOrg"></div>
+        </div>
+        <button class="sidebar-signout" onclick="signOut()">Sign Out</button>
+      </div>
     </aside>
     
     <!-- ============================================
@@ -679,7 +777,7 @@
               <div class="flex items-start justify-between mb-3">
                 <div>
                   <p class="text-sm font-medium text-gray-500 mb-1">Quote Win Rate</p>
-                  <p class="text-3xl font-bold text-gray-900 text-mono">68%</p>
+                  <p class="text-3xl font-bold text-gray-900 text-mono" id="kpiWinRate">68%</p>
                 </div>
                 <div class="p-3 rounded-lg bg-green-50">
                   <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
@@ -695,7 +793,7 @@
               <div class="flex items-start justify-between mb-3">
                 <div>
                   <p class="text-sm font-medium text-gray-500 mb-1">Avg Days to Pay</p>
-                  <p class="text-3xl font-bold text-gray-900 text-mono">28</p>
+                  <p class="text-3xl font-bold text-gray-900 text-mono" id="kpiAvgDaysToPay">28</p>
                 </div>
                 <div class="p-3 rounded-lg bg-amber-50">
                   <svg class="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -710,8 +808,8 @@
             <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
               <div class="flex items-start justify-between mb-3">
                 <div>
-                  <p class="text-sm font-medium text-gray-500 mb-1">Revenue MTD</p>
-                  <p class="text-3xl font-bold text-gray-900 text-mono">£89k</p>
+                  <p class="text-sm font-medium text-gray-500 mb-1">Total Outstanding</p>
+                  <p class="text-3xl font-bold text-gray-900 text-mono" id="kpiOutstanding">£89k</p>
                 </div>
                 <div class="p-3 rounded-lg bg-purple-50">
                   <svg class="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -1414,7 +1512,7 @@
                 </div>
                 <div class="flex gap-2">
                   <button onclick="showRfqDetail('aerospace')" class="px-3 py-1.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">View</button>
-                  <button onclick="showQuoteModal()" class="px-3 py-1.5 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-dark">Quote</button>
+                  <button onclick="prefillQuote('Aerospace Components Ltd', 'CNC machined titanium brackets x50 - Grade 5 Ti-6Al-4V', 50)" class="px-3 py-1.5 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-dark">Quote</button>
                 </div>
               </div>
 
@@ -1462,7 +1560,7 @@
                 </div>
                 <div class="flex gap-2">
                   <button onclick="showRfqDetail('precision')" class="px-3 py-1.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">View</button>
-                  <button onclick="showQuoteModal()" class="px-3 py-1.5 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700">Generate Quote</button>
+                  <button onclick="prefillQuote('Precision Engineering Group', 'Stainless steel shafts x30 - 316 grade', 30)" class="px-3 py-1.5 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700">Generate Quote</button>
                 </div>
               </div>
             </div>
@@ -1486,20 +1584,20 @@
               <div class="space-y-4">
                 <div>
                   <label class="block text-sm font-medium mb-2">Customer Name</label>
-                  <input type="text" value="Aerospace Components Ltd" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" />
+                  <input type="text" id="quoteCustomer" value="Aerospace Components Ltd" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" />
                 </div>
                 <div>
                   <label class="block text-sm font-medium mb-2">Job Description</label>
-                  <input type="text" value="CNC machined titanium brackets" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" />
+                  <input type="text" id="quoteDesc" value="CNC machined titanium brackets" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" />
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                   <div>
                     <label class="block text-sm font-medium mb-2">Quantity</label>
-                    <input type="number" value="50" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" />
+                    <input type="number" id="quoteQty" value="50" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" />
                   </div>
                   <div>
                     <label class="block text-sm font-medium mb-2">Material</label>
-                    <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                    <select id="quoteMaterial" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
                       <option>Titanium Grade 5</option>
                       <option>Aluminium 6082</option>
                       <option>Stainless Steel 304</option>
@@ -1510,15 +1608,15 @@
                 <div class="grid grid-cols-3 gap-4">
                   <div>
                     <label class="block text-sm font-medium mb-2">Material Cost (£)</label>
-                    <input type="number" value="2400" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" />
+                    <input type="number" id="quoteMatCost" value="2400" step="0.01" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" />
                   </div>
                   <div>
                     <label class="block text-sm font-medium mb-2">Machine Hours</label>
-                    <input type="number" value="8.5" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" />
+                    <input type="number" id="quoteMachineHrs" value="8.5" step="0.1" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" />
                   </div>
                   <div>
                     <label class="block text-sm font-medium mb-2">Setup Hours</label>
-                    <input type="number" value="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" />
+                    <input type="number" id="quoteSetupHrs" value="2" step="0.5" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" />
                   </div>
                 </div>
 
@@ -1596,7 +1694,7 @@
                   </button>
                 </div>
 
-                <button onclick="showQuoteModal()" class="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark transition-colors">
+                <button onclick="generateQuote()" class="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark transition-colors">
                   Generate Quote
                 </button>
               </div>
@@ -1608,49 +1706,49 @@
                 <div class="grid grid-cols-3 gap-4">
                   <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
                     <div class="text-xs text-gray-600 mb-1">Quote Value</div>
-                    <div class="text-2xl font-bold text-blue-700 text-mono">£8,400</div>
+                    <div class="text-2xl font-bold text-blue-700 text-mono" id="quoteResValue">—</div>
                   </div>
                   <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
                     <div class="text-xs text-gray-600 mb-1">Total Cost</div>
-                    <div class="text-2xl font-bold text-gray-900 text-mono">£5,460</div>
+                    <div class="text-2xl font-bold text-gray-900 text-mono" id="quoteResCost">—</div>
                   </div>
                   <div class="bg-green-50 rounded-lg p-4 border border-green-200">
                     <div class="text-xs text-gray-600 mb-1">Margin</div>
-                    <div class="text-2xl font-bold text-green-700 text-mono">35%</div>
+                    <div class="text-2xl font-bold text-green-700 text-mono" id="quoteResMargin">—</div>
                   </div>
                 </div>
 
                 <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <h4 class="font-semibold mb-3 text-sm">Cost Breakdown</h4>
+                  <h4 class="font-semibold mb-3 text-sm">Cost Breakdown <span class="text-xs font-normal text-gray-500 text-mono" id="quoteResRef"></span></h4>
                   <div class="space-y-2 text-sm">
                     <div class="flex justify-between">
                       <span class="text-gray-600">Material (inc. 8% waste)</span>
-                      <span class="font-medium text-mono">£2,592</span>
+                      <span class="font-medium text-mono" id="quoteBdMaterial">—</span>
                     </div>
                     <div class="flex justify-between">
-                      <span class="text-gray-600">Machine Time (8.5hrs × £65)</span>
-                      <span class="font-medium text-mono">£552.50</span>
+                      <span class="text-gray-600" id="quoteBdMachineLabel">Machine Time</span>
+                      <span class="font-medium text-mono" id="quoteBdMachine">—</span>
                     </div>
                     <div class="flex justify-between">
-                      <span class="text-gray-600">Setup Time (2hrs × £45)</span>
-                      <span class="font-medium text-mono">£90</span>
+                      <span class="text-gray-600" id="quoteBdSetupLabel">Setup Time</span>
+                      <span class="font-medium text-mono" id="quoteBdSetup">—</span>
                     </div>
                     <div class="border-t border-gray-300 pt-2 mt-2 flex justify-between font-semibold">
                       <span>Total Cost</span>
-                      <span class="text-mono">£3,234.50</span>
+                      <span class="text-mono" id="quoteBdTotal">—</span>
                     </div>
                     <div class="flex justify-between font-semibold text-green-700">
-                      <span>Profit (35% margin)</span>
-                      <span class="text-mono">£1,765.50</span>
+                      <span id="quoteBdProfitLabel">Profit</span>
+                      <span class="text-mono" id="quoteBdProfit">—</span>
                     </div>
                   </div>
                 </div>
 
                 <div class="flex gap-3">
-                  <button class="flex-1 border border-gray-300 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                  <button onclick="downloadQuotePdf()" class="flex-1 border border-gray-300 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors">
                     Download PDF
                   </button>
-                  <button class="flex-1 bg-primary text-white py-2 rounded-lg font-medium hover:bg-primary-dark transition-colors">
+                  <button onclick="sendQuoteToCustomer()" class="flex-1 bg-primary text-white py-2 rounded-lg font-medium hover:bg-primary-dark transition-colors">
                     Send to Customer
                   </button>
                 </div>
@@ -1673,19 +1771,19 @@
           <div class="grid grid-cols-4 gap-4 mb-6">
             <div class="bg-white border border-gray-200 rounded-lg p-4">
               <div class="text-sm text-gray-500">Material Ordered</div>
-              <div class="text-2xl font-bold text-blue-600 text-mono">3</div>
+              <div class="text-2xl font-bold text-blue-600 text-mono" id="jobStatMaterial">3</div>
             </div>
             <div class="bg-white border border-gray-200 rounded-lg p-4">
               <div class="text-sm text-gray-500">Setup</div>
-              <div class="text-2xl font-bold text-purple-600 text-mono">4</div>
+              <div class="text-2xl font-bold text-purple-600 text-mono" id="jobStatSetup">4</div>
             </div>
             <div class="bg-white border border-gray-200 rounded-lg p-4">
               <div class="text-sm text-gray-500">Machining</div>
-              <div class="text-2xl font-bold text-green-600 text-mono">8</div>
+              <div class="text-2xl font-bold text-green-600 text-mono" id="jobStatMachining">8</div>
             </div>
             <div class="bg-white border border-gray-200 rounded-lg p-4">
               <div class="text-sm text-gray-500">Inspection</div>
-              <div class="text-2xl font-bold text-amber-600 text-mono">5</div>
+              <div class="text-2xl font-bold text-amber-600 text-mono" id="jobStatInspection">5</div>
             </div>
           </div>
 
@@ -1718,9 +1816,10 @@
                     <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Stage</th>
                     <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Due Date</th>
                     <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
+                    <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Actions</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200">
+                <tbody class="divide-y divide-gray-200" id="jobTableBody">
                   <tr class="hover:bg-gray-50 transition-colors job-row" data-status="on_track" data-stage="machining">
                     <td class="px-6 py-4 text-sm font-medium text-gray-900 text-mono">JNR-J-218</td>
                     <td class="px-6 py-4 text-sm text-gray-900">Aerospace Components</td>
@@ -1846,7 +1945,7 @@
               <h3 class="font-semibold text-gray-900">Late Payer Patterns</h3>
               <span class="text-xs text-gray-500">Auto-detected from payment history</span>
             </div>
-            <div class="space-y-2">
+            <div class="space-y-2" id="latePayerList">
               <div class="flex items-center justify-between p-3 bg-red-50 border border-red-200 rounded-lg">
                 <div class="flex items-center gap-3">
                   <div class="w-2 h-2 bg-red-500 rounded-full"></div>
@@ -2195,7 +2294,7 @@
           <!-- Recently Sent -->
           <div class="mt-8">
             <h3 class="font-semibold text-gray-900 mb-3">Recently Sent</h3>
-            <div class="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+            <div class="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100" id="recentlySentList">
               <div class="p-4 flex items-center gap-3">
                 <div class="bg-green-50 rounded-lg p-2"><svg class="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></div>
                 <div class="flex-1">
@@ -2250,23 +2349,23 @@
           <div class="grid grid-cols-4 gap-4 mb-6">
             <div class="bg-white border border-gray-200 rounded-lg p-4">
               <div class="text-sm text-gray-500">Low Stock Items</div>
-              <div class="text-2xl font-bold text-red-600 text-mono">7</div>
-              <div class="text-xs text-amber-600 mt-1 font-medium">3 auto-ordering now</div>
+              <div class="text-2xl font-bold text-red-600 text-mono" id="stockStatLow">7</div>
+              <div class="text-xs text-amber-600 mt-1 font-medium" id="stockStatLowNote">3 auto-ordering now</div>
             </div>
             <div class="bg-white border border-gray-200 rounded-lg p-4">
-              <div class="text-sm text-gray-500">Auto-Orders Pending</div>
-              <div class="text-2xl font-bold text-blue-600 text-mono">4</div>
-              <div class="text-xs text-gray-500 mt-1">£8,420 value</div>
+              <div class="text-sm text-gray-500">Auto-Purchase Items</div>
+              <div class="text-2xl font-bold text-blue-600 text-mono" id="stockStatAuto">4</div>
+              <div class="text-xs text-gray-500 mt-1" id="stockStatAutoNote">£8,420 value</div>
             </div>
             <div class="bg-white border border-gray-200 rounded-lg p-4">
               <div class="text-sm text-gray-500">Active Suppliers</div>
-              <div class="text-2xl font-bold text-purple-600 text-mono">12</div>
-              <div class="text-xs text-green-600 mt-1 font-medium">9 reliable</div>
+              <div class="text-2xl font-bold text-purple-600 text-mono" id="stockStatSuppliers">12</div>
+              <div class="text-xs text-green-600 mt-1 font-medium">&nbsp;</div>
             </div>
             <div class="bg-white border border-gray-200 rounded-lg p-4">
               <div class="text-sm text-gray-500">Stock Value</div>
-              <div class="text-2xl font-bold text-green-600 text-mono">£48k</div>
-              <div class="text-xs text-gray-500 mt-1">↑ 12% this month</div>
+              <div class="text-2xl font-bold text-green-600 text-mono" id="stockStatValue">£48k</div>
+              <div class="text-xs text-gray-500 mt-1">at cost price</div>
             </div>
           </div>
 
@@ -2568,15 +2667,15 @@
           <div class="grid grid-cols-4 gap-4 mb-6">
             <div class="bg-white border border-gray-200 rounded-lg p-4">
               <div class="text-sm text-gray-500">Active Warnings</div>
-              <div class="text-2xl font-bold text-red-600 text-mono">2</div>
+              <div class="text-2xl font-bold text-red-600 text-mono" id="machineStatWarnings">2</div>
             </div>
             <div class="bg-white border border-gray-200 rounded-lg p-4">
               <div class="text-sm text-gray-500">Maintenance Due</div>
-              <div class="text-2xl font-bold text-amber-600 text-mono">3</div>
+              <div class="text-2xl font-bold text-amber-600 text-mono" id="machineStatDue">3</div>
             </div>
             <div class="bg-white border border-gray-200 rounded-lg p-4">
               <div class="text-sm text-gray-500">Operational Machines</div>
-              <div class="text-2xl font-bold text-green-600 text-mono">8</div>
+              <div class="text-2xl font-bold text-green-600 text-mono" id="machineStatOperational">8</div>
             </div>
             <div class="bg-white border border-gray-200 rounded-lg p-4">
               <div class="text-sm text-gray-500">Utilization Rate</div>
@@ -2608,9 +2707,10 @@
                     <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Last Maintenance</th>
                     <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Next Due</th>
                     <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
+                    <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Actions</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200">
+                <tbody class="divide-y divide-gray-200" id="machineTableBody">
                   <tr class="bg-red-50 hover:bg-red-100 transition-colors machine-row" data-machine-status="overdue">
                     <td class="px-6 py-4 text-sm font-medium text-gray-900">Haas VF-2</td>
                     <td class="px-6 py-4 text-sm text-gray-600">CNC Mill</td>
@@ -2701,11 +2801,11 @@
         
         <!-- Mode Selector -->
         <div class="grid grid-cols-2 gap-3 mb-6">
-          <button class="px-4 py-3 bg-green-50 border-2 border-green-500 rounded-lg font-semibold text-green-700 flex items-center justify-center gap-2">
+          <button id="scanModeIn" onclick="setScanMode('in')" class="px-4 py-3 bg-green-50 border-2 border-green-500 rounded-lg font-semibold text-green-700 flex items-center justify-center gap-2">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             Stock IN
           </button>
-          <button class="px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg font-semibold text-gray-500 hover:bg-gray-100 flex items-center justify-center gap-2">
+          <button id="scanModeOut" onclick="setScanMode('out')" class="px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg font-semibold text-gray-500 hover:bg-gray-100 flex items-center justify-center gap-2">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
             Stock OUT
           </button>
@@ -2760,13 +2860,14 @@
         <div class="mb-6">
           <label class="block text-sm font-semibold text-gray-700 mb-2">Manual SKU Entry</label>
           <div class="flex gap-2">
-            <input type="text" placeholder="Type or paste SKU code..." class="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-mono focus:ring-2 focus:ring-primary focus:border-transparent">
-            <button class="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark font-medium">Lookup</button>
+            <input type="text" id="barcodeSku" placeholder="Type or paste SKU code..." class="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-mono focus:ring-2 focus:ring-primary focus:border-transparent">
+            <input type="number" id="barcodeQty" value="1" min="1" title="Quantity" class="w-24 px-4 py-3 border border-gray-300 rounded-lg text-mono focus:ring-2 focus:ring-primary focus:border-transparent">
+            <button onclick="barcodeApply()" class="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark font-medium">Apply</button>
           </div>
         </div>
 
         <!-- Last Scanned Item -->
-        <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+        <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6" id="barcodeLastScan">
           <div class="flex items-center gap-3 mb-3">
             <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
               <svg class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
@@ -2795,8 +2896,8 @@
 
         <!-- Recent Scans -->
         <div>
-          <h4 class="text-sm font-semibold text-gray-700 mb-3">Today's Activity</h4>
-          <div class="space-y-2">
+          <h4 class="text-sm font-semibold text-gray-700 mb-3">Recent Activity</h4>
+          <div class="space-y-2" id="barcodeActivity">
             <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg text-sm">
               <div class="flex items-center gap-3">
                 <span class="w-2 h-2 bg-green-500 rounded-full"></span>
@@ -2861,7 +2962,7 @@
               <label class="block text-sm font-medium text-gray-700 mb-2">Order Approval Limit</label>
               <div class="flex items-center gap-2">
                 <span class="text-gray-500">£</span>
-                <input type="number" value="2500" class="flex-1 px-3 py-2 border border-gray-300 rounded text-mono">
+                <input type="number" id="apApprovalLimit" value="2500" class="flex-1 px-3 py-2 border border-gray-300 rounded text-mono">
               </div>
               <div class="text-xs text-gray-500 mt-1">Orders above this value require manual approval</div>
             </div>
@@ -2869,7 +2970,7 @@
               <label class="block text-sm font-medium text-gray-700 mb-2">Daily Order Limit</label>
               <div class="flex items-center gap-2">
                 <span class="text-gray-500">£</span>
-                <input type="number" value="10000" class="flex-1 px-3 py-2 border border-gray-300 rounded text-mono">
+                <input type="number" id="apDailyLimit" value="10000" class="flex-1 px-3 py-2 border border-gray-300 rounded text-mono">
               </div>
               <div class="text-xs text-gray-500 mt-1">Maximum auto-purchase value per day</div>
             </div>
@@ -2889,7 +2990,7 @@
                   <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Auto-Order</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-gray-200">
+              <tbody class="divide-y divide-gray-200" id="autoPurchaseRules">
                 <tr>
                   <td class="px-4 py-3 text-sm font-medium">Aluminium 6082 Bar</td>
                   <td class="px-4 py-3 text-sm text-mono">≤ 25 units</td>
@@ -2946,7 +3047,7 @@
         </div>
 
         <div class="grid grid-cols-2 gap-3 mt-6">
-          <button class="bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark" onclick="closeModal('autoPurchaseModal')">Save Settings</button>
+          <button class="bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark" onclick="saveAutoPurchaseRules()">Save Settings</button>
           <button class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50" onclick="closeModal('autoPurchaseModal')">Cancel</button>
         </div>
       </div>
@@ -3566,12 +3667,15 @@
     }
     
     // Modal helpers
-    function showInvoiceModal() { showModal('invoiceModal'); }
-    function showQuoteModal() { showModal('quoteModal'); }
     function showEmailDraftModal() { showModal('emailDraftModal'); }
-    function showBarcodeModal() { showModal('barcodeModal'); }
-    function showAutoPurchaseModal() { showModal('autoPurchaseModal'); }
-    function showSupplierConfigModal() { showModal('supplierConfigModal'); }
+    function showBarcodeModal() {
+      showModal('barcodeModal');
+      refreshBarcodeActivity();
+    }
+    function showAutoPurchaseModal() {
+      renderAutoPurchaseRules();
+      showModal('autoPurchaseModal');
+    }
     
     // Close modal on outside click
     window.addEventListener('click', function(e) {
@@ -3763,10 +3867,35 @@ JNR Engineering Limited`
       messageBox.value = templates[template] || messageBox.value;
     }
     
-    function submitClarify(e) {
+    function openClarify(rfqId) {
+      window.__clarifyRfqId = rfqId || null;
+      showModal('clarifyModal');
+    }
+
+    async function submitClarify(e) {
       e.preventDefault();
+      const to = document.getElementById('clarifyTo').value;
+      const subject = document.getElementById('clarifySubject').value;
+      const body = document.getElementById('clarifyMessage').value;
+
+      const { error } = await db.from('email_outbox').insert([{
+        kind: 'clarification',
+        to_email: to,
+        subject: subject,
+        body: body,
+        related_ref: window.__clarifyRfqId ? 'RFQ-' + window.__clarifyRfqId : null,
+        status: 'queued'
+      }]);
+      if (error) { showToast('Send Failed', error.message, 'error'); return; }
+
+      if (window.__clarifyRfqId) {
+        await updateRfqStatus(window.__clarifyRfqId, 'clarification');
+        window.__clarifyRfqId = null;
+        renderRfqs(await loadRfqsFromDB());
+      }
       closeModal('clarifyModal');
-      showToast('Clarification Sent', 'Email sent to procurement@defencemanufacturing.co.uk');
+      showToast('Clarification Queued', `Email to ${to} added to the outbox`);
+      renderOutbox(await loadOutboxFromDB());
     }
     
     // ============================================
@@ -3807,7 +3936,7 @@ JNR Engineering Limited`
                 </div>
               </div>
               <div class="grid grid-cols-2 gap-3 pt-4 border-t">
-                <button onclick="closeModal('viewDetailModal'); showQuoteModal();" class="bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark">Generate Quote</button>
+                <button onclick="closeModal('viewDetailModal'); prefillQuote('Aerospace Components Ltd', 'CNC machined titanium brackets x50 - Grade 5 Ti-6Al-4V', 50);" class="bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark">Generate Quote</button>
                 <button onclick="closeModal('viewDetailModal')" class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50">Close</button>
               </div>
             </div>
@@ -3861,7 +3990,7 @@ JNR Engineering Limited`
                 <p class="text-sm text-gray-700">Stainless steel shafts x30 - 316 grade, drawings attached. Standard machine shop tolerances acceptable.</p>
               </div>
               <div class="grid grid-cols-2 gap-3 pt-4 border-t">
-                <button onclick="closeModal('viewDetailModal'); showQuoteModal();" class="bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700">Generate Quote Now</button>
+                <button onclick="closeModal('viewDetailModal'); prefillQuote('Precision Engineering Group', 'Stainless steel shafts x30 - 316 grade', 30);" class="bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700">Generate Quote Now</button>
                 <button onclick="closeModal('viewDetailModal')" class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50">Close</button>
               </div>
             </div>
@@ -3938,49 +4067,27 @@ JNR Engineering Limited`
     // ============================================
     // EMAIL SETTINGS SAVE
     // ============================================
-    function saveEmailSettings(e) {
+    async function saveEmailSettings(e) {
       e.preventDefault();
+      const settings = {
+        reminders: [
+          { days: +document.getElementById('remind1Days').value || 3, time: document.getElementById('remind1Time').value },
+          { days: +document.getElementById('remind2Days').value || 7, time: document.getElementById('remind2Time').value },
+          { days: +document.getElementById('remind3Days').value || 14, time: document.getElementById('remind3Time').value }
+        ]
+      };
+      orgSettings = Object.assign({}, orgSettings, settings);
+      const { error } = await db.from('org_settings').upsert(
+        { org_id: currentOrg ? currentOrg.id : null, settings: orgSettings },
+        { onConflict: 'org_id' });
+      if (error) { showToast('Save Failed', error.message, 'error'); return; }
       closeModal('autoSendSettingsModal');
-      showToast('Settings Saved', 'Auto-send schedule updated successfully');
+      showToast('Settings Saved', 'Auto-send schedule updated');
     }
     
-    // ============================================
-    // OVERRIDE EXISTING ACTION BUTTONS - add toast feedback
-    // ============================================
-    
-    // Hijack quote/invoice modal action buttons to show toasts
-    document.addEventListener('click', function(e) {
-      const target = e.target.closest('button');
-      if (!target) return;
-      
-      const btnText = target.textContent.trim();
-      
-      // Action button mappings
-      const actions = {
-        'Download PDF': () => showToast('Download Started', 'PDF generated and downloading...', 'info'),
-        'Send to Customer': () => showToast('Email Sent', 'Document sent to customer successfully'),
-        'Send Now': () => showToast('Email Sent', 'Reminder sent successfully'),
-        'Send Reminder': () => showToast('Reminder Sent', 'Payment reminder sent to customer'),
-        'Final Notice': () => showToast('Final Notice Sent', 'Final payment notice sent', 'warning'),
-        'Convert to Job': () => showToast('Quote Converted', 'New job created from quote'),
-        'Edit Template': () => showToast('Template Editor', 'Opening email template editor...', 'info'),
-        'Cancel Auto-Send': () => showToast('Auto-Send Cancelled', 'Reminder will not auto-send', 'warning'),
-        'Reorder': () => showToast('Reorder Placed', 'Auto-purchase order created with preferred supplier'),
-        'Schedule Service': () => showToast('Service Scheduled', 'Maintenance booking created'),
-        'View Log': () => showToast('Loading Log', 'Opening machine maintenance history...', 'info'),
-        'View Details': () => showToast('Loading Details', 'Opening item details...', 'info'),
-        'Auto-Send All Overdue': () => showToast('Bulk Action Started', '2 reminder emails queued for sending', 'info'),
-        'Save Configuration': () => showToast('Configuration Saved', 'Supplier settings updated successfully'),
-        'Save Settings': () => showToast('Settings Saved', 'Changes applied successfully')
-      };
-      
-      if (actions[btnText]) {
-        actions[btnText]();
-      }
-    });
-    
-    console.log('QuoteFlow AI - All systems operational');
-  
+    // (The old button-text -> toast simulation layer is gone: every action
+    //  button now has a real handler that persists to the database.)
+
     
     // ============================================
     // SUPABASE DATABASE CONNECTION
@@ -4191,9 +4298,10 @@ JNR Engineering Limited`
       if (!container || !rfqs || rfqs.length === 0) return;
       
       const statusBadges = {
-        new: { class: 'bg-blue-50 text-blue-700 border-blue-200', label: 'New', iconBg: 'bg-blue-50', iconColor: 'text-blue-600', actionBtn: '<button onclick="showQuoteModal()" class="px-3 py-1.5 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-dark">Quote</button>' },
-        clarification: { class: 'bg-amber-50 text-amber-700 border-amber-200', label: 'Clarification', iconBg: 'bg-amber-50', iconColor: 'text-amber-600', actionBtn: '<button onclick="showModal(\'clarifyModal\')" class="px-3 py-1.5 text-sm font-medium bg-amber-600 text-white rounded-lg hover:bg-amber-700">Clarify</button>' },
-        ready: { class: 'bg-green-50 text-green-700 border-green-200', label: 'Ready', iconBg: 'bg-green-50', iconColor: 'text-green-600', actionBtn: '<button onclick="showQuoteModal()" class="px-3 py-1.5 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700">Generate Quote</button>' }
+        new: { class: 'bg-blue-50 text-blue-700 border-blue-200', label: 'New', iconBg: 'bg-blue-50', iconColor: 'text-blue-600' },
+        clarification: { class: 'bg-amber-50 text-amber-700 border-amber-200', label: 'Clarification', iconBg: 'bg-amber-50', iconColor: 'text-amber-600' },
+        ready: { class: 'bg-green-50 text-green-700 border-green-200', label: 'Ready', iconBg: 'bg-green-50', iconColor: 'text-green-600' },
+        quoted: { class: 'bg-gray-100 text-gray-600 border-gray-200', label: 'Quoted', iconBg: 'bg-gray-100', iconColor: 'text-gray-500' }
       };
       
       let html = '';
@@ -4222,7 +4330,11 @@ JNR Engineering Limited`
             </div>
             <div class="flex gap-2">
               <button onclick="viewRfqFromDB('${escapeHtml(rfq.id)}')" class="px-3 py-1.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">View</button>
-              ${statusInfo.actionBtn}
+              ${rfq.status === 'clarification'
+                ? `<button onclick="openClarify('${escapeHtml(rfq.id)}')" class="px-3 py-1.5 text-sm font-medium bg-amber-600 text-white rounded-lg hover:bg-amber-700">Clarify</button>`
+                : rfq.status === 'quoted'
+                  ? ''
+                  : `<button onclick="startQuoteFromRfq('${escapeHtml(rfq.id)}')" class="px-3 py-1.5 text-sm font-medium ${rfq.status === 'ready' ? 'bg-green-600 hover:bg-green-700' : 'bg-primary hover:bg-primary-dark'} text-white rounded-lg">${rfq.status === 'ready' ? 'Generate Quote' : 'Quote'}</button>`}
             </div>
           </div>
         `;
@@ -4256,7 +4368,7 @@ JNR Engineering Limited`
             ${data.email ? `<div><h4 class="font-semibold mb-2">Contact</h4><div class="text-sm text-gray-700">📧 ${escapeHtml(data.email)}</div></div>` : ''}
             ${data.notes ? `<div><h4 class="font-semibold mb-2">Notes</h4><p class="text-sm text-gray-700">${escapeHtml(data.notes)}</p></div>` : ''}
             <div class="grid grid-cols-2 gap-3 pt-4 border-t">
-              <button onclick="closeModal('viewDetailModal'); showQuoteModal();" class="bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark">Generate Quote</button>
+              <button onclick="closeModal('viewDetailModal'); startQuoteFromRfq('${escapeHtml(data.id)}');" class="bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark">Generate Quote</button>
               <button onclick="closeModal('viewDetailModal')" class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50">Close</button>
             </div>
           </div>
@@ -4339,7 +4451,7 @@ JNR Engineering Limited`
             <td class="px-6 py-4 text-sm text-gray-600">${fmtDate(q.sent_date)}</td>
             <td class="px-6 py-4"><div class="text-xs space-y-0.5">${history.map(h => `<div class="text-gray-600">${escapeHtml(h)}</div>`).join('')}</div></td>
             <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-medium ${badgeClass} border rounded">${escapeHtml(badge)}</span></td>
-            <td class="px-6 py-4"><button onclick="showEmailDraftModal()" class="text-sm text-blue-600 hover:text-blue-700 font-medium">View</button></td>
+            <td class="px-6 py-4"><button onclick="previewQuoteEmail('${escapeHtml(q.id)}')" class="text-sm text-blue-600 hover:text-blue-700 font-medium">View</button></td>
           </tr>`;
       }).join('');
     }
@@ -4384,6 +4496,9 @@ JNR Engineering Limited`
       set('aging30Count', `${c30} invoice${plural(c30)}`);
       set('aging60Count', `${c60} invoice${plural(c60)}`);
       set('aging90Count', c90 > 0 ? `⚠ ${c90} invoice${plural(c90)} critical` : 'None');
+      set('kpiOutstanding', fmtGBP(totalOwed));
+      invoicesCache = enriched;
+      renderLatePayers(enriched);
 
       // Filter tab counts
       const counts = {
@@ -4512,10 +4627,25 @@ JNR Engineering Limited`
             </td>
             <td class="px-6 py-4">${badge}</td>
             <td class="px-6 py-4">
-              <button onclick="showSupplierConfigModal()" class="text-sm text-primary hover:text-primary-dark font-medium">Configure</button>
+              <button onclick="openSupplierConfig('${escapeHtml(item.sku)}')" class="text-sm text-primary hover:text-primary-dark font-medium">Configure</button>
             </td>
           </tr>`;
       }).join('');
+
+      // Live stock KPI cards
+      stockCache = stock;
+      const lowItems = stock.filter(s => Number(s.reorder_level) > 0 && Number(s.current_stock) / Number(s.reorder_level) <= 1);
+      const autoItems = stock.filter(s => s.auto_purchase);
+      const autoValue = autoItems.reduce((sum, s) => sum + Number(s.reorder_qty || 0) * Number(s.unit_cost || 0), 0);
+      const suppliers = new Set(stock.map(s => s.supplier).filter(Boolean));
+      const stockValue = stock.reduce((sum, s) => sum + Number(s.current_stock || 0) * Number(s.unit_cost || 0), 0);
+      const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      setEl('stockStatLow', lowItems.length);
+      setEl('stockStatLowNote', `${autoItems.filter(s => lowItems.includes(s)).length} auto-ordering`);
+      setEl('stockStatAuto', autoItems.length);
+      setEl('stockStatAutoNote', fmtGBP(autoValue) + ' reorder value');
+      setEl('stockStatSuppliers', suppliers.size);
+      setEl('stockStatValue', fmtGBP(stockValue));
     }
 
     // ============================================
@@ -4555,20 +4685,26 @@ JNR Engineering Limited`
     async function initializeData() {
       console.log('Loading data from Supabase...');
 
-      // Load all data in parallel
-      const [rfqs, quotes, invoices, stock] = await Promise.all([
+      // Load everything in parallel
+      const [rfqs, quotes, invoices, stock, jobs, machines, outbox] = await Promise.all([
         loadRfqsFromDB(),
         loadQuotesFromDB(),
         loadInvoicesFromDB(),
-        loadStockFromDB()
+        loadStockFromDB(),
+        loadJobsFromDB(),
+        loadMachinesFromDB(),
+        loadOutboxFromDB()
       ]);
 
-      // Render everything that came back; pages with no DB rows
-      // keep their built-in demo content as a fallback
       updateRfqStats(rfqs);
       renderQuoteFollowups(quotes);
       renderInvoices(invoices);
       renderStock(stock);
+      renderJobs(jobs);
+      renderMachines(machines);
+      renderOutbox(outbox);
+      computeDashboard(quotes, invoices);
+      await loadOrgSettings();
 
       // Default the invoice modal dates to today / +30 days
       const invDate = document.getElementById('invDate');
@@ -4576,18 +4712,14 @@ JNR Engineering Limited`
       if (invDate) invDate.value = new Date().toISOString().slice(0, 10);
       if (invDue) invDue.value = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
 
-      const totalRows = rfqs.length + quotes.length + invoices.length + stock.length;
-      if (totalRows > 0) {
-        showToast('System Online', `Live data loaded: ${rfqs.length} RFQs, ${quotes.length} quotes, ${invoices.length} invoices, ${stock.length} stock items.`, 'success');
-      }
+      showToast('Workspace Loaded', `${rfqs.length} RFQs, ${quotes.length} quotes, ${invoices.length} invoices, ${jobs.length} jobs.`, 'success');
     }
     
-    // Run on page load (after DOM is ready)
+    // Boot: authentication decides whether the app loads at all
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initializeData);
+      document.addEventListener('DOMContentLoaded', initAuth);
     } else {
-      // DOM already loaded
-      setTimeout(initializeData, 100);
+      setTimeout(initAuth, 50);
     }
 
     
@@ -4595,9 +4727,59 @@ JNR Engineering Limited`
     // INVOICE ACTIONS
     // ============================================
 
-    function bulkSendReminders() {
-      showToast('Reminders Drafted', '5 reminder emails added to Approval Queue. Review before sending.', 'info');
-      setTimeout(() => navigateToPage('approval'), 800);
+    function reminderBody(kind, inv, days) {
+      const opener = kind === 'final_notice' ? 'Dear Sir/Madam,'
+        : kind === 'firm_chase' ? 'Hello,' : 'Hi Team,';
+      const line = kind === 'final_notice'
+        ? `This is a final notice regarding outstanding invoice ${inv.invoice_ref} for ${fmtGBP(inv.total)}, now ${days} days overdue. Unless payment is received within 7 days we will have no option but to escalate this matter.`
+        : kind === 'firm_chase'
+          ? `I'm following up on invoice ${inv.invoice_ref} for ${fmtGBP(inv.total)} which is now ${days} days overdue. Could you let me know when we can expect payment?`
+          : `Just a quick reminder that invoice ${inv.invoice_ref} for ${fmtGBP(inv.total)} was due ${days} day${days === 1 ? '' : 's'} ago. If you've already arranged payment please ignore this.`;
+      return `${opener}\n\n${line}\n\nRegards,\n${currentOrg ? currentOrg.name : 'QuoteFlow'}`;
+    }
+
+    async function draftReminderForInvoice(inv, silent) {
+      const days = Math.max(1, daysBetween(new Date(inv.due_date), new Date()));
+      const kind = days > 60 ? 'final_notice' : days > 30 ? 'firm_chase' : 'gentle_reminder';
+      const label = kind === 'final_notice' ? 'Final Notice' : kind === 'firm_chase' ? 'Overdue Invoice' : 'Friendly Reminder';
+      const { error } = await db.from('email_outbox').insert([{
+        kind: kind,
+        customer: inv.customer,
+        amount: inv.total,
+        days_overdue: days,
+        related_ref: inv.invoice_ref,
+        subject: `${label} - ${inv.invoice_ref} - ${fmtGBP(inv.total)}`,
+        body: reminderBody(kind, inv, days),
+        status: 'pending_approval'
+      }]);
+      if (error) { showToast('Draft Failed', error.message, 'error'); return false; }
+      if (!silent) showToast('Reminder Drafted', `${inv.invoice_ref} chase added to the Approval Queue`, 'info');
+      return true;
+    }
+
+    async function bulkSendReminders() {
+      const invoices = await loadInvoicesFromDB();
+      const today = new Date();
+      const overdue = (invoices || []).filter(i =>
+        i.status !== 'paid' && i.due_date && daysBetween(new Date(i.due_date), today) > 0);
+      if (overdue.length === 0) {
+        showToast('Nothing to Chase', 'No overdue invoices right now', 'info');
+        return;
+      }
+      const outbox = await loadOutboxFromDB();
+      const alreadyDrafted = new Set((outbox || [])
+        .filter(o => o.status === 'pending_approval').map(o => o.related_ref));
+      const targets = overdue.filter(i => !alreadyDrafted.has(i.invoice_ref));
+
+      let drafted = 0;
+      for (const inv of targets) {
+        if (await draftReminderForInvoice(inv, true)) drafted++;
+      }
+      showToast('Reminders Drafted', drafted > 0
+        ? `${drafted} reminder email${drafted === 1 ? '' : 's'} added to the Approval Queue. Review before sending.`
+        : 'All overdue invoices already have a draft awaiting approval.', 'info');
+      renderOutbox(await loadOutboxFromDB());
+      setTimeout(() => navigateToPage('approval'), 600);
     }
     
     async function markInvoicePaid(invoiceRef) {
@@ -4631,93 +4813,171 @@ JNR Engineering Limited`
       }
     }
     
-    function showInvoiceDetail(invoiceRef) {
-      showToast('Loading Invoice', `Opening details for ${invoiceRef}...`, 'info');
-      setTimeout(() => showInvoiceModal(), 400);
+    async function showInvoiceDetail(invoiceRef) {
+      const { data, error } = await db.from('invoices').select('*').eq('invoice_ref', invoiceRef).single();
+      if (error || !data) { showToast('Error', 'Could not load invoice ' + invoiceRef, 'error'); return; }
+      const inv = data;
+      const days = inv.due_date && inv.status !== 'paid' ? daysBetween(new Date(inv.due_date), new Date()) : 0;
+
+      document.getElementById('viewDetailTitle').textContent = `Invoice ${inv.invoice_ref}`;
+      document.getElementById('viewDetailBody').innerHTML = `
+        <div class="space-y-4">
+          <div class="bg-gray-50 rounded-lg p-4">
+            <div class="grid grid-cols-2 gap-4 text-sm">
+              <div><span class="text-gray-500">Customer:</span> <span class="font-semibold">${escapeHtml(inv.customer)}</span></div>
+              <div><span class="text-gray-500">Status:</span> <span class="font-semibold">${inv.status === 'paid' ? 'Paid' : days > 0 ? days + ' days overdue' : 'Outstanding'}</span></div>
+              <div><span class="text-gray-500">Sent:</span> ${fmtDate(inv.sent_date)}</div>
+              <div><span class="text-gray-500">Due:</span> ${fmtDate(inv.due_date)}</div>
+              <div><span class="text-gray-500">Total (inc VAT):</span> <span class="text-mono font-semibold">${fmtGBP(inv.total)}</span></div>
+              ${inv.paid_at ? `<div><span class="text-gray-500">Paid:</span> ${fmtDate(inv.paid_at)}</div>` : ''}
+            </div>
+          </div>
+          <div>
+            <h4 class="font-semibold mb-2">Description</h4>
+            <p class="text-sm text-gray-700">${escapeHtml(inv.description || 'No description')}</p>
+          </div>
+          <div class="grid grid-cols-2 gap-3 pt-4 border-t">
+            <button onclick="printInvoice('${escapeHtml(inv.invoice_ref)}')" class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50">Print / PDF</button>
+            ${inv.status !== 'paid'
+              ? `<button onclick="closeModal('viewDetailModal'); draftInvoiceReminder('${escapeHtml(inv.invoice_ref)}')" class="bg-amber-600 text-white py-3 rounded-lg font-semibold hover:bg-amber-700">Draft Reminder</button>`
+              : `<button onclick="closeModal('viewDetailModal')" class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50">Close</button>`}
+          </div>
+        </div>`;
+      showModal('viewDetailModal');
+    }
+
+    async function draftInvoiceReminder(invoiceRef) {
+      const { data } = await db.from('invoices').select('*').eq('invoice_ref', invoiceRef).single();
+      if (!data) return;
+      if (await draftReminderForInvoice(data, false)) {
+        renderOutbox(await loadOutboxFromDB());
+      }
+    }
+
+    async function printInvoice(invoiceRef) {
+      const { data } = await db.from('invoices').select('*').eq('invoice_ref', invoiceRef).single();
+      if (!data) return;
+      const net = Number(data.total || 0) / 1.2;
+      printDocument(`Invoice ${data.invoice_ref}`, `
+        <h1>INVOICE</h1>
+        <p class="muted">${escapeHtml(currentOrg ? currentOrg.name : '')}</p>
+        <table>
+          <tr><td>Invoice No</td><td class="mono">${escapeHtml(data.invoice_ref)}</td></tr>
+          <tr><td>Customer</td><td>${escapeHtml(data.customer)}</td></tr>
+          <tr><td>Date</td><td>${fmtDate(data.sent_date)}</td></tr>
+          <tr><td>Due</td><td>${fmtDate(data.due_date)}</td></tr>
+        </table>
+        <h3>Description</h3>
+        <p>${escapeHtml(data.description || '')}</p>
+        <table>
+          <tr><td>Net</td><td class="mono">£${net.toFixed(2)}</td></tr>
+          <tr><td>VAT (20%)</td><td class="mono">£${(Number(data.total || 0) - net).toFixed(2)}</td></tr>
+          <tr><td><strong>Total</strong></td><td class="mono"><strong>£${Number(data.total || 0).toFixed(2)}</strong></td></tr>
+        </table>`);
     }
     
     // ============================================
     // APPROVAL QUEUE ACTIONS
     // ============================================
     
-    function approveEmail(id) {
+    async function approveEmail(id) {
+      const { data, error } = await db.from('email_outbox')
+        .update({ status: 'approved', approved_at: new Date().toISOString() })
+        .eq('id', id).select();
+      if (error || !data || data.length === 0) {
+        showToast('Approve Failed', error ? error.message : 'Email not found', 'error');
+        return;
+      }
+
       const card = document.querySelector(`[data-approval-id="${id}"]`);
-      if (!card) return;
-      
-      const customerEl = card.querySelector('.font-semibold');
-      const customer = customerEl ? customerEl.textContent : 'customer';
-      
-      // Animate out
-      card.style.transition = 'all 0.4s ease';
-      card.style.transform = 'translateX(20px)';
-      card.style.opacity = '0';
-      
-      setTimeout(() => {
-        card.remove();
-        updateApprovalBadge();
-        checkEmptyQueue();
-      }, 400);
-      
-      showToast('Email Sent', `Reminder sent to ${customer}`, 'success');
+      if (card) {
+        card.style.transition = 'all 0.4s ease';
+        card.style.transform = 'translateX(20px)';
+        card.style.opacity = '0';
+        setTimeout(() => { card.remove(); updateApprovalBadge(); checkEmptyQueue(); }, 400);
+      }
+      showToast('Email Approved', `Reminder to ${data[0].customer || data[0].to_email || 'customer'} moved to the outbox`, 'success');
+      outboxCache = await loadOutboxFromDB();
+      renderRecentlySent(outboxCache);
     }
-    
+
     function editEmail(id) {
-      showToast('Opening Editor', 'Edit email content before sending...', 'info');
+      const o = outboxCache.find(x => String(x.id) === String(id));
+      if (!o) return;
+      document.getElementById('viewDetailTitle').textContent = 'Edit Email - ' + (o.customer || o.to_email || '');
+      document.getElementById('viewDetailBody').innerHTML = `
+        <div class="space-y-4">
+          <div class="form-group"><label class="form-label">To</label>
+            <input type="email" id="editEmailTo" class="form-input" value="${escapeHtml(o.to_email || '')}"></div>
+          <div class="form-group"><label class="form-label">Subject</label>
+            <input type="text" id="editEmailSubject" class="form-input" value="${escapeHtml(o.subject || '')}"></div>
+          <div class="form-group"><label class="form-label">Message</label>
+            <textarea id="editEmailBody" class="form-textarea" style="min-height: 220px;">${escapeHtml(o.body || '')}</textarea></div>
+          <div class="grid grid-cols-2 gap-3 pt-2">
+            <button onclick="saveEmailEdit('${o.id}')" class="bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark">Save Changes</button>
+            <button onclick="closeModal('viewDetailModal')" class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50">Cancel</button>
+          </div>
+        </div>`;
+      showModal('viewDetailModal');
     }
-    
+
+    async function saveEmailEdit(id) {
+      const { error } = await db.from('email_outbox').update({
+        to_email: document.getElementById('editEmailTo').value,
+        subject: document.getElementById('editEmailSubject').value,
+        body: document.getElementById('editEmailBody').value
+      }).eq('id', id);
+      if (error) { showToast('Save Failed', error.message, 'error'); return; }
+      closeModal('viewDetailModal');
+      showToast('Email Updated', 'Changes saved to the draft');
+      renderOutbox(await loadOutboxFromDB());
+    }
+
     function previewEmail(id) {
-      showToast('Loading Preview', 'Opening full email preview...', 'info');
+      const o = outboxCache.find(x => String(x.id) === String(id));
+      if (!o) return;
+      document.getElementById('viewDetailTitle').textContent = o.subject || 'Email Preview';
+      document.getElementById('viewDetailBody').innerHTML = `
+        <div class="space-y-3">
+          <div class="text-sm text-gray-500">To: ${escapeHtml(o.to_email || '(no recipient set)')}</div>
+          <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-700" style="white-space: pre-wrap;">${escapeHtml(o.body || '')}</div>
+          <button onclick="closeModal('viewDetailModal')" class="w-full border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50">Close</button>
+        </div>`;
+      showModal('viewDetailModal');
     }
-    
-    function skipEmail(id) {
-      const card = document.querySelector(`[data-approval-id="${id}"]`);
-      if (!card) return;
-      
+
+    async function skipEmail(id) {
       if (!confirm('Skip this reminder? It won\'t be sent and won\'t auto-redraft for 7 days.')) return;
-      
-      card.style.transition = 'all 0.3s ease';
-      card.style.opacity = '0';
-      card.style.maxHeight = '0';
-      
-      setTimeout(() => {
-        card.remove();
-        updateApprovalBadge();
-        checkEmptyQueue();
-      }, 300);
-      
+      const { error } = await db.from('email_outbox').update({ status: 'skipped' }).eq('id', id);
+      if (error) { showToast('Skip Failed', error.message, 'error'); return; }
+
+      const card = document.querySelector(`[data-approval-id="${id}"]`);
+      if (card) {
+        card.style.transition = 'all 0.3s ease';
+        card.style.opacity = '0';
+        setTimeout(() => { card.remove(); updateApprovalBadge(); checkEmptyQueue(); }, 300);
+      }
       showToast('Email Skipped', 'Will not be redrafted for 7 days', 'warning');
+      outboxCache = await loadOutboxFromDB();
     }
-    
-    function approveAllReminders() {
-      const cards = document.querySelectorAll('[data-approval-id]');
-      const safeCards = Array.from(cards).filter(card => {
-        // Skip Final Notices - require individual approval
-        return !card.querySelector('.bg-red-600');
-      });
-      
-      if (safeCards.length === 0) {
+
+    async function approveAllReminders() {
+      const safe = outboxCache.filter(o => o.status === 'pending_approval' && o.kind !== 'final_notice');
+      if (safe.length === 0) {
         showToast('No Safe Emails', 'Final notices require individual approval', 'warning');
         return;
       }
-      
-      if (!confirm(`Approve and send ${safeCards.length} reminder email${safeCards.length > 1 ? 's' : ''}? Final notices will still need individual approval.`)) return;
-      
-      safeCards.forEach((card, idx) => {
-        setTimeout(() => {
-          card.style.transition = 'all 0.4s ease';
-          card.style.transform = 'translateX(20px)';
-          card.style.opacity = '0';
-          setTimeout(() => {
-            card.remove();
-            updateApprovalBadge();
-            checkEmptyQueue();
-          }, 400);
-        }, idx * 200);
-      });
-      
-      showToast('Bulk Approval', `${safeCards.length} email${safeCards.length > 1 ? 's' : ''} sent successfully`, 'success');
+      if (!confirm(`Approve ${safe.length} reminder email${safe.length > 1 ? 's' : ''}? Final notices will still need individual approval.`)) return;
+
+      for (const o of safe) {
+        const { error } = await db.from('email_outbox')
+          .update({ status: 'approved', approved_at: new Date().toISOString() }).eq('id', o.id);
+        if (error) { showToast('Approve Failed', error.message, 'error'); return; }
+      }
+      showToast('Bulk Approval', `${safe.length} email${safe.length > 1 ? 's' : ''} approved`, 'success');
+      renderOutbox(await loadOutboxFromDB());
     }
-    
+
     function updateApprovalBadge() {
       const remaining = document.querySelectorAll('[data-approval-id]').length;
       const badge = document.getElementById('approvalBadge');
@@ -4725,6 +4985,7 @@ JNR Engineering Limited`
         if (remaining === 0) {
           badge.style.display = 'none';
         } else {
+          badge.style.display = '';
           badge.textContent = remaining;
         }
       }
@@ -4749,6 +5010,842 @@ JNR Engineering Limited`
     }
 
     
+    // ============================================================
+    // PHASE 1 - AUTHENTICATION & ORGANISATION (tenant isolation)
+    // ============================================================
+    let currentOrg = null;
+    let orgPrefix = 'QF';
+    let orgSettings = {};
+    let authMode = 'login';
+    let authedUserId = null;
+    let outboxCache = [];
+    let stockCache = [];
+    let invoicesCache = [];
+    let jobsCache = [];
+    let machinesCache = [];
+    let scanMode = 'in';
+
+    function showAuthOverlay() {
+      document.getElementById('authOverlay').classList.remove('hidden');
+    }
+    function hideAuthOverlay() {
+      document.getElementById('authOverlay').classList.add('hidden');
+    }
+    function showAuthError(msg) {
+      const el = document.getElementById('authError');
+      el.textContent = msg; el.style.display = 'block';
+      document.getElementById('authNotice').style.display = 'none';
+    }
+    function showAuthNotice(msg) {
+      const el = document.getElementById('authNotice');
+      el.textContent = msg; el.style.display = 'block';
+      document.getElementById('authError').style.display = 'none';
+    }
+
+    function toggleAuthMode() {
+      authMode = authMode === 'login' ? 'signup' : 'login';
+      document.getElementById('authTitle').textContent = authMode === 'login' ? 'Sign in' : 'Create your workspace';
+      document.getElementById('authSub').textContent = authMode === 'login'
+        ? 'Log in to your company workspace'
+        : 'Set up a private workspace for your company';
+      document.getElementById('authSubmitBtn').textContent = authMode === 'login' ? 'Sign In' : 'Create Account';
+      document.getElementById('authToggle').textContent = authMode === 'login'
+        ? 'New company? Create an account' : 'Already registered? Sign in';
+      document.getElementById('authOrgField').style.display = authMode === 'login' ? 'none' : 'block';
+      document.getElementById('authError').style.display = 'none';
+      document.getElementById('authNotice').style.display = 'none';
+    }
+
+    async function submitAuth(e) {
+      e.preventDefault();
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value;
+      const btn = document.getElementById('authSubmitBtn');
+      btn.disabled = true;
+      try {
+        if (authMode === 'login') {
+          const { error } = await db.auth.signInWithPassword({ email, password });
+          if (error) showAuthError(error.message);
+        } else {
+          const { data, error } = await db.auth.signUp({ email, password });
+          if (error) {
+            showAuthError(error.message);
+          } else if (!data.session) {
+            showAuthNotice('Account created. Check your inbox to confirm your email, then sign in.');
+            authMode = 'signup_done';
+            toggleAuthMode();
+            authMode = 'login';
+          }
+          // With email confirmation off, signUp returns a session and
+          // onAuthStateChange takes over from here.
+        }
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function onSignedIn(session) {
+      if (authedUserId === session.user.id && currentOrg) return;
+      authedUserId = session.user.id;
+
+      const requestedName = document.getElementById('authOrgName').value.trim();
+      const { data, error } = await db.rpc('ensure_org', { org_name: requestedName });
+      if (error) {
+        showAuthError('Could not open your workspace: ' + error.message);
+        await db.auth.signOut();
+        return;
+      }
+      const row = Array.isArray(data) ? data[0] : data;
+      currentOrg = { id: row.org_id, name: row.org_display_name };
+      // Document prefix: keep an existing acronym ("JNR Engineering" -> JNR),
+      // otherwise take initials ("Precision Parts Co" -> PPC)
+      const words = (currentOrg.name || 'QF').trim().split(/\s+/);
+      orgPrefix = (words[0] && words[0].length >= 2 && words[0].length <= 5 && /^[A-Z0-9]+$/.test(words[0]))
+        ? words[0]
+        : (words.map(w => w[0]).join('').replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() || 'QF');
+
+      document.getElementById('userEmail').textContent = session.user.email;
+      document.getElementById('userOrg').textContent = currentOrg.name;
+      const orgLabels = document.querySelectorAll('.logo-text p, .top-bar .text-xs.text-gray-600.font-medium');
+      orgLabels.forEach(el => { el.textContent = currentOrg.name; });
+
+      hideAuthOverlay();
+      initializeData();
+    }
+
+    async function initAuth() {
+      const { data } = await db.auth.getSession();
+      if (data && data.session) {
+        await onSignedIn(data.session);
+      } else {
+        showAuthOverlay();
+      }
+      db.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN' && session) onSignedIn(session);
+        if (event === 'SIGNED_OUT') {
+          currentOrg = null; authedUserId = null;
+          showAuthOverlay();
+        }
+      });
+    }
+
+    async function signOut() {
+      await db.auth.signOut();
+      showToast('Signed Out', 'Your session has ended', 'info');
+    }
+
+    // ============================================================
+    // PHASE 1 - QUOTE ENGINE (cost model, refs, PDF, outbox)
+    // ============================================================
+    const RATES = { machine: 65, setup: 45, wastePct: 0.08, margin: 0.35 };
+
+    async function nextRef(table, column, prefix) {
+      const { data } = await db.from(table).select(column).order(column, { ascending: false });
+      let max = 0;
+      (data || []).forEach(r => {
+        const v = r[column];
+        if (v && v.startsWith(prefix)) {
+          const n = parseInt(v.slice(prefix.length), 10);
+          if (!isNaN(n) && n > max) max = n;
+        }
+      });
+      return prefix + String(max + 1).padStart(3, '0');
+    }
+
+    function prefillQuote(customer, description, quantity) {
+      document.getElementById('quoteCustomer').value = customer || '';
+      document.getElementById('quoteDesc').value = description || '';
+      if (quantity) document.getElementById('quoteQty').value = quantity;
+      navigateToPage('quote');
+      showToast('RFQ Loaded', 'Add costs and hours, then Generate Quote', 'info');
+    }
+
+    async function startQuoteFromRfq(id) {
+      const { data } = await db.from('rfqs').select('*').eq('id', id).single();
+      if (data) {
+        window.__quoteRfqId = data.id;
+        window.__quoteRfqEmail = data.email || null;
+        const matSel = document.getElementById('quoteMaterial');
+        if (data.material && matSel) {
+          Array.from(matSel.options).forEach(o => { if (o.text === data.material) matSel.value = o.value; });
+        }
+        prefillQuote(data.customer, data.description, data.quantity);
+      } else {
+        navigateToPage('quote');
+      }
+    }
+
+    async function generateQuote() {
+      const customer = document.getElementById('quoteCustomer').value.trim();
+      const description = document.getElementById('quoteDesc').value.trim();
+      const qty = parseFloat(document.getElementById('quoteQty').value) || 1;
+      const matCost = parseFloat(document.getElementById('quoteMatCost').value) || 0;
+      const machineHrs = parseFloat(document.getElementById('quoteMachineHrs').value) || 0;
+      const setupHrs = parseFloat(document.getElementById('quoteSetupHrs').value) || 0;
+      if (!customer) { showToast('Missing Customer', 'Enter a customer name first', 'warning'); return; }
+
+      const material = matCost * (1 + RATES.wastePct);
+      const machine = machineHrs * RATES.machine;
+      const setup = setupHrs * RATES.setup;
+      const totalCost = material + machine + setup;
+      const price = totalCost / (1 - RATES.margin);
+      const profit = price - totalCost;
+
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      set('quoteResValue', '£' + price.toFixed(2));
+      set('quoteResCost', '£' + totalCost.toFixed(2));
+      set('quoteResMargin', Math.round(RATES.margin * 100) + '%');
+      set('quoteBdMaterial', '£' + material.toFixed(2));
+      set('quoteBdMachineLabel', `Machine Time (${machineHrs}hrs × £${RATES.machine})`);
+      set('quoteBdMachine', '£' + machine.toFixed(2));
+      set('quoteBdSetupLabel', `Setup Time (${setupHrs}hrs × £${RATES.setup})`);
+      set('quoteBdSetup', '£' + setup.toFixed(2));
+      set('quoteBdTotal', '£' + totalCost.toFixed(2));
+      set('quoteBdProfitLabel', `Profit (${Math.round(RATES.margin * 100)}% margin)`);
+      set('quoteBdProfit', '£' + profit.toFixed(2));
+
+      const quote_ref = await nextRef('quotes', 'quote_ref', orgPrefix + '-Q-');
+      const quoteData = {
+        quote_ref, customer, description,
+        quantity: Math.round(qty),
+        unit_price: +(price / qty).toFixed(2),
+        total: +price.toFixed(2),
+        status: 'draft',
+        sent_date: new Date().toISOString().slice(0, 10)
+      };
+      const { data, error } = await db.from('quotes').insert([quoteData]).select();
+      if (error) { showToast('Save Failed', error.message, 'error'); return; }
+      window.__lastQuote = Object.assign({}, data[0], { material, machine, setup, totalCost, profit, machineHrs, setupHrs });
+      set('quoteResRef', quote_ref);
+
+      if (window.__quoteRfqId) {
+        await updateRfqStatus(window.__quoteRfqId, 'quoted');
+        window.__quoteRfqId = null;
+        renderRfqs(await loadRfqsFromDB());
+      }
+      renderQuoteFollowups(await loadQuotesFromDB());
+      showToast('Quote Saved', `${quote_ref} for ${customer} - ${fmtGBP(price)}`, 'success');
+    }
+
+    function printDocument(title, bodyHtml) {
+      const w = window.open('', '_blank');
+      if (!w) { showToast('Popup Blocked', 'Allow popups to print documents', 'warning'); return; }
+      w.document.write(`<!DOCTYPE html><html><head><title>${escapeHtml(title)}</title><style>
+        body { font-family: 'Segoe UI', system-ui, sans-serif; color: #0F172A; padding: 40px; max-width: 700px; margin: 0 auto; }
+        h1 { color: #1E3472; letter-spacing: 0.02em; }
+        h3 { margin-top: 24px; }
+        .muted { color: #64748B; }
+        .mono { font-family: 'Courier New', monospace; }
+        table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+        td { padding: 8px 10px; border-bottom: 1px solid #E2E8F0; }
+        td:last-child { text-align: right; }
+        footer { margin-top: 40px; font-size: 12px; color: #94A3B8; }
+      </style></head><body>${bodyHtml}
+      <footer>Generated by QuoteFlow · ${new Date().toLocaleDateString('en-GB')}</footer>
+      </body></html>`);
+      w.document.close();
+      w.focus();
+      setTimeout(() => w.print(), 300);
+    }
+
+    function downloadQuotePdf() {
+      const q = window.__lastQuote;
+      if (!q) { showToast('No Quote Yet', 'Generate a quote first', 'warning'); return; }
+      printDocument(`Quote ${q.quote_ref}`, `
+        <h1>QUOTATION</h1>
+        <p class="muted">${escapeHtml(currentOrg ? currentOrg.name : '')}</p>
+        <table>
+          <tr><td>Quote Ref</td><td class="mono">${escapeHtml(q.quote_ref)}</td></tr>
+          <tr><td>Customer</td><td>${escapeHtml(q.customer)}</td></tr>
+          <tr><td>Date</td><td>${fmtDate(q.sent_date)}</td></tr>
+          <tr><td>Valid For</td><td>30 days</td></tr>
+        </table>
+        <h3>Description</h3>
+        <p>${escapeHtml(q.description || '')} (Qty: ${q.quantity})</p>
+        <table>
+          <tr><td>Unit Price</td><td class="mono">£${Number(q.unit_price).toFixed(2)}</td></tr>
+          <tr><td><strong>Total (ex VAT)</strong></td><td class="mono"><strong>£${Number(q.total).toFixed(2)}</strong></td></tr>
+        </table>`);
+    }
+
+    function sendQuoteToCustomer() {
+      const q = window.__lastQuote;
+      if (!q) { showToast('No Quote Yet', 'Generate a quote first', 'warning'); return; }
+      document.getElementById('viewDetailTitle').textContent = `Send Quote ${q.quote_ref}`;
+      document.getElementById('viewDetailBody').innerHTML = `
+        <div class="space-y-4">
+          <div class="form-group"><label class="form-label">Customer Email</label>
+            <input type="email" id="sendQuoteEmail" class="form-input" value="${escapeHtml(window.__quoteRfqEmail || '')}" placeholder="customer@company.co.uk" required></div>
+          <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-700" style="white-space: pre-wrap;">${escapeHtml(quoteEmailBody(q))}</div>
+          <div class="grid grid-cols-2 gap-3">
+            <button onclick="queueQuoteEmail()" class="bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark">Add to Outbox</button>
+            <button onclick="closeModal('viewDetailModal')" class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50">Cancel</button>
+          </div>
+        </div>`;
+      showModal('viewDetailModal');
+    }
+
+    function quoteEmailBody(q) {
+      return `Hi,\n\nPlease find our quotation ${q.quote_ref} below.\n\n${q.description || ''} (Qty: ${q.quantity})\nTotal: ${fmtGBP(q.total)} ex VAT\nValid for 30 days.\n\nAny questions, just reply to this email.\n\nRegards,\n${currentOrg ? currentOrg.name : ''}`;
+    }
+
+    async function queueQuoteEmail() {
+      const q = window.__lastQuote;
+      const to = document.getElementById('sendQuoteEmail').value.trim();
+      if (!q || !to) { showToast('Missing Email', 'Enter the customer\'s email address', 'warning'); return; }
+      const { error } = await db.from('email_outbox').insert([{
+        kind: 'quote_send', to_email: to, customer: q.customer, amount: q.total,
+        related_ref: q.quote_ref,
+        subject: `Quotation ${q.quote_ref} - ${currentOrg ? currentOrg.name : 'QuoteFlow'}`,
+        body: quoteEmailBody(q), status: 'queued'
+      }]);
+      if (error) { showToast('Queue Failed', error.message, 'error'); return; }
+      await db.from('quotes').update({ status: 'sent' }).eq('id', q.id);
+      closeModal('viewDetailModal');
+      showToast('Quote Queued', `${q.quote_ref} added to the outbox for ${to}`, 'success');
+      renderOutbox(await loadOutboxFromDB());
+      renderQuoteFollowups(await loadQuotesFromDB());
+    }
+
+    function previewQuoteEmail(id) {
+      db.from('quotes').select('*').eq('id', id).single().then(({ data }) => {
+        if (!data) return;
+        document.getElementById('viewDetailTitle').textContent = `Quote ${data.quote_ref || ''} - ${data.customer}`;
+        document.getElementById('viewDetailBody').innerHTML = `
+          <div class="space-y-3">
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-700" style="white-space: pre-wrap;">${escapeHtml(quoteEmailBody(data))}</div>
+            <button onclick="closeModal('viewDetailModal')" class="w-full border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50">Close</button>
+          </div>`;
+        showModal('viewDetailModal');
+      });
+    }
+
+    // ============================================================
+    // PHASE 1 - JOBS
+    // ============================================================
+    const JOB_STAGES = ['material', 'setup', 'machining', 'inspection', 'done'];
+    const JOB_STAGE_LABELS = { material: 'Material Ordered', setup: 'Setup', machining: 'Machining', inspection: 'Inspection', done: 'Complete' };
+
+    async function loadJobsFromDB() {
+      const { data, error } = await db.from('jobs').select('*').order('due_date', { ascending: true });
+      if (error) { console.error('Error loading jobs:', error); return []; }
+      jobsCache = data || [];
+      return jobsCache;
+    }
+
+    function renderJobs(jobs) {
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      if (jobs && jobs.length) {
+        set('jobStatMaterial', jobs.filter(j => j.stage === 'material').length);
+        set('jobStatSetup', jobs.filter(j => j.stage === 'setup').length);
+        set('jobStatMachining', jobs.filter(j => j.stage === 'machining').length);
+        set('jobStatInspection', jobs.filter(j => j.stage === 'inspection').length);
+      }
+      const tbody = document.getElementById('jobTableBody');
+      if (!tbody || !jobs || jobs.length === 0) return;
+
+      const today = new Date();
+      tbody.innerHTML = jobs.map(j => {
+        const overdue = j.stage !== 'done' && j.due_date && daysBetween(new Date(j.due_date), today) > 0;
+        const atRisk = !overdue && j.stage !== 'done' && j.due_date && daysBetween(new Date(j.due_date), today) > -3;
+        const status = j.stage === 'done' ? 'done' : overdue ? 'overdue' : atRisk ? 'at_risk' : 'on_track';
+        const badge = {
+          done: '<span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200 rounded">Complete</span>',
+          overdue: '<span class="px-2 py-1 text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 rounded">Behind Schedule</span>',
+          at_risk: '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-700 border border-red-300 rounded">At Risk</span>',
+          on_track: '<span class="px-2 py-1 text-xs font-medium bg-green-50 text-green-700 border border-green-200 rounded">On Track</span>'
+        }[status];
+        const nextStage = JOB_STAGES[JOB_STAGES.indexOf(j.stage) + 1];
+        return `
+          <tr class="hover:bg-gray-50 transition-colors job-row" data-status="${status}" data-stage="${escapeHtml(j.stage)}">
+            <td class="px-6 py-4 text-sm font-medium text-gray-900 text-mono">${escapeHtml(j.job_ref || '')}</td>
+            <td class="px-6 py-4 text-sm text-gray-900">${escapeHtml(j.customer || '')}</td>
+            <td class="px-6 py-4 text-sm text-gray-600">${escapeHtml(j.description || '')}</td>
+            <td class="px-6 py-4 text-sm text-gray-600">${JOB_STAGE_LABELS[j.stage] || escapeHtml(j.stage || '')}</td>
+            <td class="px-6 py-4 text-sm text-gray-600">${fmtDate(j.due_date)}</td>
+            <td class="px-6 py-4">${badge}</td>
+            <td class="px-6 py-4">${nextStage
+              ? `<button onclick="advanceJobStage('${j.id}')" class="text-sm text-primary hover:text-primary-dark font-medium">→ ${JOB_STAGE_LABELS[nextStage]}</button>`
+              : '<span class="text-xs text-gray-400">—</span>'}</td>
+          </tr>`;
+      }).join('');
+    }
+
+    async function advanceJobStage(id) {
+      const job = jobsCache.find(j => String(j.id) === String(id));
+      if (!job) return;
+      const next = JOB_STAGES[JOB_STAGES.indexOf(job.stage) + 1];
+      if (!next) return;
+      const { error } = await db.from('jobs').update({ stage: next }).eq('id', id);
+      if (error) { showToast('Update Failed', error.message, 'error'); return; }
+      showToast('Job Updated', `${job.job_ref} moved to ${JOB_STAGE_LABELS[next]}`, 'success');
+      renderJobs(await loadJobsFromDB());
+    }
+
+    // ============================================================
+    // PHASE 1 - MACHINES
+    // ============================================================
+    async function loadMachinesFromDB() {
+      const { data, error } = await db.from('machines').select('*').order('next_due', { ascending: true });
+      if (error) { console.error('Error loading machines:', error); return []; }
+      machinesCache = data || [];
+      return machinesCache;
+    }
+
+    function renderMachines(machines) {
+      const tbody = document.getElementById('machineTableBody');
+      if (!machines || machines.length === 0) return;
+      const today = new Date();
+
+      const withStatus = machines.map(m => {
+        const days = m.next_due ? daysBetween(today, new Date(m.next_due)) : 999;
+        const status = days < 0 ? 'overdue' : days <= 14 ? 'due_soon' : 'healthy';
+        return { ...m, status };
+      });
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      set('machineStatWarnings', withStatus.filter(m => m.status === 'overdue').length);
+      set('machineStatDue', withStatus.filter(m => m.status === 'due_soon').length);
+      set('machineStatOperational', withStatus.length);
+
+      if (!tbody) return;
+      tbody.innerHTML = withStatus.map(m => {
+        const rowTone = m.status === 'overdue' ? 'bg-red-50 hover:bg-red-100'
+          : m.status === 'due_soon' ? 'bg-amber-50 hover:bg-amber-100' : 'hover:bg-gray-50';
+        const badge = m.status === 'overdue'
+          ? '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-700 border border-red-300 rounded">Maintenance Overdue</span>'
+          : m.status === 'due_soon'
+            ? '<span class="px-2 py-1 text-xs font-medium bg-amber-100 text-amber-700 border border-amber-300 rounded">Due Soon</span>'
+            : '<span class="px-2 py-1 text-xs font-medium bg-green-50 text-green-700 border border-green-200 rounded">Good</span>';
+        return `
+          <tr class="${rowTone} transition-colors machine-row" data-machine-status="${m.status}">
+            <td class="px-6 py-4 text-sm font-medium text-gray-900">${escapeHtml(m.name)}</td>
+            <td class="px-6 py-4 text-sm text-gray-600">${escapeHtml(m.type || '')}</td>
+            <td class="px-6 py-4 text-sm text-gray-900 text-mono">${Number(m.hours_run || 0).toLocaleString()} hrs</td>
+            <td class="px-6 py-4 text-sm text-gray-600">${fmtDate(m.last_maintenance)}</td>
+            <td class="px-6 py-4 text-sm ${m.status === 'overdue' ? 'text-red-600 font-medium' : 'text-gray-600'}">${m.status === 'overdue' ? 'Overdue' : fmtDate(m.next_due)}</td>
+            <td class="px-6 py-4">${badge}</td>
+            <td class="px-6 py-4">
+              <button onclick="scheduleService('${m.id}')" class="text-sm text-primary hover:text-primary-dark font-medium mr-3">Schedule Service</button>
+              <button onclick="viewMachineLog('${m.id}')" class="text-sm text-gray-500 hover:text-gray-700 font-medium">View Log</button>
+            </td>
+          </tr>`;
+      }).join('');
+    }
+
+    function scheduleService(id) {
+      const m = machinesCache.find(x => String(x.id) === String(id));
+      if (!m) return;
+      document.getElementById('viewDetailTitle').textContent = `Schedule Service - ${m.name}`;
+      document.getElementById('viewDetailBody').innerHTML = `
+        <div class="space-y-4">
+          <div class="form-group"><label class="form-label">Service Date</label>
+            <input type="date" id="serviceDate" class="form-input" value="${new Date().toISOString().slice(0, 10)}"></div>
+          <div class="form-group"><label class="form-label">Notes</label>
+            <textarea id="serviceNote" class="form-textarea" placeholder="e.g. Full service - spindle check, way lube, coolant flush"></textarea></div>
+          <div class="grid grid-cols-2 gap-3">
+            <button onclick="saveService('${m.id}')" class="bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark">Book Service</button>
+            <button onclick="closeModal('viewDetailModal')" class="border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50">Cancel</button>
+          </div>
+        </div>`;
+      showModal('viewDetailModal');
+    }
+
+    async function saveService(id) {
+      const m = machinesCache.find(x => String(x.id) === String(id));
+      const date = document.getElementById('serviceDate').value;
+      const note = document.getElementById('serviceNote').value || 'Service booked';
+      if (!date) { showToast('Missing Date', 'Pick a service date', 'warning'); return; }
+
+      const nextDue = new Date(new Date(date).getTime() + 60 * 86400000).toISOString().slice(0, 10);
+      const { error } = await db.from('machines')
+        .update({ last_maintenance: date, next_due: nextDue }).eq('id', id);
+      if (error) { showToast('Booking Failed', error.message, 'error'); return; }
+      await db.from('machine_logs').insert([{ machine_id: id, note: note, log_date: date }]);
+
+      closeModal('viewDetailModal');
+      showToast('Service Booked', `${m ? m.name : 'Machine'} serviced ${fmtDate(date)}, next due ${fmtDate(nextDue)}`, 'success');
+      renderMachines(await loadMachinesFromDB());
+    }
+
+    async function viewMachineLog(id) {
+      const m = machinesCache.find(x => String(x.id) === String(id));
+      const { data } = await db.from('machine_logs').select('*').eq('machine_id', id).order('log_date', { ascending: false });
+      document.getElementById('viewDetailTitle').textContent = `Maintenance Log - ${m ? m.name : ''}`;
+      document.getElementById('viewDetailBody').innerHTML = `
+        <div class="space-y-3">
+          ${(data && data.length) ? data.map(l => `
+            <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+              <span class="text-xs text-gray-500 text-mono" style="min-width: 90px;">${fmtDate(l.log_date)}</span>
+              <span class="text-sm text-gray-700">${escapeHtml(l.note)}</span>
+            </div>`).join('')
+          : '<p class="text-sm text-gray-500">No maintenance history recorded yet.</p>'}
+          <button onclick="closeModal('viewDetailModal')" class="w-full border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50">Close</button>
+        </div>`;
+      showModal('viewDetailModal');
+    }
+
+    // ============================================================
+    // PHASE 1 - EMAIL OUTBOX / APPROVAL QUEUE
+    // ============================================================
+    async function loadOutboxFromDB() {
+      const { data, error } = await db.from('email_outbox').select('*').order('created_at', { ascending: false });
+      if (error) { console.error('Error loading outbox:', error); return []; }
+      outboxCache = data || [];
+      return outboxCache;
+    }
+
+    function renderOutbox(outbox) {
+      renderApprovalQueue(outbox);
+      renderRecentlySent(outbox);
+    }
+
+    function renderApprovalQueue(outbox) {
+      const list = document.getElementById('approvalList');
+      if (!list || !outbox) return;
+      const pending = outbox.filter(o => o.status === 'pending_approval');
+
+      const badge = document.getElementById('approvalBadge');
+      if (badge) {
+        badge.style.display = pending.length ? '' : 'none';
+        badge.textContent = pending.length;
+      }
+      if (pending.length === 0) { checkEmptyQueueStatic(list); return; }
+
+      const kindMeta = {
+        final_notice: { label: 'FINAL NOTICE', tone: 'red', btn: 'bg-red-600 hover:bg-red-700' },
+        firm_chase: { label: 'FIRM CHASE', tone: 'amber', btn: 'bg-amber-600 hover:bg-amber-700' },
+        gentle_reminder: { label: 'GENTLE REMINDER', tone: 'blue', btn: 'bg-blue-600 hover:bg-blue-700' },
+        clarification: { label: 'CLARIFICATION', tone: 'blue', btn: 'bg-blue-600 hover:bg-blue-700' },
+        quote_send: { label: 'QUOTE', tone: 'blue', btn: 'bg-blue-600 hover:bg-blue-700' }
+      };
+      list.innerHTML = pending.map(o => {
+        const k = kindMeta[o.kind] || kindMeta.gentle_reminder;
+        return `
+          <div class="bg-white border-2 border-${k.tone}-200 rounded-xl overflow-hidden" data-approval-id="${o.id}">
+            <div class="bg-${k.tone}-50 px-5 py-3 border-b border-${k.tone}-200 flex items-center justify-between flex-wrap gap-2">
+              <div class="flex items-center gap-3 flex-wrap">
+                <span class="px-2 py-0.5 text-xs font-bold bg-${k.tone}-600 text-white rounded">${k.label}</span>
+                <span class="text-sm font-semibold text-gray-900">${escapeHtml(o.customer || o.to_email || '')}</span>
+                ${o.related_ref ? `<span class="text-xs text-gray-600">${escapeHtml(o.related_ref)}${o.days_overdue ? ' · ' + o.days_overdue + ' days overdue' : ''}${o.amount ? ' · ' + fmtGBP(o.amount) : ''}</span>` : ''}
+              </div>
+              <span class="text-xs text-gray-500">Drafted ${fmtDate(o.created_at)}</span>
+            </div>
+            <div class="p-5">
+              ${o.to_email ? `<div class="text-xs text-gray-500 mb-1">To: ${escapeHtml(o.to_email)}</div>` : ''}
+              <div class="text-sm font-semibold text-gray-900 mb-3">Subject: ${escapeHtml(o.subject || '')}</div>
+              <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-700 leading-relaxed mb-4" style="white-space: pre-wrap; max-height: 130px; overflow: hidden;">${escapeHtml((o.body || '').slice(0, 400))}</div>
+              <div class="flex gap-2 flex-wrap">
+                <button onclick="approveEmail('${o.id}')" class="px-4 py-2 ${k.btn} text-white rounded-lg font-medium text-sm">Approve & Send</button>
+                <button onclick="editEmail('${o.id}')" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-sm">Edit</button>
+                <button onclick="previewEmail('${o.id}')" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-sm">Preview Full</button>
+                <button onclick="skipEmail('${o.id}')" class="px-4 py-2 border border-gray-300 text-gray-500 rounded-lg hover:bg-gray-50 font-medium text-sm ml-auto">Skip</button>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function checkEmptyQueueStatic(list) {
+      list.innerHTML = `
+        <div class="bg-white border border-gray-200 rounded-xl p-12 text-center">
+          <div class="bg-green-50 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <svg class="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <h3 class="font-semibold text-gray-900 mb-1">All Caught Up</h3>
+          <p class="text-sm text-gray-500">No emails waiting for approval.</p>
+        </div>`;
+    }
+
+    function renderRecentlySent(outbox) {
+      const list = document.getElementById('recentlySentList');
+      if (!list || !outbox) return;
+      const sent = outbox.filter(o => ['approved', 'queued', 'sent'].includes(o.status)).slice(0, 6);
+      if (sent.length === 0) {
+        list.innerHTML = '<div class="p-4 text-sm text-gray-500">Nothing sent yet.</div>';
+        return;
+      }
+      list.innerHTML = sent.map(o => `
+        <div class="p-4 flex items-center gap-3">
+          <div class="bg-green-50 rounded-lg p-2"><svg class="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></div>
+          <div class="flex-1">
+            <div class="text-sm font-semibold text-gray-900">${escapeHtml(o.subject || '')}</div>
+            <div class="text-xs text-gray-500">${escapeHtml(o.customer || o.to_email || '')} · ${fmtDate(o.approved_at || o.created_at)}</div>
+          </div>
+          <span class="text-xs text-gray-500 capitalize">${escapeHtml(o.status)}</span>
+        </div>`).join('');
+    }
+
+    // ============================================================
+    // PHASE 1 - BARCODE STOCK IN/OUT
+    // ============================================================
+    function setScanMode(mode) {
+      scanMode = mode;
+      const btnIn = document.getElementById('scanModeIn');
+      const btnOut = document.getElementById('scanModeOut');
+      if (mode === 'in') {
+        btnIn.className = 'px-4 py-3 bg-green-50 border-2 border-green-500 rounded-lg font-semibold text-green-700 flex items-center justify-center gap-2';
+        btnOut.className = 'px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg font-semibold text-gray-500 hover:bg-gray-100 flex items-center justify-center gap-2';
+      } else {
+        btnOut.className = 'px-4 py-3 bg-red-50 border-2 border-red-500 rounded-lg font-semibold text-red-700 flex items-center justify-center gap-2';
+        btnIn.className = 'px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg font-semibold text-gray-500 hover:bg-gray-100 flex items-center justify-center gap-2';
+      }
+    }
+
+    async function barcodeApply() {
+      const sku = document.getElementById('barcodeSku').value.trim();
+      const qty = Math.abs(parseFloat(document.getElementById('barcodeQty').value) || 0);
+      if (!sku || !qty) { showToast('Missing Input', 'Enter a SKU and quantity', 'warning'); return; }
+
+      const item = stockCache.find(s => (s.sku || '').toLowerCase() === sku.toLowerCase());
+      if (!item) { showToast('Unknown SKU', `No stock item matches "${sku}"`, 'error'); return; }
+
+      const before = Number(item.current_stock || 0);
+      const delta = scanMode === 'in' ? qty : -qty;
+      const after = Math.max(0, before + delta);
+
+      const { error } = await db.from('stock').update({ current_stock: after }).eq('sku', item.sku);
+      if (error) { showToast('Update Failed', error.message, 'error'); return; }
+      await db.from('stock_movements').insert([{
+        sku: item.sku, name: item.name, delta: Math.abs(delta),
+        direction: scanMode, note: 'Barcode ' + (scanMode === 'in' ? 'stock in' : 'stock out')
+      }]);
+
+      const panel = document.getElementById('barcodeLastScan');
+      if (panel) {
+        panel.innerHTML = `
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+              <svg class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <div class="flex-1">
+              <div class="font-semibold text-gray-900">Last Scanned: ${escapeHtml(item.name)}</div>
+              <div class="text-xs text-gray-600 text-mono">SKU: ${escapeHtml(item.sku)} • ${new Date().toLocaleTimeString('en-GB')}</div>
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-3">
+            <div class="bg-white rounded p-3"><div class="text-xs text-gray-500">Before</div><div class="text-lg font-bold text-gray-900 text-mono">${before} units</div></div>
+            <div class="bg-white rounded p-3"><div class="text-xs text-gray-500">${scanMode === 'in' ? 'Quantity Added' : 'Quantity Removed'}</div><div class="text-lg font-bold ${scanMode === 'in' ? 'text-green-600' : 'text-red-600'} text-mono">${scanMode === 'in' ? '+' : '-'}${qty}</div></div>
+            <div class="bg-white rounded p-3"><div class="text-xs text-gray-500">Now in Stock</div><div class="text-lg font-bold text-gray-900 text-mono">${after} units</div></div>
+          </div>`;
+      }
+      document.getElementById('barcodeSku').value = '';
+      showToast('Stock Updated', `${item.name}: ${before} → ${after} units`, 'success');
+      renderStock(await loadStockFromDB());
+      refreshBarcodeActivity();
+    }
+
+    async function refreshBarcodeActivity() {
+      const list = document.getElementById('barcodeActivity');
+      if (!list) return;
+      const { data } = await db.from('stock_movements').select('*').order('created_at', { ascending: false });
+      const rows = (data || []).slice(0, 6);
+      list.innerHTML = rows.length ? rows.map(mv => `
+        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg text-sm">
+          <div class="flex items-center gap-3">
+            <span class="w-2 h-2 ${mv.direction === 'in' ? 'bg-green-500' : 'bg-red-500'} rounded-full"></span>
+            <span class="text-gray-900">${escapeHtml(mv.name || mv.sku)}</span>
+            <span class="text-xs text-gray-500 text-mono">${fmtDate(mv.created_at)}</span>
+          </div>
+          <span class="${mv.direction === 'in' ? 'text-green-600' : 'text-red-600'} font-semibold text-mono">${mv.direction === 'in' ? '+' : '-'}${Number(mv.delta)} ${mv.direction.toUpperCase()}</span>
+        </div>`).join('')
+      : '<div class="p-3 text-sm text-gray-500">No stock movements recorded yet.</div>';
+    }
+
+    // ============================================================
+    // PHASE 1 - SUPPLIERS, AUTO-PURCHASE & PURCHASE ORDERS
+    // ============================================================
+    function openSupplierConfig(sku) {
+      const item = stockCache.find(s => s.sku === sku);
+      if (!item) return;
+      document.getElementById('viewDetailTitle').textContent = `Configure - ${item.name}`;
+      document.getElementById('viewDetailBody').innerHTML = `
+        <div class="space-y-4">
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Reorder Trigger (units)</label>
+              <input type="number" id="cfgReorderLevel" class="form-input text-mono" value="${Number(item.reorder_level || 0)}"></div>
+            <div class="form-group"><label class="form-label">Reorder Quantity</label>
+              <input type="number" id="cfgReorderQty" class="form-input text-mono" value="${Number(item.reorder_qty || 0)}"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Preferred Supplier</label>
+              <input type="text" id="cfgSupplier" class="form-input" value="${escapeHtml(item.supplier || '')}"></div>
+            <div class="form-group"><label class="form-label">Unit Cost (£)</label>
+              <input type="number" step="0.01" id="cfgUnitCost" class="form-input text-mono" value="${Number(item.unit_cost || 0)}"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Lead Time</label>
+            <input type="text" id="cfgLeadTime" class="form-input" value="${escapeHtml(item.lead_time || '')}" placeholder="e.g. 3-5 days"></div>
+          <label class="flex items-center gap-2 text-sm">
+            <input type="checkbox" id="cfgAutoPurchase" class="w-4 h-4" ${item.auto_purchase ? 'checked' : ''}>
+            <span>Auto-purchase when stock hits the trigger level</span>
+          </label>
+          <div class="grid grid-cols-2 gap-3 pt-4 border-t">
+            <button onclick="saveSupplierConfig('${escapeHtml(item.sku)}')" class="bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark">Save Configuration</button>
+            <button onclick="placePurchaseOrder('${escapeHtml(item.sku)}')" class="bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700">Order Now</button>
+          </div>
+        </div>`;
+      showModal('viewDetailModal');
+    }
+
+    async function saveSupplierConfig(sku) {
+      const { error } = await db.from('stock').update({
+        reorder_level: parseFloat(document.getElementById('cfgReorderLevel').value) || 0,
+        reorder_qty: parseFloat(document.getElementById('cfgReorderQty').value) || 0,
+        supplier: document.getElementById('cfgSupplier').value,
+        unit_cost: parseFloat(document.getElementById('cfgUnitCost').value) || 0,
+        lead_time: document.getElementById('cfgLeadTime').value,
+        auto_purchase: document.getElementById('cfgAutoPurchase').checked
+      }).eq('sku', sku);
+      if (error) { showToast('Save Failed', error.message, 'error'); return; }
+      closeModal('viewDetailModal');
+      showToast('Configuration Saved', 'Supplier settings updated', 'success');
+      renderStock(await loadStockFromDB());
+    }
+
+    async function placePurchaseOrder(sku) {
+      const item = stockCache.find(s => s.sku === sku);
+      if (!item) return;
+      const qty = Number(item.reorder_qty || 0) || 1;
+      const po_ref = await nextRef('purchase_orders', 'po_ref', orgPrefix + '-PO-');
+      const { error } = await db.from('purchase_orders').insert([{
+        po_ref, supplier: item.supplier, sku: item.sku, material_name: item.name,
+        quantity: qty, unit_cost: item.unit_cost,
+        total: +(qty * Number(item.unit_cost || 0)).toFixed(2), status: 'ordered'
+      }]);
+      if (error) { showToast('Order Failed', error.message, 'error'); return; }
+      await db.from('stock').update({ order_note: 'Auto-ordered today' }).eq('sku', sku);
+      closeModal('viewDetailModal');
+      showToast('Purchase Order Placed', `${po_ref}: ${qty} × ${item.name} from ${item.supplier || 'supplier'}`, 'success');
+      renderStock(await loadStockFromDB());
+    }
+
+    function renderAutoPurchaseRules() {
+      const tbody = document.getElementById('autoPurchaseRules');
+      if (!tbody) return;
+      window.__apRules = stockCache.map(s => ({ sku: s.sku, auto: !!s.auto_purchase }));
+      tbody.innerHTML = stockCache.map((s, i) => `
+        <tr>
+          <td class="px-4 py-3 text-sm font-medium">${escapeHtml(s.name)}</td>
+          <td class="px-4 py-3 text-sm text-mono">≤ ${Number(s.reorder_level || 0)} units</td>
+          <td class="px-4 py-3 text-sm text-mono">${Number(s.reorder_qty || 0)} units</td>
+          <td class="px-4 py-3">
+            <button type="button" onclick="toggleAutoRule(${i}, this)" class="relative inline-block w-10 h-5 ${s.auto_purchase ? 'bg-green-500' : 'bg-gray-300'} rounded-full" style="width:40px;height:20px;border:none;cursor:pointer;">
+              <span class="absolute top-0.5 ${s.auto_purchase ? 'right-0.5' : 'left-0.5'} w-4 h-4 bg-white rounded-full"></span>
+            </button>
+          </td>
+        </tr>`).join('');
+      const s = orgSettings.autoPurchase || {};
+      if (document.getElementById('apApprovalLimit') && s.approvalLimit) document.getElementById('apApprovalLimit').value = s.approvalLimit;
+      if (document.getElementById('apDailyLimit') && s.dailyLimit) document.getElementById('apDailyLimit').value = s.dailyLimit;
+    }
+
+    function toggleAutoRule(index, btn) {
+      const rule = window.__apRules[index];
+      rule.auto = !rule.auto;
+      btn.className = `relative inline-block w-10 h-5 ${rule.auto ? 'bg-green-500' : 'bg-gray-300'} rounded-full`;
+      btn.style.cssText = 'width:40px;height:20px;border:none;cursor:pointer;';
+      btn.innerHTML = `<span class="absolute top-0.5 ${rule.auto ? 'right-0.5' : 'left-0.5'} w-4 h-4 bg-white rounded-full"></span>`;
+    }
+
+    async function saveAutoPurchaseRules() {
+      for (const rule of (window.__apRules || [])) {
+        const item = stockCache.find(s => s.sku === rule.sku);
+        if (item && !!item.auto_purchase !== rule.auto) {
+          const { error } = await db.from('stock').update({ auto_purchase: rule.auto }).eq('sku', rule.sku);
+          if (error) { showToast('Save Failed', error.message, 'error'); return; }
+        }
+      }
+      orgSettings.autoPurchase = {
+        approvalLimit: parseFloat(document.getElementById('apApprovalLimit').value) || 2500,
+        dailyLimit: parseFloat(document.getElementById('apDailyLimit').value) || 10000
+      };
+      await db.from('org_settings').upsert(
+        { org_id: currentOrg ? currentOrg.id : null, settings: orgSettings }, { onConflict: 'org_id' });
+      closeModal('autoPurchaseModal');
+      showToast('Settings Saved', 'Auto-purchase rules updated', 'success');
+      renderStock(await loadStockFromDB());
+    }
+
+    // ============================================================
+    // PHASE 1 - SETTINGS & DASHBOARD
+    // ============================================================
+    async function loadOrgSettings() {
+      if (!currentOrg) return;
+      const { data } = await db.from('org_settings').select('settings').eq('org_id', currentOrg.id).single();
+      orgSettings = (data && data.settings) || {};
+      const r = orgSettings.reminders;
+      if (r && r.length === 3) {
+        const ids = [['remind1Days', 'remind1Time'], ['remind2Days', 'remind2Time'], ['remind3Days', 'remind3Time']];
+        ids.forEach(([d, t], i) => {
+          const dEl = document.getElementById(d), tEl = document.getElementById(t);
+          if (dEl) dEl.value = r[i].days;
+          if (tEl && r[i].time) tEl.value = r[i].time;
+        });
+      }
+    }
+
+    function computeDashboard(quotes, invoices) {
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      if (quotes && quotes.length) {
+        const decided = quotes.filter(q => ['accepted', 'rejected'].includes(q.status) || q.paid_detected);
+        const won = quotes.filter(q => q.status === 'accepted' || q.paid_detected);
+        if (decided.length) set('kpiWinRate', Math.round(won.length / decided.length * 100) + '%');
+      }
+      if (invoices && invoices.length) {
+        const paid = invoices.filter(i => i.status === 'paid' && i.paid_at && i.sent_date);
+        if (paid.length) {
+          const avg = paid.reduce((s, i) => s + daysBetween(new Date(i.sent_date), new Date(i.paid_at)), 0) / paid.length;
+          set('kpiAvgDaysToPay', Math.max(0, Math.round(avg)));
+        }
+      }
+    }
+
+    function renderLatePayers(invoices) {
+      const list = document.getElementById('latePayerList');
+      if (!list || !invoices || invoices.length === 0) return;
+
+      const byCustomer = {};
+      invoices.forEach(inv => {
+        const c = inv.customer || 'Unknown';
+        byCustomer[c] = byCustomer[c] || { total: 0, late: 0, daysLateSum: 0, flag: null };
+        byCustomer[c].total++;
+        const late = inv.derivedStatus === 'overdue'
+          || (inv.status === 'paid' && inv.paid_at && inv.due_date && daysBetween(new Date(inv.due_date), new Date(inv.paid_at)) > 0);
+        if (late) {
+          byCustomer[c].late++;
+          const days = inv.derivedStatus === 'overdue'
+            ? inv.daysOverdue
+            : daysBetween(new Date(inv.due_date), new Date(inv.paid_at));
+          byCustomer[c].daysLateSum += Math.max(0, days);
+        }
+        if (inv.late_payer_flag) byCustomer[c].flag = inv.late_payer_flag;
+      });
+
+      const offenders = Object.entries(byCustomer)
+        .filter(([, v]) => v.late > 0)
+        .sort((a, b) => (b[1].daysLateSum / b[1].late) - (a[1].daysLateSum / a[1].late))
+        .slice(0, 4);
+
+      if (offenders.length === 0) {
+        list.innerHTML = '<div class="p-3 text-sm text-gray-500">No late payments on record. Long may it last.</div>';
+        return;
+      }
+      list.innerHTML = offenders.map(([name, v]) => {
+        const avg = Math.round(v.daysLateSum / v.late);
+        const chronic = v.flag || avg > 40;
+        return `
+          <div class="flex items-center justify-between p-3 ${chronic ? 'bg-red-50 border border-red-200' : 'bg-amber-50 border border-amber-200'} rounded-lg">
+            <div class="flex items-center gap-3">
+              <div class="w-2 h-2 ${chronic ? 'bg-red-500' : 'bg-amber-500'} rounded-full"></div>
+              <div>
+                <div class="font-semibold text-gray-900">${escapeHtml(name)}</div>
+                <div class="text-xs text-gray-600">Late on ${v.late} of ${v.total} invoice${v.total === 1 ? '' : 's'} · Avg ${avg} days late</div>
+              </div>
+            </div>
+            <span class="px-2 py-1 text-xs font-bold ${chronic ? 'bg-red-600' : 'bg-amber-600'} text-white rounded">${chronic ? 'CHRONIC' : 'WATCH'}</span>
+          </div>`;
+      }).join('');
+    }
+
     // ============================================
     // MULTI-SELECT FILTER FUNCTIONS - all pages
     // ============================================
@@ -5114,12 +6211,12 @@ JNR Engineering Limited`
         <form onsubmit="submitClarify(event)">
           <div class="form-group">
             <label class="form-label">To</label>
-            <input type="email" class="form-input" value="procurement@defencemanufacturing.co.uk" readonly>
+            <input type="email" id="clarifyTo" class="form-input" value="procurement@defencemanufacturing.co.uk" required>
           </div>
-          
+
           <div class="form-group">
             <label class="form-label">Subject</label>
-            <input type="text" class="form-input" value="Clarification needed - RFQ for Precision Milled Components">
+            <input type="text" id="clarifySubject" class="form-input" value="Clarification needed - RFQ for Precision Milled Components">
           </div>
           
           <div class="form-group">
@@ -5285,12 +6382,12 @@ JNR Engineering Limited</textarea>
             </div>
             <div class="flex items-center gap-2">
               <span class="text-sm text-gray-600">Send</span>
-              <input type="number" value="3" class="form-input" style="width: 70px;">
+              <input type="number" id="remind1Days" value="3" class="form-input" style="width: 70px;">
               <span class="text-sm text-gray-600">days after quote sent at</span>
-              <input type="time" value="09:00" class="form-input" style="width: 110px;">
+              <input type="time" id="remind1Time" value="09:00" class="form-input" style="width: 110px;">
             </div>
           </div>
-          
+
           <div class="border border-gray-200 rounded-lg p-4 mb-3">
             <div class="flex items-center justify-between mb-2">
               <label class="font-medium">2nd Reminder</label>
@@ -5300,9 +6397,9 @@ JNR Engineering Limited</textarea>
             </div>
             <div class="flex items-center gap-2">
               <span class="text-sm text-gray-600">Send</span>
-              <input type="number" value="7" class="form-input" style="width: 70px;">
+              <input type="number" id="remind2Days" value="7" class="form-input" style="width: 70px;">
               <span class="text-sm text-gray-600">days after quote sent at</span>
-              <input type="time" value="09:00" class="form-input" style="width: 110px;">
+              <input type="time" id="remind2Time" value="09:00" class="form-input" style="width: 110px;">
             </div>
           </div>
           
@@ -5315,9 +6412,9 @@ JNR Engineering Limited</textarea>
             </div>
             <div class="flex items-center gap-2">
               <span class="text-sm text-gray-600">Send</span>
-              <input type="number" value="14" class="form-input" style="width: 70px;">
+              <input type="number" id="remind3Days" value="14" class="form-input" style="width: 70px;">
               <span class="text-sm text-gray-600">days after quote sent at</span>
-              <input type="time" value="09:00" class="form-input" style="width: 110px;">
+              <input type="time" id="remind3Time" value="09:00" class="form-input" style="width: 110px;">
             </div>
           </div>
 

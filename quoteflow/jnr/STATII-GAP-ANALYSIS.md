@@ -148,10 +148,16 @@ Database side: JNREng project restored from pause; the schema/RLS/seed SQL is
 versioned in `quoteflow/db/01..03_*.sql` — run the three files in order in the
 Supabase SQL editor (one-time) to finish. *Result: the demo is real.*
 
-**Phase 1 — quote-to-invoice loop (1–2 wks):** auth + customers + RFQ pipeline with
-drawing uploads + quote builder with cost model + PDF + invoice records with real
-aging. *Result: JNR can stop using spreadsheets for quoting & chasing. Already
-competitive with ~40% of Statii at £0/month.*
+**Phase 1 — auth, tenancy & real buttons (July 2026): ✅ code DONE.**
+Login/signup gate (Supabase Auth), organisations with org-scoped RLS (each
+company sees only its own rows — URL access without login shows nothing),
+quote engine with cost model + per-org numbering + print-to-PDF, email outbox
+backing the Approval Queue/clarifications/chasing (approve/edit/skip/bulk all
+persist), jobs with stage advancement, machine servicing + logs, barcode
+stock in/out with movement ledger, supplier config + purchase orders,
+persisted settings. Verified by `quoteflow/tests/e2e.js` (55 browser checks).
+Outstanding: run `db/04_phase1_auth_tenancy.sql`; connect an email provider
+(e.g. Resend) so approved outbox emails actually dispatch; drawing uploads.
 
 **Phase 2 — works orders & purchasing (2–4 wks):** jobs with routing/operations,
 job cards, POs, goods-in, stock movements, delivery notes. *Result: covers the

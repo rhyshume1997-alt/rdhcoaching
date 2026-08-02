@@ -5091,7 +5091,13 @@ JNR Engineering Limited`
       const requestedName = document.getElementById('authOrgName').value.trim();
       const { data, error } = await db.rpc('ensure_org', { org_name: requestedName });
       if (error) {
-        showAuthError('Could not open your workspace: ' + error.message);
+        // Missing function/schema means the one-time database setup hasn't
+        // been run yet - point at it instead of showing a raw error
+        if (/ensure_org|function|schema cache/i.test(error.message || '')) {
+          showAuthError('One-time database setup needed: run quoteflow/db/00_run_everything.sql in the Supabase SQL editor, then sign in again.');
+        } else {
+          showAuthError('Could not open your workspace: ' + error.message);
+        }
         await db.auth.signOut();
         return;
       }

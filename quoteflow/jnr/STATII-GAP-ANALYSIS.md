@@ -140,9 +140,13 @@ Core schema (Phase 1): `orgs`, `users`, `customers`, `suppliers`, `rfqs`,
 
 ## 5. Build order (each phase independently usable by JNR)
 
-**Phase 0 — hygiene (days):** create the schema + RLS in JNREng (project now
-restored), fix duplicate/XSS/dead-code defects, wire the pages that already fetch data
-to actually render it, mobile responsiveness, hash routing. *Result: the demo is real.*
+**Phase 0 — hygiene (days): ✅ code DONE (July 2026).** Duplicate/XSS/dead-code
+defects fixed; quotes, invoices (incl. computed aging) and stock now render from
+the database with demo fallback; mark-paid and create-invoice persist; mobile
+responsive; hash routing. Verified with a 51-check headless-browser suite.
+Database side: JNREng project restored from pause; the schema/RLS/seed SQL is
+versioned in `quoteflow/db/01..03_*.sql` — run the three files in order in the
+Supabase SQL editor (one-time) to finish. *Result: the demo is real.*
 
 **Phase 1 — quote-to-invoice loop (1–2 wks):** auth + customers + RFQ pipeline with
 drawing uploads + quote builder with cost model + PDF + invoice records with real

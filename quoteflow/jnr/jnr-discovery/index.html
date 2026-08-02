@@ -413,6 +413,9 @@
     
     <!-- FORM -->
     <div class="form-card" id="formCard">
+      <div id="draftNotice" style="display:none; background:#EFF6FF; border:1px solid #BFDBFE; color:#1E40AF; font-size:13px; padding:10px 14px; border-radius:8px; margin-bottom:16px;">
+        ✓ Your earlier answers were restored — carry on where you left off.
+      </div>
       <div class="progress-bar">
         <div class="progress-fill" id="progressFill"></div>
       </div>
@@ -972,7 +975,61 @@
       el.addEventListener('change', updateProgress);
       el.addEventListener('input', updateProgress);
     });
-    
+
+    // ============================================
+    // DRAFT AUTOSAVE
+    // A 20-question form must survive refreshes and crashes.
+    // Answers save to this browser only; cleared on successful submit.
+    // ============================================
+    const DRAFT_KEY = 'jnr-discovery-draft-v1';
+    const formEl = document.getElementById('discoveryForm');
+
+    function saveDraft() {
+      const data = { __checks: {} };
+      formEl.querySelectorAll('input[type="text"], textarea').forEach(el => {
+        if (el.value.trim()) data[el.name] = el.value;
+      });
+      formEl.querySelectorAll('input[type="radio"]:checked').forEach(el => {
+        data[el.name] = el.value;
+      });
+      formEl.querySelectorAll('input[type="checkbox"]:checked').forEach(el => {
+        (data.__checks[el.name] = data.__checks[el.name] || []).push(el.value);
+      });
+      try { localStorage.setItem(DRAFT_KEY, JSON.stringify(data)); } catch (err) { /* storage full/blocked - skip */ }
+    }
+
+    function restoreDraft() {
+      let data;
+      try { data = JSON.parse(localStorage.getItem(DRAFT_KEY)); } catch (err) { return; }
+      if (!data) return;
+
+      let restored = 0;
+      Object.entries(data).forEach(([name, value]) => {
+        if (name === '__checks') return;
+        const field = formEl.querySelector(`input[type="text"][name="${name}"], textarea[name="${name}"]`);
+        if (field) { field.value = value; restored++; return; }
+        const radio = formEl.querySelector(`input[type="radio"][name="${name}"][value="${value}"]`);
+        if (radio) { radio.checked = true; restored++; }
+      });
+      Object.entries(data.__checks || {}).forEach(([name, values]) => {
+        values.forEach(v => {
+          const box = formEl.querySelector(`input[type="checkbox"][name="${name}"][value="${v}"]`);
+          if (box) { box.checked = true; restored++; }
+        });
+      });
+
+      if (restored > 0) {
+        document.getElementById('draftNotice').style.display = 'block';
+        updateProgress();
+      }
+    }
+
+    document.querySelectorAll('input, textarea').forEach(el => {
+      el.addEventListener('change', saveDraft);
+      el.addEventListener('input', saveDraft);
+    });
+    restoreDraft();
+
     // Submit handler - sends to Formspree which emails Rhys directly
     async function submitForm(e) {
       e.preventDefault();
@@ -1047,7 +1104,27 @@
         if (labels[question] && labels[question][value]) return labels[question][value];
         return value;
       }
-      
+
+      // Human-readable labels for the checkbox questions too
+      const checkboxLabels = {
+        q7_rfq_format: {
+          email_text: 'Plain email text', pdf: 'PDF technical drawings',
+          step_iges: 'CAD files (STEP/IGES/DWG)', excel: 'Excel spreadsheets / parts lists',
+          phone: 'Phone calls', customer_portal: 'Customer procurement portal'
+        },
+        q13_delay_cause: {
+          material: 'Materials late from suppliers', machine: 'Machine breakdowns',
+          capacity: 'Too many jobs / capacity', changes: 'Customer changes specs mid-job',
+          people: 'Staff availability', quote: 'Underquoted the time needed'
+        },
+        q19_tools: {
+          excel: 'Excel / Spreadsheets', sage: 'Sage', quickbooks: 'QuickBooks', xero: 'Xero',
+          outlook: 'Microsoft Outlook / 365', gmail: 'Gmail / Google Workspace',
+          cad: 'CAD software', paper: 'Paper / printed documents', other: 'Something else'
+        }
+      };
+      const readableList = (q, values) => values.map(v => (checkboxLabels[q] && checkboxLabels[q][v]) || v).join(', ');
+
       // Build the formatted email body
       const tools = formData.getAll('q19_tools');
       const rfqFormats = formData.getAll('q7_rfq_format');
@@ -1062,19 +1139,19 @@
         '03_BIGGEST_PAIN': formData.get('q4_biggest_pain') || '',
         '04_admin_hours_per_week': readable('q5_admin_hours', formData.get('q5_admin_hours')),
         '05_magic_wish': formData.get('q6_magic_wish') || '',
-        '06_rfq_formats_received': rfqFormats.join(', '),
+        '06_rfq_formats_received': readableList('q7_rfq_format', rfqFormats),
         '07_time_to_quote': readable('q8_quote_time', formData.get('q8_quote_time')),
         '08_followup_process': readable('q9_followup', formData.get('q9_followup')),
         '09_win_rate': readable('q10_win_rate', formData.get('q10_win_rate')),
         '10_job_tracking_method': formData.get('q11_job_tracking') || '',
         '11_delay_frequency': readable('q12_delays', formData.get('q12_delays')),
-        '12_delay_causes': delayCauses.join(', '),
+        '12_delay_causes': readableList('q13_delay_cause', delayCauses),
         '13_outstanding_amount': readable('q14_outstanding', formData.get('q14_outstanding')),
         '14_LATE_PAYERS': formData.get('q15_late_payers') || '',
         '15_chase_method': readable('q16_chase_method', formData.get('q16_chase_method')),
         '16_stockout_frequency': readable('q17_stockout', formData.get('q17_stockout')),
         '17_BAD_SUPPLIERS': formData.get('q18_bad_suppliers') || '',
-        '18_current_software': tools.join(', '),
+        '18_current_software': readableList('q19_tools', tools),
         '19_DREAM_CHANGE': formData.get('q20_dream') || ''
       };
       
@@ -1094,7 +1171,8 @@
         });
         
         if (response.ok) {
-          // Show success state
+          // Clear the saved draft and show success state
+          try { localStorage.removeItem(DRAFT_KEY); } catch (err) { /* ignore */ }
           document.getElementById('formCard').style.display = 'none';
           document.getElementById('successState').classList.add('show');
           window.scrollTo({ top: 0, behavior: 'smooth' });

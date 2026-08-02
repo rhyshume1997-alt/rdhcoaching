@@ -3,8 +3,13 @@
 Project: `qtgqliczvyyrkibvxfqv` (JNREng) — the URL/key baked into
 `quoteflow/index.html`.
 
-Run these once, in order, in the Supabase Dashboard → SQL Editor
-(https://supabase.com/dashboard/project/qtgqliczvyyrkibvxfqv/sql):
+**Fastest path (works from a phone): run `00_run_everything.sql`** — it is
+all four migrations combined into one idempotent paste, and the whole
+sequence has been tested end-to-end on a clean Postgres 16 including a
+two-company isolation test (see repo history). One paste, done.
+
+Or run the four files individually, in order, in the Supabase Dashboard →
+SQL Editor (https://supabase.com/dashboard/project/qtgqliczvyyrkibvxfqv/sql):
 
 1. `01_align_schema.sql` — adds every column the app reads/writes to the
    existing `rfqs`, `quotes`, `invoices`, `stock` tables, plus updated_at

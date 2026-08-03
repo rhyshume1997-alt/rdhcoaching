@@ -543,7 +543,7 @@
         <div class="auth-brand-name">QuoteFlow AI<span>Workshop management</span></div>
       </div>
       <h2 id="authTitle">Sign in</h2>
-      <p class="auth-sub" id="authSub">Log in to your company workspace</p>
+      <p class="auth-sub" id="authSub">Access is by invitation. Sign in with your invited email.</p>
       <form id="authForm" onsubmit="submitAuth(event)">
         <div id="authOrgField" style="display:none; margin-bottom: 12px;">
           <label class="form-label">Company Name</label>
@@ -646,7 +646,8 @@
           <div class="sidebar-user-email" id="userEmail"></div>
           <div class="sidebar-user-org" id="userOrg"></div>
         </div>
-        <button class="sidebar-signout" onclick="signOut()">Sign Out</button>
+        <button class="sidebar-signout" id="teamBtn" onclick="openTeamPanel()" title="Manage team access">Team</button>
+        <button class="sidebar-signout" id="signOutBtn" onclick="signOut()">Sign Out</button>
       </div>
     </aside>
     
@@ -5091,9 +5092,10 @@ JNR Engineering Limited`
       const requestedName = document.getElementById('authOrgName').value.trim();
       const { data, error } = await db.rpc('ensure_org', { org_name: requestedName });
       if (error) {
-        // Missing function/schema means the one-time database setup hasn't
-        // been run yet - point at it instead of showing a raw error
-        if (/ensure_org|function|schema cache/i.test(error.message || '')) {
+        if (/ACCESS_DENIED|invite-only/i.test(error.message || '')) {
+          showAuthError('This workspace is invite-only. Ask your administrator to invite your email address, then sign in again.');
+        } else if (/ensure_org|function|schema cache/i.test(error.message || '')) {
+          // Missing function/schema means the one-time database setup hasn't run yet
           showAuthError('One-time database setup needed: run quoteflow/db/00_run_everything.sql in the Supabase SQL editor, then sign in again.');
         } else {
           showAuthError('Could not open your workspace: ' + error.message);
@@ -5138,6 +5140,76 @@ JNR Engineering Limited`
     async function signOut() {
       await db.auth.signOut();
       showToast('Signed Out', 'Your session has ended', 'info');
+    }
+
+    // ============================================================
+    // PHASE 1.1 - TEAM ACCESS (invite-only workspace management)
+    // ============================================================
+    async function openTeamPanel() {
+      const { data: invites, error } = await db.from('app_access').select('*').order('created_at', { ascending: false });
+      const isOwner = !error && invites !== null;
+      const rows = (invites || []).map(i => `
+        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <div>
+            <div class="text-sm font-semibold text-gray-900">${escapeHtml(i.email)}</div>
+            <div class="text-xs text-gray-500 capitalize">${escapeHtml((i.role || '').replace('_', ' '))}</div>
+          </div>
+          <button onclick="revokeInvite('${escapeHtml(i.email)}')" class="text-xs text-red-600 hover:text-red-700 font-medium">Revoke</button>
+        </div>`).join('');
+
+      document.getElementById('viewDetailTitle').textContent = 'Team Access';
+      document.getElementById('viewDetailBody').innerHTML = isOwner ? `
+        <div class="space-y-4">
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+            This workspace is <strong>invite-only</strong>. Only email addresses listed here can sign in.
+          </div>
+          <div class="form-row">
+            <div class="form-group" style="margin-bottom:0;"><label class="form-label">Email Address</label>
+              <input type="email" id="inviteEmail" class="form-input" placeholder="teammate@company.co.uk"></div>
+            <div class="form-group" style="margin-bottom:0;"><label class="form-label">Role</label>
+              <select id="inviteRole" class="form-select">
+                <option value="office">Office</option>
+                <option value="shop_floor">Shop Floor</option>
+                <option value="owner">Owner</option>
+              </select></div>
+          </div>
+          <button onclick="sendInvite()" class="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark">Grant Access</button>
+          <div class="pt-2 border-t">
+            <h4 class="font-semibold text-sm mb-2">People with access</h4>
+            <div class="space-y-2" id="teamList">${rows || '<p class="text-sm text-gray-500">Only you so far.</p>'}</div>
+          </div>
+        </div>` : `
+        <div class="space-y-3">
+          <p class="text-sm text-gray-700">Only workspace owners can manage team access. Ask your administrator to invite or remove people.</p>
+          <button onclick="closeModal('viewDetailModal')" class="w-full border border-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50">Close</button>
+        </div>`;
+      showModal('viewDetailModal');
+    }
+
+    async function sendInvite() {
+      const email = (document.getElementById('inviteEmail').value || '').trim().toLowerCase();
+      const role = document.getElementById('inviteRole').value;
+      if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        showToast('Invalid Email', 'Enter a valid email address', 'warning');
+        return;
+      }
+      const { error } = await db.from('app_access').insert([{
+        email: email, org_id: currentOrg.id, role: role, invited_by: authedUserId
+      }]);
+      if (error) {
+        showToast('Invite Failed', /duplicate|unique/i.test(error.message) ? 'That email already has access' : error.message, 'error');
+        return;
+      }
+      showToast('Access Granted', `${email} can now sign up and will join ${currentOrg.name}`, 'success');
+      openTeamPanel();
+    }
+
+    async function revokeInvite(email) {
+      if (!confirm(`Remove access for ${email}? They will not be able to join this workspace.`)) return;
+      const { error } = await db.from('app_access').delete().eq('email', email);
+      if (error) { showToast('Revoke Failed', error.message, 'error'); return; }
+      showToast('Access Revoked', `${email} removed from the allowlist`, 'warning');
+      openTeamPanel();
     }
 
     // ============================================================

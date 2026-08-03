@@ -19,6 +19,14 @@ SQL Editor (https://supabase.com/dashboard/project/qtgqliczvyyrkibvxfqv/sql):
    want an unauthenticated demo mode.
 3. `03_seed_demo_data.sql` — demo rows with dates relative to today, so aging
    buckets and follow-up stages always look current. Idempotent.
+5. `05_invite_only_access.sql` — **Invite-only lockdown.** Signing up no
+   longer grants access on its own; a user must be on the `app_access`
+   allowlist. Only `rhyshume1997@gmail.com` may create the first
+   organisation (and adopts the seed). Everyone else needs an invite,
+   which owners send from the in-app **Team** panel. Verified with an
+   attack test: uninvited signups are refused, non-owners cannot invite
+   or revoke, and each invite is single-use (bound to its org once used).
+
 4. `04_phase1_auth_tenancy.sql` — **Phase 1.** Organisations + membership,
    org-scoped RLS on every table (replaces the demo-open policies), org
    stamping triggers, the `ensure_org` bootstrap function, email outbox,
@@ -32,9 +40,13 @@ SQL Editor (https://supabase.com/dashboard/project/qtgqliczvyyrkibvxfqv/sql):
 - Recommended for the first login: Authentication → Sign In / Up →
   disable "Confirm email" so the first account works instantly, or keep it
   on and click the confirmation link Supabase emails you.
-- The FIRST account to sign up creates the first organisation and
-  automatically adopts all the seeded JNR data. Sign up with Rhys/JNR's
-  email first, before sharing the URL with anyone.
+- The workspace is INVITE-ONLY. `rhyshume1997@gmail.com` is the seeded
+  bootstrap owner — sign up with that email first; it creates JNR's
+  organisation and adopts all seeded data. Nobody else can get in until
+  you invite their email from the in-app Team panel, so sharing the URL
+  is now safe: strangers who open it and sign up are refused a workspace.
+- To change the bootstrap email, edit the INSERT in
+  `05_invite_only_access.sql` before running the setup.
 
 Note: free-tier Supabase projects auto-pause after ~1 week of inactivity.
 If the demo suddenly shows only fallback content, restore the project from the

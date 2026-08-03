@@ -1,0 +1,4 @@
+# Never deploy these as public URLs
+quoteflow/db
+quoteflow/tests
+quoteflow/jnr/STATII-GAP-ANALYSIS.md

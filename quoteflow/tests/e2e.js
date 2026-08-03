@@ -43,7 +43,8 @@ const seed = {
   ],
   stock_movements: [],
   org_settings: [],
-  purchase_orders: []
+  purchase_orders: [],
+  app_access: [ { email: 'rhys@jnr.co.uk', org_id: null, role: 'owner', created_at: new Date(Date.now() - 30 * 864e5).toISOString() } ]
 };
 
 const stubJs = `
@@ -89,6 +90,7 @@ window.supabase = {
         insert(rows) { st.op = 'insert'; st.values = Array.isArray(rows) ? rows : [rows]; return api; },
         update(vals) { st.op = 'update'; st.values = vals; return api; },
         upsert(rows) { st.op = 'upsert'; st.values = Array.isArray(rows) ? rows : [rows]; return api; },
+        delete() { st.op = 'delete'; return api; },
         then(resolve) {
           const all = window.__mockData[st.table] = window.__mockData[st.table] || [];
           let result;
@@ -101,6 +103,11 @@ window.supabase = {
               if (i >= 0) Object.assign(all[i], r); else all.push(r);
             });
             result = { data: st.values, error: null };
+          } else if (st.op === 'delete') {
+            const keep = all.filter(r => !st.filters.every(([c, v]) => String(r[c]) === String(v)));
+            const removed = all.length - keep.length;
+            window.__mockData[st.table] = keep;
+            result = { data: [], error: null, count: removed };
           } else if (st.op === 'update') {
             const matched = all.filter(r => st.filters.every(([c, v]) => String(r[c]) === String(v)));
             matched.forEach(r => Object.assign(r, st.values));
@@ -120,7 +127,12 @@ window.supabase = {
       auth: auth,
       rpc: async function (name, args) {
         if (name === 'ensure_org') {
-          return { data: [{ org_id: 'org-1', org_display_name: (args && args.org_name) || 'JNR Engineering Ltd' }], error: null };
+          const sess = currentSession();
+          const email = sess && sess.user.email.toLowerCase();
+          const entry = (window.__mockData.app_access || []).find(a => a.email.toLowerCase() === email);
+          if (!entry) return { data: null, error: { message: 'ACCESS_DENIED: this workspace is invite-only' } };
+          if (!entry.org_id) entry.org_id = 'org-1';
+          return { data: [{ org_id: entry.org_id, org_display_name: (args && args.org_name) || 'JNR Engineering Ltd' }], error: null };
         }
         return { data: null, error: { message: 'unknown rpc ' + name } };
       }
@@ -163,7 +175,16 @@ function check(name, cond, extra) {
   check('wrong password shows error', await page.locator('#authError').isVisible());
   check('still locked after failed login', await page.locator('#authOverlay:not(.hidden)').isVisible());
 
-  // correct login
+  // uninvited user: valid credentials, but not on the allowlist
+  await page.fill('#authEmail', 'stranger@random.com');
+  await page.fill('#authPassword', 'correct-horse-battery');
+  await page.click('#authSubmitBtn');
+  await page.waitForTimeout(900);
+  check('uninvited user rejected with invite-only message', (await page.textContent('#authError')).includes('invite-only'));
+  check('uninvited user stays locked out', await page.locator('#authOverlay:not(.hidden)').isVisible());
+
+  // correct login (invited bootstrap user)
+  await page.fill('#authEmail', 'rhys@jnr.co.uk');
   await page.fill('#authPassword', 'correct-horse-battery');
   await page.click('#authSubmitBtn');
   await page.waitForTimeout(1200);
@@ -338,6 +359,21 @@ function check(name, cond, extra) {
   check('clarification queued in outbox', await page.evaluate(() =>
     window.__mockData.email_outbox.some(o => o.kind === 'clarification' && o.status === 'queued')));
 
+  // ---------- BUTTON: team access (invite-only management) ----------
+  await page.click('button:has-text("Team")');
+  await page.waitForTimeout(400);
+  await page.fill('#inviteEmail', 'bob@jnr.co.uk');
+  await page.click('#viewDetailModal button:has-text("Grant Access")');
+  await page.waitForTimeout(500);
+  check('invite persisted to allowlist', await page.evaluate(() =>
+    window.__mockData.app_access.some(a => a.email === 'bob@jnr.co.uk' && a.org_id === 'org-1' && a.role === 'office')));
+  page.once('dialog', d => d.accept());
+  await page.locator('#teamList div:has-text("bob@jnr.co.uk") button:has-text("Revoke")').click();
+  await page.waitForTimeout(500);
+  check('revoke removes from allowlist', await page.evaluate(() =>
+    !window.__mockData.app_access.some(a => a.email === 'bob@jnr.co.uk')));
+  await page.click('#viewDetailModal .modal-close');
+
   // ---------- session persistence + deep link ----------
   await page.goto(APP + '#stock');
   await page.waitForTimeout(1000);
@@ -345,10 +381,28 @@ function check(name, cond, extra) {
   check('deep link works while authed', await page.locator('#stock.page.active').count() === 1);
 
   // ---------- sign out ----------
-  await page.click('.sidebar-signout');
+  await page.click('#signOutBtn');
   await page.waitForTimeout(600);
   check('sign out locks the app again', await page.locator('#authOverlay:not(.hidden)').isVisible());
   check('session cleared on sign out', (await page.evaluate(() => localStorage.getItem('stub-session'))) === null);
+
+  // ---------- DISCOVERY FORM ACCESS GATE ----------
+  const DISC = 'file://' + require('path').resolve(__dirname, '..', 'jnr', 'jnr-discovery', 'index.html');
+  await page.goto(DISC);
+  await page.waitForTimeout(400);
+  check('discovery gate blocks by default', await page.locator('#accessGate').isVisible());
+  await page.fill('#accessCode', 'wrong-code');
+  await page.click('#accessGate button');
+  await page.waitForTimeout(400);
+  check('wrong code rejected', await page.locator('#accessError').isVisible());
+  check('gate still up after wrong code', await page.locator('#accessGate').isVisible());
+  await page.fill('#accessCode', 'JNR-2026');
+  await page.click('#accessGate button');
+  await page.waitForTimeout(500);
+  check('correct code opens the form', await page.locator('#accessGate').isHidden());
+  await page.goto(DISC);
+  await page.waitForTimeout(400);
+  check('unlock persists across reload', await page.locator('#accessGate').isHidden());
 
   check('no JS errors across entire run', pageErrors.length === 0, pageErrors.slice(0, 3).join(' | '));
 

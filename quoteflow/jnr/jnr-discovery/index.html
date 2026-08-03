@@ -381,7 +381,24 @@
   </style>
 </head>
 <body>
-  
+
+  <!-- ============================================
+       ACCESS GATE - this form is private to JNR
+       ============================================ -->
+  <div id="accessGate" style="position:fixed; inset:0; z-index:1000; background:linear-gradient(135deg,#1E3472 0%,#152654 100%); display:flex; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:white; border-radius:16px; padding:36px; width:100%; max-width:400px; box-shadow:0 20px 50px rgba(0,0,0,0.3);">
+      <h2 style="font-size:20px; font-weight:700; margin-bottom:6px;">Private questionnaire</h2>
+      <p style="font-size:14px; color:#64748B; margin-bottom:20px;">This page is for JNR Engineering. Enter the access code you were given.</p>
+      <form onsubmit="submitAccessCode(event)">
+        <input type="password" id="accessCode" class="form-input" placeholder="Access code" autocomplete="off" required>
+        <div id="accessError" style="display:none; background:#FEF2F2; border:1px solid #FECACA; color:#991B1B; font-size:13px; padding:10px 14px; border-radius:8px; margin-top:12px;">
+          That code isn't right. Check the message Rhys sent you.
+        </div>
+        <button type="submit" style="width:100%; margin-top:16px; padding:13px; background:linear-gradient(135deg,#1E3472 0%,#2E52B8 100%); color:white; border:none; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; font-family:inherit;">Open Questionnaire</button>
+      </form>
+    </div>
+  </div>
+
   <div class="container">
     
     <!-- HEADER -->
@@ -940,6 +957,33 @@
   </div>
   
   <script>
+    // ============================================
+    // ACCESS GATE - only the hash of the code lives in this file
+    // ============================================
+    const ACCESS_HASH = '3f90f480de2bbda33e1296d312d576afa7d2b285234b9fbb66b3f492db3085aa';
+
+    async function sha256Hex(text) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function submitAccessCode(e) {
+      e.preventDefault();
+      const code = document.getElementById('accessCode').value.trim();
+      if (await sha256Hex(code) === ACCESS_HASH) {
+        try { localStorage.setItem('jnr-discovery-access', 'granted'); } catch (err) { /* ignore */ }
+        document.getElementById('accessGate').style.display = 'none';
+      } else {
+        document.getElementById('accessError').style.display = 'block';
+      }
+    }
+
+    try {
+      if (localStorage.getItem('jnr-discovery-access') === 'granted') {
+        document.getElementById('accessGate').style.display = 'none';
+      }
+    } catch (err) { /* storage blocked - gate stays up */ }
+
     // Progress bar updates as fields are filled
     function updateProgress() {
       const form = document.getElementById('discoveryForm');

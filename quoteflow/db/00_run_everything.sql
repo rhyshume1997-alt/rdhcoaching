@@ -112,9 +112,11 @@ create trigger stock_updated_at before update on public.stock
 -- auth layer yet, so anon needs read/insert/update for the demo to function.
 -- Deliberately NO delete policy anywhere.
 --
--- !! MUST be replaced with authenticated + org_id policies before any real
--- !! customer data enters the system (Phase 1 of the build plan).
--- Idempotent: safe to re-run.
+-- !! SECURITY WARNING !!
+-- 04_phase1_auth_tenancy.sql REPLACES these policies with org-scoped,
+-- authenticated-only ones. NEVER re-run this file on its own after 04 has
+-- been applied - doing so would reopen anonymous read/write access.
+-- Always run via 00_run_everything.sql, which applies 04 last.
 
 alter table public.rfqs enable row level security;
 alter table public.quotes enable row level security;

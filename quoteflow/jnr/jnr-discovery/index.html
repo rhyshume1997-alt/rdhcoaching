@@ -421,7 +421,10 @@
       </div>
       
       <form id="discoveryForm" onsubmit="submitForm(event)">
-        
+        <!-- Honeypot: humans never see or fill this; bots do -->
+        <input type="text" name="_gotcha" tabindex="-1" autocomplete="off"
+               style="position:absolute; left:-9999px; width:1px; height:1px; opacity:0;" aria-hidden="true">
+
         <!-- ============================================
              SECTION 1: ABOUT JNR
              ============================================ -->
@@ -1132,6 +1135,7 @@
       
       const submission = {
         '_subject': 'JNR Discovery Submission - ' + (formData.get('q1_name') || 'Unknown') + ' - ' + new Date().toLocaleDateString('en-GB'),
+        '_gotcha': formData.get('_gotcha') || '',
         'tool': 'jnr-discovery-questionnaire',
         '00_filled_by': formData.get('q1_name') || '',
         '01_office_team_size': readable('q2_office_size', formData.get('q2_office_size')),

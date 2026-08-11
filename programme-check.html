@@ -663,6 +663,11 @@ formspree('initForm', {
   }
 });
 
+  // Also add the email to the Mailchimp audience, fired alongside the Formspree submit above.
+  // no-cors means the response cannot be read, but the request still goes through.
+  var mcSubscribeUrl = 'https://rdhcoaching.us2.list-manage.com/subscribe/post?u=0dc632ba2006dc705ecbdff53&id=e8151960c4&f_id=002ee3e0f0';
+  document.getElementById('emailForm').addEventListener('submit', function(){ var mcField = document.getElementById('emailInput'); var mcEmail = mcField ? mcField.value : ''; if (!mcEmail) return; fetch(mcSubscribeUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'EMAIL=' + encodeURIComponent(mcEmail) }); });
+
 // Instagram form handler (backup if someone manually goes to Instagram gate)
 formspree('initForm', { 
   formElement: '#instaForm', 

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RDH Coaching | Offboarding</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <style>
   :root {
     --blue: #5271FF;
@@ -77,9 +77,10 @@
     border-radius: 999px;
     padding: 6px 16px 6px 10px;
     margin-bottom: 28px;
-    font-family: 'Syne', sans-serif;
+    font-family: 'Anton', sans-serif;
     font-size: 12px;
     font-weight: 700;
+    letter-spacing: 0.14em;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--blue);
@@ -98,9 +99,10 @@
   }
 
   h1 {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Anton', sans-serif;
     font-size: clamp(30px, 6vw, 42px);
     font-weight: 800;
+    letter-spacing: 0.02em;
     line-height: 1.1;
     letter-spacing: -0.02em;
     margin-bottom: 14px;
@@ -131,9 +133,10 @@
 
   /* Section label */
   .section-label {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Anton', sans-serif;
     font-size: 10px;
     font-weight: 700;
+    letter-spacing: 0.16em;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--blue);
@@ -362,9 +365,10 @@
     border: none;
     border-radius: 12px;
     padding: 16px 40px;
-    font-family: 'Syne', sans-serif;
+    font-family: 'Anton', sans-serif;
     font-size: 15px;
     font-weight: 700;
+    letter-spacing: 0.08em;
     letter-spacing: 0.02em;
     cursor: pointer;
     transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
@@ -410,9 +414,10 @@
   }
 
   .success-screen h2 {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Anton', sans-serif;
     font-size: 26px;
     font-weight: 800;
+    letter-spacing: 0.02em;
     margin-bottom: 12px;
   }
 
@@ -444,6 +449,7 @@
     margin-top: 5px;
   }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -539,10 +545,37 @@
       </div>
 
       <div class="field">
-        <label for="improve">What could we have done better? <span class="req">*</span></label>
-        <textarea id="improve" name="areas_to_improve" placeholder="Be brutally honest — this is how we actually get better..." required maxlength="600"></textarea>
-        <div class="char-count"><span id="improve-count">0</span>/600</div>
-        <div class="field-error" id="improve-err">Please share what we could improve</div>
+        <label for="moment">Was there a specific moment you felt frustrated, unsupported, or confused? <span class="req">*</span></label>
+        <textarea id="moment" name="specific_moment" placeholder="Walk us through what happened. A slow reply, a check-in that felt generic, a plan that didn't fit your week — the actual moment, not a general feeling..." required maxlength="600"></textarea>
+        <div class="char-count"><span id="moment-count">0</span>/600</div>
+        <div class="field-error" id="moment-err">Please share a specific moment</div>
+      </div>
+
+      <div class="field">
+        <label for="considered_leaving">At any point did you consider leaving before you actually did? What almost pushed you out the door?</label>
+        <textarea id="considered_leaving" name="considered_leaving_earlier" placeholder="If yes, what was it. If no, say so — that's useful too..." maxlength="500"></textarea>
+        <div class="char-count"><span id="considered-count">0</span>/500</div>
+      </div>
+
+      <div class="field">
+        <label for="if_you_ran_it">If you were running this coaching business, what's the one thing you'd change immediately? <span class="req">*</span></label>
+        <textarea id="if_you_ran_it" name="one_thing_youd_change" placeholder="Not a compliment, not a soft suggestion — the actual thing you'd fix first if it was yours to fix..." required maxlength="500"></textarea>
+        <div class="char-count"><span id="ifyou-count">0</span>/500</div>
+        <div class="field-error" id="ifyou-err">Please share the one thing you'd change</div>
+      </div>
+
+      <div class="field">
+        <label for="honest_rating">On a scale of "everything was great" to "honestly, quite a bit needs fixing" — where does this sit for you?</label>
+        <div class="pill-group" id="honesty-group">
+          <input type="radio" name="honesty_scale" id="h1" value="Nothing to fix, genuinely">
+          <label for="h1">Nothing to fix, genuinely</label>
+          <input type="radio" name="honesty_scale" id="h2" value="A couple of small things">
+          <label for="h2">A couple of small things</label>
+          <input type="radio" name="honesty_scale" id="h3" value="Some real gaps">
+          <label for="h3">Some real gaps</label>
+          <input type="radio" name="honesty_scale" id="h4" value="Quite a bit needs fixing">
+          <label for="h4">Quite a bit needs fixing</label>
+        </div>
       </div>
 
       <div class="field">
@@ -670,7 +703,9 @@
     });
   }
   bindCounter('loved', 'loved-count');
-  bindCounter('improve', 'improve-count');
+  bindCounter('moment', 'moment-count');
+  bindCounter('considered_leaving', 'considered-count');
+  bindCounter('if_you_ran_it', 'ifyou-count');
   bindCounter('testimonial', 'testi-count');
 
   // Validation
@@ -724,19 +759,95 @@
       lovedErr.style.display = 'none';
     }
 
-    // Improve
-    const improve = document.getElementById('improve');
-    const improveErr = document.getElementById('improve-err');
-    if (!improve.value.trim()) {
-      improve.classList.add('invalid');
-      improveErr.style.display = 'block';
+    // Specific moment
+    const moment = document.getElementById('moment');
+    const momentErr = document.getElementById('moment-err');
+    if (!moment.value.trim()) {
+      moment.classList.add('invalid');
+      momentErr.style.display = 'block';
       valid = false;
     } else {
-      improve.classList.remove('invalid');
-      improveErr.style.display = 'none';
+      moment.classList.remove('invalid');
+      momentErr.style.display = 'none';
+    }
+
+    // One thing you'd change
+    const ifyou = document.getElementById('if_you_ran_it');
+    const ifyouErr = document.getElementById('ifyou-err');
+    if (!ifyou.value.trim()) {
+      ifyou.classList.add('invalid');
+      ifyouErr.style.display = 'block';
+      valid = false;
+    } else {
+      ifyou.classList.remove('invalid');
+      ifyouErr.style.display = 'none';
     }
 
     return valid;
+  }
+
+  // Build a branded PDF from the submitted answers
+  function buildFeedbackPDF(data) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const margin = 50;
+    let y = 60;
+
+    // Header band
+    doc.setFillColor(9, 9, 14);
+    doc.rect(0, 0, pageW, 90, 'F');
+    doc.setTextColor(82, 113, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('RDH COACHING', margin, 38);
+    doc.setTextColor(253, 253, 253);
+    doc.setFontSize(20);
+    doc.text('Offboarding Feedback', margin, 64);
+
+    y = 120;
+    doc.setTextColor(20, 20, 26);
+
+    const field = (label, value) => {
+      if (!value) return;
+      if (y > 760) { doc.addPage(); y = 60; }
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(140, 100, 200);
+      doc.text(label.toUpperCase(), margin, y);
+      y += 16;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(11.5);
+      doc.setTextColor(25, 25, 30);
+      const lines = doc.splitTextToSize(String(value), pageW - margin * 2);
+      doc.text(lines, margin, y);
+      y += lines.length * 15 + 18;
+    };
+
+    field('Name', data.name);
+    field('Email', data.email);
+    field('Time as client', data.duration);
+    field('Reason for leaving', data.leaving_reason);
+    field('More on reason', data.other_reason);
+    field('What they loved most', data.what_you_loved);
+    field('A specific frustrating moment', data.specific_moment);
+    field('Considered leaving earlier?', data.considered_leaving_earlier);
+    field('The one thing they would change', data.one_thing_youd_change);
+    field('Honesty scale', data.honesty_scale);
+    field('Overall rating', data.rating ? data.rating + ' / 5 stars' : '');
+    field('NPS score', data.nps_score ? data.nps_score + ' / 10' : '');
+    field('Would return?', data.would_return);
+    field('Achieved their goal?', data.goal_achieved);
+    field('Testimonial', data.testimonial);
+    field('Permission to share', data.testimonial_permission);
+    field('Best result', data.best_result);
+
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(9);
+    doc.setTextColor(150, 150, 160);
+    doc.text('Generated automatically from the RDH Coaching offboarding form.', margin, 800);
+
+    return doc.output('blob');
   }
 
   // Form submission
@@ -755,6 +866,23 @@
 
     try {
       const formData = new FormData(this);
+
+      // Collect plain values for the PDF
+      const data = {};
+      formData.forEach((value, key) => {
+        if (data[key]) {
+          data[key] += ', ' + value; // handles multi-value fields
+        } else {
+          data[key] = value;
+        }
+      });
+
+      // Generate the PDF and attach it as a real file
+      const pdfBlob = buildFeedbackPDF(data);
+      const fileName = `RDH-Offboarding-${(data.name || 'client').replace(/\s+/g, '-')}.pdf`;
+      const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+      formData.append('feedback_pdf', pdfFile);
+
       const response = await fetch(this.action, {
         method: 'POST',
         body: formData,

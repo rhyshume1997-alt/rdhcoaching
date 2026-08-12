@@ -449,7 +449,6 @@
     margin-top: 5px;
   }
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -786,70 +785,6 @@
     return valid;
   }
 
-  // Build a branded PDF from the submitted answers
-  function buildFeedbackPDF(data) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-    const pageW = doc.internal.pageSize.getWidth();
-    const margin = 50;
-    let y = 60;
-
-    // Header band
-    doc.setFillColor(9, 9, 14);
-    doc.rect(0, 0, pageW, 90, 'F');
-    doc.setTextColor(82, 113, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.text('RDH COACHING', margin, 38);
-    doc.setTextColor(253, 253, 253);
-    doc.setFontSize(20);
-    doc.text('Offboarding Feedback', margin, 64);
-
-    y = 120;
-    doc.setTextColor(20, 20, 26);
-
-    const field = (label, value) => {
-      if (!value) return;
-      if (y > 760) { doc.addPage(); y = 60; }
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(140, 100, 200);
-      doc.text(label.toUpperCase(), margin, y);
-      y += 16;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(11.5);
-      doc.setTextColor(25, 25, 30);
-      const lines = doc.splitTextToSize(String(value), pageW - margin * 2);
-      doc.text(lines, margin, y);
-      y += lines.length * 15 + 18;
-    };
-
-    field('Name', data.name);
-    field('Email', data.email);
-    field('Time as client', data.duration);
-    field('Reason for leaving', data.leaving_reason);
-    field('More on reason', data.other_reason);
-    field('What they loved most', data.what_you_loved);
-    field('A specific frustrating moment', data.specific_moment);
-    field('Considered leaving earlier?', data.considered_leaving_earlier);
-    field('The one thing they would change', data.one_thing_youd_change);
-    field('Honesty scale', data.honesty_scale);
-    field('Overall rating', data.rating ? data.rating + ' / 5 stars' : '');
-    field('NPS score', data.nps_score ? data.nps_score + ' / 10' : '');
-    field('Would return?', data.would_return);
-    field('Achieved their goal?', data.goal_achieved);
-    field('Testimonial', data.testimonial);
-    field('Permission to share', data.testimonial_permission);
-    field('Best result', data.best_result);
-
-    doc.setFont('helvetica', 'italic');
-    doc.setFontSize(9);
-    doc.setTextColor(150, 150, 160);
-    doc.text('Generated automatically from the RDH Coaching offboarding form.', margin, 800);
-
-    return doc.output('blob');
-  }
-
   // Form submission
   document.getElementById('offboarding-form').addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -866,23 +801,6 @@
 
     try {
       const formData = new FormData(this);
-
-      // Collect plain values for the PDF
-      const data = {};
-      formData.forEach((value, key) => {
-        if (data[key]) {
-          data[key] += ', ' + value; // handles multi-value fields
-        } else {
-          data[key] = value;
-        }
-      });
-
-      // Generate the PDF and attach it as a real file
-      const pdfBlob = buildFeedbackPDF(data);
-      const fileName = `RDH-Offboarding-${(data.name || 'client').replace(/\s+/g, '-')}.pdf`;
-      const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
-      formData.append('feedback_pdf', pdfFile);
-
       const response = await fetch(this.action, {
         method: 'POST',
         body: formData,

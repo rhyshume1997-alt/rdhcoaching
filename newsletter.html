@@ -1094,14 +1094,14 @@ function setConsent(v){
       headers:{'Content-Type':'application/json','Accept':'application/json'},
       body: JSON.stringify(payload)
     })
-      .then(function(r){ return r.json().then(function(d){ return {status:r.status, data:d}; }); })
+      .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(d){ return {status:r.status, data:d}; }); })
       .then(function(out){
         if(out.status === 200 && out.data && out.data.ok === true){
           f.style.display='none';
           document.getElementById('newsSuccess').classList.add('show');
           if(window.RDH) RDH.track('newsletter_submitted', {form_name: 'newsletter'});
         } else {
-          fail(out.status === 400 ? 'validation' : (out.status === 409 ? 'unsubscribed' : 'server'), (out.data && out.data.error) || null);
+          var em = out.data && out.data.error; if(em && typeof em !== 'string') em = null; fail(out.status === 400 ? 'validation' : (out.status === 409 ? 'unsubscribed' : 'server'), em);
         }
       })
       .catch(function(){ fail('network'); });

@@ -704,6 +704,7 @@ h1,h2,h3{font-family:'Bebas Neue','Supreme',sans-serif;font-weight:400;line-heig
       <a href="/online-coaching">Online Coaching</a>
       <a href="/personal-trainer-glasgow">Glasgow PT</a>
       <a href="/about">About</a>
+        <a href="/newsletter">Newsletter</a>
       <a href="/#proof">Proof</a>
     </div>
     <a href="#apply" class="nav-cta">Apply Now</a>
@@ -715,6 +716,7 @@ h1,h2,h3{font-family:'Bebas Neue','Supreme',sans-serif;font-weight:400;line-heig
   <a href="/online-coaching">Online Coaching</a>
   <a href="/personal-trainer-glasgow">Glasgow PT</a>
   <a href="/about">About</a>
+  <a href="/newsletter">Newsletter</a>
   <a href="/#proof">Proof</a>
   <a href="#apply" class="mm-cta">Apply Now</a>
 </div>
@@ -727,7 +729,7 @@ h1,h2,h3{font-family:'Bebas Neue','Supreme',sans-serif;font-weight:400;line-heig
       <span class="line"><span>Personal training</span></span>
       <span class="line"><span>in <span class="gt">Glasgow</span>.</span></span>
     </h1>
-    <p class="hero-sub">I coach in person around Glasgow and online everywhere else. Same programme, same weekly check ins, same standard. <strong>Most people still pick online, because it covers the whole week instead of one hour of it.</strong></p>
+    <p class="hero-sub">I coach in person around Glasgow and online everywhere else. Same programme, same weekly check ins, same standard. <strong>Most people still pick online, because it covers every day of the week, not one hour of it.</strong></p>
     <div class="hero-cta">
       <a href="#apply" class="btn btn-gold">Apply Now <span class="arr">&rarr;</span></a>
     </div>
@@ -741,7 +743,7 @@ h1,h2,h3{font-family:'Bebas Neue','Supreme',sans-serif;font-weight:400;line-heig
     <div class="sec-head reveal"><span class="eyebrow">Local</span><h2>I started in a Glasgow gym at 52kg.</h2></div>
     <div class="do-copy reveal" data-d="1" style="max-width:760px">
       <p>My first proper gym was on Jamaica Street and I weighed 52kg walking into it. I trained in Glasgow gyms for years, got hurt, got it wrong, and eventually worked out what actually moves the needle. When lockdown shut everything I built a home gym with no mirrors and filmed every lift to coach myself.</p>
-      <p>That is the whole reason I do this from Glasgow now. <strong>I know exactly what it feels like to train in this city and get nowhere.</strong></p>
+      <p>That is why I coach out of Glasgow now. <strong>I know exactly what it feels like to train in this city and get nowhere.</strong></p>
     </div>
   </div>
 </section>
@@ -831,7 +833,7 @@ h1,h2,h3{font-family:'Bebas Neue','Supreme',sans-serif;font-weight:400;line-heig
         <a class="nn-card reveal" href="/programme-check.html">
           <div class="nn-ic">🏋️</div>
           <h4>Start with a plan, free</h4>
-          <p>The Programme Builder tells you what to train for your level and your goal. Two minutes, and it costs you nothing.</p>
+          <p>The Programme Builder tells you what to train for your level and your goal. Two minutes, and I send the plan straight to your inbox along with everything else I write.</p>
           <span class="nn-link"><span>Build my programme</span> <span class="arr">&rarr;</span></span>
         </a>
         <a class="nn-card reveal" data-d="1" href="https://instagram.com/rdhcoaching" target="_blank" rel="noopener">
@@ -1060,6 +1062,7 @@ document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeVi
     }
     step1.style.display = 'none';
     step2.style.display = 'block';
+    RDH.track('application_step_2', {form_name: 'coaching_application', form_step: 2});
     var firstField = step2.querySelector('textarea');
     if(firstField) firstField.focus();
   });
@@ -1080,7 +1083,7 @@ document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeVi
 
 /* ===== FORM (AJAX) ===== */
 var form = document.getElementById('applyForm');
-form.addEventListener('submit', function(e){
+if(form) form.addEventListener('submit', function(e){
   e.preventDefault();
   var btn = document.getElementById('submitBtn');
   btn.disabled = true; btn.textContent = 'Sending...';
@@ -1092,12 +1095,15 @@ form.addEventListener('submit', function(e){
     if(r.ok){
       document.getElementById('formInner').style.display='none';
       document.getElementById('formSuccess').classList.add('show');
+      RDH.track('application_submitted', {form_name: 'coaching_application'});
     } else {
       btn.disabled=false; btn.textContent='Send My Application →';
+      RDH.track('application_error', {form_name: 'coaching_application', error_type: 'server'});
       alert('Something went wrong. Email me directly at rhumecoaching@gmail.com');
     }
   }).catch(function(){
     btn.disabled=false; btn.textContent='Send My Application →';
+    RDH.track('application_error', {form_name: 'coaching_application', error_type: 'network'});
     alert('Something went wrong. Email me directly at rhumecoaching@gmail.com');
   });
 });
@@ -1123,11 +1129,101 @@ function setConsent(v){
   var c = null;
   try{ c = localStorage.getItem('rdh_consent'); }catch(e){}
   if(c === 'yes'){ loadGA(); }
-  else if(c !== 'no'){ setTimeout(function(){ cookie.classList.add('show'); }, 1400); }
+  else if(c !== 'no' && cookie){ setTimeout(function(){ cookie.classList.add('show'); }, 1400); }
 })();
-document.getElementById('ckAccept').addEventListener('click', function(){ setConsent('yes'); });
-document.getElementById('ckDecline').addEventListener('click', function(){ setConsent('no'); });
-document.getElementById('ckMore').addEventListener('click', function(e){ e.preventDefault(); setConsent('yes'); });
+(function(){
+  var a=document.getElementById('ckAccept'), d=document.getElementById('ckDecline'), m=document.getElementById('ckMore');
+  if(a) a.addEventListener('click', function(){ setConsent('yes'); });
+  if(d) d.addEventListener('click', function(){ setConsent('no'); });
+  if(m) m.addEventListener('click', function(e){ e.preventDefault(); setConsent('yes'); });
+})();
+
+/* ===== ANALYTICS (consent gated) ===== */
+var RDH = (function(){
+  var fired = {};
+  function consented(){
+    try { return localStorage.getItem('rdh_consent') === 'yes'; } catch(e){ return false; }
+  }
+  function base(){
+    return {
+      page_path: location.pathname,
+      page_title: document.title
+    };
+  }
+  function track(name, params){
+    if(!consented() || typeof window.gtag !== 'function') return;
+    var p = base();
+    if(params){ for(var k in params){ if(params[k] !== undefined && params[k] !== null && params[k] !== '') p[k] = params[k]; } }
+    try { window.gtag('event', name, p); } catch(e){}
+  }
+  function once(key, name, params){
+    if(fired[key]) return;
+    fired[key] = 1;
+    track(name, params);
+  }
+  function text(el){
+    if(!el) return '';
+    return (el.textContent || '').replace(/\s+/g,' ').trim().slice(0,60);
+  }
+  function region(el){
+    var s = el && el.closest ? el.closest('section, footer, nav, .hero, .form-card') : null;
+    if(!s) return 'unknown';
+    return s.id || (s.tagName ? s.tagName.toLowerCase() : 'unknown');
+  }
+  return { track: track, once: once, text: text, region: region, consented: consented };
+})();
+
+/* --- outbound + CTA click tracking (delegated, one listener) --- */
+document.addEventListener('click', function(e){
+  var a = e.target.closest ? e.target.closest('a, button') : null;
+  if(!a) return;
+  var href = a.getAttribute('href') || '';
+  var label = RDH.text(a);
+  var loc = RDH.region(a);
+
+  if(/instagram\.com/i.test(href))      RDH.track('instagram_clicked', {link_url: href, cta_location: loc, cta_text: label});
+  else if(/youtube\.com/i.test(href))   RDH.track('youtube_clicked',   {link_url: href, cta_location: loc, cta_text: label});
+  else if(/tiktok\.com/i.test(href))    RDH.track('tiktok_clicked',    {link_url: href, cta_location: loc, cta_text: label});
+  else if(/calendly\.com/i.test(href))  RDH.track('calendly_clicked',  {link_url: href, cta_location: loc, cta_text: label});
+  else if(/programme-check/i.test(href))            RDH.track('programme_builder_clicked',      {link_url: href, cta_location: loc, cta_text: label});
+  else if(/macro-tracking/i.test(href))             RDH.track('macro_calculator_clicked',       {link_url: href, cta_location: loc, cta_text: label});
+  else if(/summer-body-calculator/i.test(href))     RDH.track('summer_body_calculator_clicked', {link_url: href, cta_location: loc, cta_text: label});
+  else if(href.indexOf('#apply') !== -1)            RDH.track('apply_cta_clicked',              {cta_location: loc, cta_text: label});
+});
+
+/* --- scroll depth, once per page view --- */
+(function(){
+  function onScroll(){
+    var d = document.documentElement;
+    var h = (d.scrollHeight - window.innerHeight);
+    if(h <= 0) return;
+    var pct = ((window.pageYOffset || d.scrollTop) / h) * 100;
+    if(pct >= 50) RDH.once('s50','scroll_50', {percent_scrolled: 50});
+    if(pct >= 90) RDH.once('s90','scroll_90', {percent_scrolled: 90});
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+})();
+
+/* --- application form funnel --- */
+(function(){
+  var af = document.getElementById('applyForm');
+  if(!af) return;
+  af.addEventListener('input', function(){
+    RDH.once('appstart','application_started', {form_name: 'coaching_application', form_step: 1});
+  });
+})();
+
+/* --- newsletter form start --- */
+(function(){
+  var nf = document.getElementById('newsForm');
+  if(!nf) return;
+  nf.addEventListener('input', function(){
+    RDH.once('newsstart','newsletter_started', {form_name: 'newsletter'});
+  });
+})();
+
 </script>
+<script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

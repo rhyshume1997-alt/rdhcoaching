@@ -1450,15 +1450,25 @@ function loadGA(){
   gtag('js', new Date());
   gtag('config', GA_ID);
 }
+/* OpenAI Ads pixel - only initialises after analytics/advertising consent */
+function loadPixel(){
+  if(window.oaiq) return;                       // already loaded
+  (function(w,d,s,u){
+    var q=function(){q.q.push(arguments)};q.q=[];w.oaiq=q;
+    var j=d.createElement(s);j.async=1;j.src=u;
+    var f=d.getElementsByTagName(s)[0];f.parentNode.insertBefore(j,f);
+  })(window,document,'script','https://bzrcdn.openai.com/sdk/oaiq.min.js');
+  window.oaiq('init',{pixelId:'GFhHQEQhNkU9FSZEKUaunT',debug:true});
+}
 function setConsent(v){
   try{ localStorage.setItem('rdh_consent', v); }catch(e){}
   cookie.classList.remove('show');
-  if(v === 'yes') loadGA();
+  if(v === 'yes'){ loadGA(); loadPixel(); }
 }
 (function(){
   var c = null;
   try{ c = localStorage.getItem('rdh_consent'); }catch(e){}
-  if(c === 'yes'){ loadGA(); }
+  if(c === 'yes'){ loadGA(); loadPixel(); }
   else if(c !== 'no' && cookie){ setTimeout(function(){ cookie.classList.add('show'); }, 1400); }
 })();
 (function(){

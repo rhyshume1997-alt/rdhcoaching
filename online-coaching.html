@@ -1208,12 +1208,17 @@ function loadPixel(){
     var j=d.createElement(s);j.async=1;j.src=u;
     var f=d.getElementsByTagName(s)[0];f.parentNode.insertBefore(j,f);
   })(window,document,'script','https://bzrcdn.openai.com/sdk/oaiq.min.js');
+  window.oaiq('consent', true);
   window.oaiq('init',{pixelId:'GFhHQEQhNkU9FSZEKUaunT',debug:true});
 }
 function setConsent(v){
   try{ localStorage.setItem('rdh_consent', v); }catch(e){}
   cookie.classList.remove('show');
-  if(v === 'yes'){ loadGA(); loadPixel(); }
+  if(v === 'yes'){
+    loadGA(); loadPixel();
+  } else if(window.oaiq){
+    window.oaiq('consent', false);                  // purges its queue and cookies
+  }
 }
 (function(){
   var c = null;

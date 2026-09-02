@@ -1176,6 +1176,7 @@ if(form) form.addEventListener('submit', function(e){
       document.getElementById('formInner').style.display='none';
       document.getElementById('formSuccess').classList.add('show');
       RDH.track('application_submitted', {form_name: 'coaching_application'});
+      if(window.oaiq) window.oaiq('measure','lead_created',{type:'customer_action'});
     } else {
       btn.disabled=false; btn.textContent='Send My Application →';
       RDH.track('application_error', {form_name: 'coaching_application', error_type: 'server'});

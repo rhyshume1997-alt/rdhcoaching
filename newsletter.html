@@ -1029,6 +1029,7 @@ if(form) form.addEventListener('submit', function(e){
       document.getElementById('formInner').style.display='none';
       document.getElementById('formSuccess').classList.add('show');
       RDH.track('application_submitted', {form_name: 'coaching_application'});
+      if(window.oaiq) window.oaiq('measure','lead_created',{type:'customer_action'});
     } else {
       btn.disabled=false; btn.textContent='Send My Application →';
       RDH.track('application_error', {form_name: 'coaching_application', error_type: 'server'});
@@ -1117,6 +1118,7 @@ function setConsent(v){
           f.style.display='none';
           document.getElementById('newsSuccess').classList.add('show');
           if(window.RDH) RDH.track('newsletter_submitted', {form_name: 'newsletter'});
+          if(window.oaiq) window.oaiq('measure','lead_created',{type:'customer_action'});
         } else {
           var em = out.data && out.data.error; if(em && typeof em !== 'string') em = null; fail(out.status === 400 ? 'validation' : (out.status === 409 ? 'unsubscribed' : 'server'), em);
         }

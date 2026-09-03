@@ -1,0 +1,205 @@
+diff --git a/index.html b/index.html
+index 374d212..d024fef 100644
+--- a/index.html
++++ b/index.html
+@@ -1110,7 +1110,7 @@ h1,h2,h3{font-family:'Bebas Neue','Supreme',sans-serif;font-weight:400;line-heig
+     </div>
+     <div class="footer-bottom">
+       <span>© <span id="year"></span> RDH Coaching. All rights reserved.</span>
+-      <span>Glasgow, Scotland · Online worldwide</span>
++      <span>Glasgow, Scotland · Online worldwide · <a href="#" data-privacy-prefs>Analytics settings</a></span>
+     </div>
+   </div>
+ </footer>
+@@ -1128,10 +1128,10 @@ h1,h2,h3{font-family:'Bebas Neue','Supreme',sans-serif;font-weight:400;line-heig
+ 
+ <!-- COOKIE -->
+ <div class="cookie" id="cookie">
+-  <p>This site uses cookies to understand how it's performing. Nothing creepy. <a href="#" id="ckMore">Accept to help out</a> or carry on without.</p>
++  <p>Analytics is on so I can see which pages actually work — anonymous stats only, never used for advertising. You can <a href="#" id="ckOptOut">switch it off</a>, or allow ad measurement as well.</p>
+   <div class="cookie-btns">
+-    <button class="ck-decline" id="ckDecline">Without</button>
+-    <button class="ck-accept" id="ckAccept">Accept</button>
++    <button class="ck-decline" id="ckDecline">Not now</button>
++    <button class="ck-accept" id="ckAccept">Allow ads too</button>
+   </div>
+ </div>
+ 
+@@ -1139,7 +1139,7 @@ h1,h2,h3{font-family:'Bebas Neue','Supreme',sans-serif;font-weight:400;line-heig
+ /* ===== CONFIG ===== */
+ // Paste your Loom share link here (e.g. "https://www.loom.com/embed/abc123"). Leave "" to send button to the form.
+ var LOOM_URL = "https://www.loom.com/embed/765e43aab52c4c49b7a9f58638c2bf4a";
+-var GA_ID = "G-R3VB8DS79R";
++var GA_ID = "G-58GH98HSHE";
+ 
+ /* ===== YEAR ===== */
+ document.getElementById('year').textContent = new Date().getFullYear();
+@@ -1338,19 +1338,58 @@ if(form) form.addEventListener('submit', function(e){
+   });
+ });
+ 
+-/* ===== COOKIE + GA (consent gated) ===== */
++/* ===== ANALYTICS + ADS CONSENT =====
++   Analytics (GA4) runs by default on a statistical-purposes basis under
++   PECR Schedule A1 (as inserted by the Data (Use and Access) Act 2025):
++   aggregate site-improvement stats only. Google signals, ad personalisation
++   and ad storage are all explicitly denied, so nothing here feeds advertising.
++   Visitors get clear notice and a one-click way to object (ckOptOut, plus the
++   persistent "Analytics settings" link in the footer).
++
++   The OpenAI ads pixel and any Google Ads features are NOT covered by that
++   exception and remain strictly opt-in. */
+ var cookie = document.getElementById('cookie');
++
++function analyticsOff(){
++  try { return localStorage.getItem('rdh_analytics') === 'off'; } catch(e){ return false; }
++}
++function adsConsented(){
++  try { return localStorage.getItem('rdh_consent') === 'yes'; } catch(e){ return false; }
++}
++
+ function loadGA(){
++  if(window.gtag) return;                       // already loaded
++  window['ga-disable-' + GA_ID] = false;
+   var s = document.createElement('script');
+   s.async = true; s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+   document.head.appendChild(s);
+   window.dataLayer = window.dataLayer || [];
+   function gtag(){ dataLayer.push(arguments); }
+   window.gtag = gtag;
++  /* Statistical purposes only until the visitor opts in to advertising. */
++  gtag('consent', 'default', {
++    ad_storage: 'denied',
++    ad_user_data: 'denied',
++    ad_personalization: 'denied',
++    analytics_storage: 'granted'
++  });
+   gtag('js', new Date());
+-  gtag('config', GA_ID);
++  gtag('config', GA_ID, {
++    anonymize_ip: true,
++    allow_google_signals: false,
++    allow_ad_personalization_signals: false
++  });
++  if(adsConsented()) grantAds();
+ }
+-/* OpenAI Ads pixel - only initialises after analytics/advertising consent */
++function grantAds(){
++  if(typeof window.gtag !== 'function') return;
++  window.gtag('consent', 'update', {
++    ad_storage: 'granted',
++    ad_user_data: 'granted',
++    ad_personalization: 'granted'
++  });
++}
++/* OpenAI Ads pixel - opt-in only, never fires without explicit consent */
+ function loadPixel(){
+   if(window.oaiq) return;                       // already loaded
+   (function(w,d,s,u){
+@@ -1363,31 +1402,54 @@ function loadPixel(){
+ }
+ function setConsent(v){
+   try{ localStorage.setItem('rdh_consent', v); }catch(e){}
+-  cookie.classList.remove('show');
+   if(v === 'yes'){
+-    loadGA(); loadPixel();
++    loadPixel(); grantAds();
+   } else if(window.oaiq){
+     window.oaiq('consent', false);                  // purges its queue and cookies
+   }
+ }
++function setAnalytics(on){
++  try{ localStorage.setItem('rdh_analytics', on ? 'on' : 'off'); }catch(e){}
++  if(on){ loadGA(); return; }
++  window['ga-disable-' + GA_ID] = true;             // stops any further GA4 hits
++  setConsent('no');                                 // opting out of stats opts out of ads too
++}
++function dismissNotice(){
++  try{ localStorage.setItem('rdh_notice', 'seen'); }catch(e){}
++  if(cookie) cookie.classList.remove('show');
++}
++window.RDHPrivacy = { setAnalytics: setAnalytics, setConsent: setConsent,
++  open: function(){ if(cookie) cookie.classList.add('show'); } };
++
+ (function(){
+-  var c = null;
+-  try{ c = localStorage.getItem('rdh_consent'); }catch(e){}
+-  if(c === 'yes'){ loadGA(); loadPixel(); }
+-  else if(c !== 'no' && cookie){ setTimeout(function(){ cookie.classList.add('show'); }, 1400); }
++  if(!analyticsOff()) loadGA();
++  if(adsConsented()) loadPixel();
++  var seen = null;
++  try{ seen = localStorage.getItem('rdh_notice'); }catch(e){}
++  if(seen !== 'seen' && cookie){ setTimeout(function(){ cookie.classList.add('show'); }, 800); }
+ })();
+ (function(){
+-  var a=document.getElementById('ckAccept'), d=document.getElementById('ckDecline'), m=document.getElementById('ckMore');
+-  if(a) a.addEventListener('click', function(){ setConsent('yes'); });
+-  if(d) d.addEventListener('click', function(){ setConsent('no'); });
+-  if(m) m.addEventListener('click', function(e){ e.preventDefault(); setConsent('yes'); });
++  var a=document.getElementById('ckAccept'), d=document.getElementById('ckDecline'),
++      m=document.getElementById('ckMore'), o=document.getElementById('ckOptOut');
++  if(a) a.addEventListener('click', function(){ dismissNotice(); setConsent('yes'); });
++  if(d) d.addEventListener('click', function(){ dismissNotice(); setConsent('no'); });
++  if(m) m.addEventListener('click', function(e){ e.preventDefault(); dismissNotice(); setConsent('yes'); });
++  if(o) o.addEventListener('click', function(e){ e.preventDefault(); dismissNotice(); setAnalytics(false); });
++  document.addEventListener('click', function(e){
++    var t = e.target && e.target.closest ? e.target.closest('[data-privacy-prefs]') : null;
++    if(!t) return;
++    e.preventDefault();
++    try{ localStorage.removeItem('rdh_notice'); }catch(err){}
++    if(cookie) cookie.classList.add('show');
++  });
+ })();
+ 
+ /* ===== ANALYTICS (consent gated) ===== */
+ var RDH = (function(){
+   var fired = {};
+   function consented(){
+-    try { return localStorage.getItem('rdh_consent') === 'yes'; } catch(e){ return false; }
++    /* Statistical analytics is on unless the visitor has objected. */
++    try { return localStorage.getItem('rdh_analytics') !== 'off'; } catch(e){ return true; }
+   }
+   function base(){
+     return {
+diff --git a/thank-you.html b/thank-you.html
+index e6ea03d..9591952 100644
+--- a/thank-you.html
++++ b/thank-you.html
+@@ -513,12 +513,34 @@ h1,h2,h3{font-family:'Bebas Neue','Supreme',sans-serif;font-weight:400;line-heig
+ </section>
+ 
+ <!-- Google Analytics + Ads conversion -->
+-<script async src="https://www.googletagmanager.com/gtag/js?id=G-R3VB8DS79R"></script>
+ <script>
++/* Statistical analytics runs unless the visitor has objected (see the notice
++   on the main site). Advertising storage stays denied until they opt in. */
++var GA_ID = "G-58GH98HSHE";
++(function(){
++  var off = false, ads = false;
++  try { off = localStorage.getItem('rdh_analytics') === 'off'; } catch(e){}
++  try { ads = localStorage.getItem('rdh_consent') === 'yes'; } catch(e){}
++  if(off) return;
++  var s = document.createElement('script');
++  s.async = true; s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
++  document.head.appendChild(s);
+   window.dataLayer = window.dataLayer || [];
+   function gtag(){dataLayer.push(arguments);}
++  window.gtag = gtag;
++  gtag('consent', 'default', {
++    ad_storage: ads ? 'granted' : 'denied',
++    ad_user_data: ads ? 'granted' : 'denied',
++    ad_personalization: ads ? 'granted' : 'denied',
++    analytics_storage: 'granted'
++  });
+   gtag('js', new Date());
+-  gtag('config', 'G-R3VB8DS79R');
++  gtag('config', GA_ID, {
++    anonymize_ip: true,
++    allow_google_signals: false,
++    allow_ad_personalization_signals: false
++  });
++})();
+ 
+   /* ======================================================================
+      GOOGLE ADS CONVERSION TRACKING

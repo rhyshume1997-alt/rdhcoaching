@@ -513,12 +513,34 @@ h1,h2,h3{font-family:'Bebas Neue','Supreme',sans-serif;font-weight:400;line-heig
 </section>
 
 <!-- Google Analytics + Ads conversion -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-R3VB8DS79R"></script>
 <script>
+/* Statistical analytics runs unless the visitor has objected (see the notice
+   on the main site). Advertising storage stays denied until they opt in. */
+var GA_ID = "G-58GH98HSHE";
+(function(){
+  var off = false, ads = false;
+  try { off = localStorage.getItem('rdh_analytics') === 'off'; } catch(e){}
+  try { ads = localStorage.getItem('rdh_consent') === 'yes'; } catch(e){}
+  if(off) return;
+  var s = document.createElement('script');
+  s.async = true; s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+  document.head.appendChild(s);
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
+  window.gtag = gtag;
+  gtag('consent', 'default', {
+    ad_storage: ads ? 'granted' : 'denied',
+    ad_user_data: ads ? 'granted' : 'denied',
+    ad_personalization: ads ? 'granted' : 'denied',
+    analytics_storage: 'granted'
+  });
   gtag('js', new Date());
-  gtag('config', 'G-R3VB8DS79R');
+  gtag('config', GA_ID, {
+    anonymize_ip: true,
+    allow_google_signals: false,
+    allow_ad_personalization_signals: false
+  });
+})();
 
   /* ======================================================================
      GOOGLE ADS CONVERSION TRACKING

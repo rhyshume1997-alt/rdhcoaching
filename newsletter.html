@@ -1179,6 +1179,8 @@ window.RDHPrivacy = { setAnalytics: setAnalytics, setConsent: setConsent,
           f.style.display='none';
           document.getElementById('newsSuccess').classList.add('show');
           if(window.RDH) RDH.track('newsletter_submitted', {form_name: 'newsletter'});
+          /* GA4 lead conversion - success path only, once per submission */
+          if(window.RDH) RDH.once('generate_lead', 'generate_lead', {form_name: 'newsletter', lead_type: 'newsletter'});
           if(window.oaiq) window.oaiq('measure','lead_created',{type:'customer_action'});
         } else {
           var em = out.data && out.data.error; if(em && typeof em !== 'string') em = null; fail(out.status === 400 ? 'validation' : (out.status === 409 ? 'unsubscribed' : 'server'), em);

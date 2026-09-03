@@ -1325,6 +1325,8 @@ if(form) form.addEventListener('submit', function(e){
       document.getElementById('formInner').style.display='none';
       document.getElementById('formSuccess').classList.add('show');
       RDH.track('application_submitted', {form_name: 'coaching_application'});
+      /* GA4 lead conversion - success path only, once per submission */
+      RDH.once('generate_lead', 'generate_lead', {form_name: 'coaching_application', lead_type: 'coaching_application'});
       if(window.oaiq) window.oaiq('measure','lead_created',{type:'customer_action'});
     } else {
       btn.disabled=false; btn.textContent='Send My Application →';

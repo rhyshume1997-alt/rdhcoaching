@@ -226,7 +226,30 @@ placement, **F8** confluence count — and re-opens **F1**. Frames are cited `Sn
 
 ---
 
-## F6 — The stop sits half a zone-height below the zone  **[DEFAULT CHANGED]**
+## F6 — The stop sits half a zone-height below the zone  **[DISPUTED — see correction below]**
+
+> **CORRECTION.** The independent chart-measurement pass (`docs/measurement/00-MASTER.txt`
+> Part 2) **withdrew** this rule from these same three frames, on the grounds that the fraction
+> depends on which band is nominated as "the zone" — the same frames yield 0.042 to 4.145 under
+> a different nomination. Three further problems with the evidence below:
+>
+> 1. **"The three frames, reproduced under test" was circular.** The test built each box *from*
+>    the ratio (`height = distance / fraction`), so the Miss column measures nothing. It passed
+>    unchanged with every frame price scaled 10×, and failed only when the fractions themselves
+>    were changed. Rewritten as `test_zone_fraction_rule_places_stop_at_the_configured_fraction`
+>    plus a regression guard, `test_f6_frames_are_a_scale_carrier_not_a_reproduction`.
+> 2. **Two of the three price anchors are not observations.** S8 1:28:33's entry is a nominal
+>    140.00 (measured elsewhere as 170.367) and TBOT1 4:11's entry is back-derived from a spoken
+>    round number.
+> 3. **TBOT1 1:09:19 may be the wrong trade.** The spoken anchor is *"Scalp long 524ish. Stop
+>    loss 509"* — a $524 instrument — while the measurement pass reads that frame as OMUSDT.P at
+>    **$5.18**. One of the two identifications is wrong.
+>
+> `stop_buffer_zone_fraction` keeps its 0.5 default (no better-evidenced value exists) but is
+> re-sourced as DISPUTED and its sweep bracket is widened to **0.0–0.60**, so a sweep can reach
+> 0.0 — snap the stop to the structural level and model no overshoot, which is the measurement
+> pass's own position. The *parameterisation* (fraction of zone height rather than price
+> percentage or ATR) is not disputed; only the number is.
 
 Three independent frames, different pairs, different timeframes, different exchanges, each with a
 position tool and a zone box on screen:

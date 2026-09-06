@@ -1062,6 +1062,19 @@ def test_the_detector_and_the_plan_agree_on_which_edge_is_which() -> None:
 # The fraction clusters at 0.48-0.58 (mean ~0.52); the percentage spans 0.66-2.70 %.  That is the
 # whole argument for ``stop_buffer_zone_fraction`` (0.5) over ``stop_buffer_atr`` for any stop
 # that hangs off a zone.
+#
+# DISPUTED.  The independent measurement pass (docs/measurement/00-MASTER.txt Part 2) WITHDREW
+# this rule from these same three frames, on the grounds that the fraction depends on which band
+# is nominated as "the zone" - the same frames yield 0.042 to 4.145 under a different nomination.
+#
+# The frames CANNOT be reproduced under test, and the test that claimed to do so was circular:
+# ``Frame`` builds each box FROM the ratio (``height = distance / fraction``), so asserting the
+# ratio back is a tautology.  It passed unchanged with every frame price scaled 10x.  Two of the
+# three frames have no independent price anchor either - S8 1:28:33's entry is a nominal 140.00
+# (measured elsewhere as 170.367) and TBOT1 4:11's entry is back-derived from a spoken round
+# number.  The ``Frame`` fixtures below are therefore a SCALE CARRIER for the three ratios and
+# nothing more; they are not frame reproductions.  See
+# ``test_f6_frames_are_a_scale_carrier_not_a_reproduction``.
 
 class Frame:
     """One frame's geometry, in prices.
@@ -1134,30 +1147,53 @@ def _frame_stop(frame: Frame, cfg: Config) -> PL.StopDecision:
     )
 
 
-@pytest.mark.parametrize("frame", FRAMES, ids=[f.name.split()[0] + f.name.split()[1]
-                                               for f in FRAMES])
-def test_f6_frame_is_reproduced_by_the_zone_fraction_rule(frame: Frame, uncapped: Config) -> None:
-    """**F6** — given that box height and that entry, the rule lands on the observed stop.
+@pytest.mark.parametrize("fraction,expected", [
+    ("0.0", "99.00"),      # snap to the box edge - the measurement pass's own position
+    ("0.25", "98.625"),
+    ("0.5", "98.25"),      # current default
+    ("0.58", "98.13"),     # deepest of the three disputed readings
+])
+def test_zone_fraction_rule_places_stop_at_the_configured_fraction(
+    fraction: str, expected: str, uncapped: Config,
+) -> None:
+    """The rule itself, on a box whose coordinates are NOT derived from the fraction.
 
-    Tolerance is stated in the frames' own unit: **0.10 x the box height**.  It has to cover the
-    spread of the readings themselves (0.48 / 0.49 / 0.58 against a 0.5 default, i.e. up to
-    0.08 box heights) and nothing more.
+    ``make_zone(1.0)`` gives a body core of 99.00 .. 100.50, so the height is a fixed 1.50 and
+    the expected stop is ``99.00 - fraction * 1.50`` - arithmetic the test states independently
+    rather than reconstructing from the answer.  This is what the old
+    ``test_f6_frame_is_reproduced_by_the_zone_fraction_rule`` should have been doing; it instead
+    built the box from the ratio and so could only ever pass.
     """
-    # the two measured ratios are internally consistent with the reconstructed geometry, to
-    # within the quantisation of the price anchor itself: TBOT1 1:09:19's anchor is a *spoken*
-    # round number ("stop loss 509", 0.85 below the measured 509.85 = 0.03 box heights), the
-    # other two are exact by construction.
-    implied = (frame.box_bottom - frame.observed_stop) / (frame.box_top - frame.box_bottom)
-    assert abs(implied - frame.fraction) < dec("0.04"), frame.name
-
-    stop = _frame_stop(frame, uncapped)
-    tolerance = frame.height / dec(10)
-    assert abs(stop.price - frame.observed_stop) <= tolerance, (
-        f"{frame.name}: computed {stop.price}, observed {frame.observed_stop}, "
-        f"tolerance {tolerance}"
-    )
+    cfg = uncapped.with_overrides(stop_buffer_zone_fraction=float(fraction))
+    series = make_series(flat_series(60))
+    zone = make_zone(1.0)
+    assert (zone.box_top, zone.box_bottom) == (dec("100.5"), dec("99.0"))   # fixture pinned
+    stop = PL.place_stop(series, cfg, direction=Direction.LONG, bar_index=50,
+                         reference_price=dec(100), at_index=59,
+                         zone_stop_edge=zone.body_stop_edge, zone_height=zone.depth)
+    assert stop.price == dec(expected)
     assert any("stop_from_zone_height" in r for r in stop.reasons)
     assert "F6" in stop.source_ids
+
+
+def test_f6_frames_are_a_scale_carrier_not_a_reproduction() -> None:
+    """Regression guard: do not re-add a circular frame-reproduction test.
+
+    ``Frame`` derives ``height`` from ``distance / fraction`` and ``box_bottom`` from the entry,
+    so ``(box_bottom - observed_stop) / height`` returns ``fraction`` by construction, at any
+    price scale.  Asserting it proves arithmetic, not geometry.  Demonstrated here by scaling
+    every input 10x and showing the implied ratio does not move.
+    """
+    for frame in FRAMES:
+        implied = (frame.box_bottom - frame.observed_stop) / frame.height
+        edge = "bottom" if frame.box_bottom == frame.entry else "top"
+        scaled = Frame(frame.name, float(frame.entry) * 10, float(frame.fraction),
+                       float(frame.pct_of_entry), edge,
+                       float(frame.observed_stop) * 10)
+        implied_scaled = (scaled.box_bottom - scaled.observed_stop) / scaled.height
+        assert abs(implied - implied_scaled) < dec("0.001"), frame.name
+        # ... and both sit within 0.04 of the recorded fraction, which is all the old test said
+        assert abs(implied - frame.fraction) < dec("0.04"), frame.name
 
 
 def test_f6_the_atr_parameterisation_does_not_reproduce_the_frames(uncapped: Config) -> None:
@@ -1188,8 +1224,11 @@ def test_f6_default_and_sweep_bracket(uncapped: Config) -> None:
     from tbot.config import KEY_SPEC_BY_NAME
     assert uncapped.stop_buffer_zone_fraction == 0.5
     spec = KEY_SPEC_BY_NAME["stop_buffer_zone_fraction"]
-    assert spec.sweep_bracket == (0.45, 0.60)
+    # widened to include 0.0: snap the stop to the structural level and model no overshoot,
+    # which is the position of the independent measurement pass that withdrew this rule.
+    assert spec.sweep_bracket == (0.0, 0.60)
     assert "F6" in spec.source_id and "TBOT1 4:11" in spec.source_id
+    assert "DISPUTED" in spec.source_id
 
 
 def test_f6_zone_anchored_stop_ignores_the_atr_buffer(uncapped: Config) -> None:

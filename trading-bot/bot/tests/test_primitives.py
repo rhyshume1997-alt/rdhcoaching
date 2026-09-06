@@ -1067,7 +1067,13 @@ class TestConfig:
         assert "ONE FRAME IN FOUR" in spec.note.upper()
 
     def test_the_pass_two_stop_buffer_key_is_present_and_sourced(self):
-        """F6 — the pass-2 default change: stop distance is a fraction of the ZONE HEIGHT."""
+        """F6 — stop distance is a fraction of the ZONE HEIGHT.  The NUMBER is disputed.
+
+        The independent measurement pass (docs/measurement/) withdrew this rule from the same
+        three frames, so the default is retained as an engineering choice pending a sweep on
+        real data, not as an evidenced value.  The bracket now reaches 0.0 — snap the stop to
+        the structural level and model no overshoot — which is that pass's own position.
+        """
         cfg = Config.load()
         assert cfg.stop_buffer_zone_fraction == 0.5
         assert cfg.stop_buffer_atr == 0.15                    # kept, as the non-zone fallback
@@ -1075,7 +1081,8 @@ class TestConfig:
         assert spec.source_id.startswith("F6")
         for frame in ("TBOT1 4:11", "TBOT1 1:09:19", "S8 1:28:33"):
             assert frame in spec.source_id                    # three independent frames
-        assert spec.sweep_bracket == (0.45, 0.60)
+        assert spec.sweep_bracket == (0.0, 0.60)
+        assert "DISPUTED" in spec.source_id
         assert "FALLBACK" in KEY_SPEC_BY_NAME["stop_buffer_atr"].note.upper()
 
     def test_f9_rr_is_measured_to_the_final_take_profit(self):
@@ -1133,8 +1140,10 @@ class TestConfig:
         assert brackets["swing_k"] == (2.0, 4.0)                # F4, S7 frame 34:30 bounds it at 4
         # F1 pass 2: the same drawing re-read at 0.33, so the bracket spans both readings.
         assert brackets["zone_wick_band_max_ratio"] == (0.30, 1.00)
-        # F6 pass 2: three frames at 0.48 / 0.49 / 0.58 zone-heights.
-        assert brackets["stop_buffer_zone_fraction"] == (0.45, 0.60)
+        # F6 pass 2: three frames at 0.48 / 0.49 / 0.58 zone-heights, DISPUTED by the
+        # independent measurement pass.  0.0 is that pass's position (snap to the structural
+        # level, no overshoot) and has to be reachable by the sweep.
+        assert brackets["stop_buffer_zone_fraction"] == (0.0, 0.60)
         # F9: four observed R:R readouts, 2.13-5.00, with 2.13 the lowest trade he took.
         assert brackets["min_rr"] == (2.0, 2.5)
         for key, (low, high) in brackets.items():

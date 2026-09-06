@@ -894,19 +894,33 @@ KEY_SPECS: tuple[KeySpec, ...] = (
         members=None,
         minimum=0.0,
         maximum=None,
-        source_id='F6 — FRAME_FINDINGS.md F6 (pass 2); TBOT1 4:11 (BTCUSDT.P 1H Binance), '
-                  'TBOT1 1:09:19 (OMUSDT.P 1H Binance), S8 1:28:33 (SOLUSDT.P 4H MEXC) — '
-                  'three independent frames, different pairs / timeframes / exchanges',
+        source_id='F6 — DISPUTED, see docs/measurement/00-MASTER.txt Part 2. '
+                  'FRAME_FINDINGS.md F6 (pass 2); TBOT1 4:11 (BTCUSDT.P 1H Binance), '
+                  'TBOT1 1:09:19 (OMUSDT.P 1H Binance), S8 1:28:33 (SOLUSDT.P 4H MEXC). '
+                  'The independent measurement pass WITHDREW this rule from the same three '
+                  'frames. Treat as [OUR CHOICE] pending a sweep on real data.',
         group='11.2',
         note='F6: when the stop is placed against a ZONE it sits this fraction of the zone '
              'height beyond the zone\'s far edge (below the box bottom for a long, above the box '
-             'top for a short). Measured 0.48 / 0.49 / 0.58 across the three frames, mean ~0.52; '
-             'default 0.5 is the round value inside that cluster. The SAME three frames give '
-             '0.66% / 2.70% / 0.81% of entry and no ATR multiple at all, so fraction-of-zone-'
-             'height is the stable parameterisation and price-percentage is not. Read only when '
-             'the setup hangs off a zone; otherwise stop_buffer_atr applies. Sweep bracket '
-             '0.45-0.60 spans the observed cluster with a small margin.',
-        sweep_bracket=(0.45, 0.60),
+             'top for a short). Measured 0.48 / 0.49 / 0.58 across the three frames, mean ~0.52. '
+             'The parameterisation still looks right — the SAME three frames give 0.66% / 2.70% '
+             '/ 0.81% of entry and no ATR multiple at all — but the NUMBER is disputed and the '
+             'default is no longer presented as evidenced. Three reasons, all from the '
+             'independent measurement pass in docs/measurement/: (1) it withdrew this rule '
+             'because the fraction depends on which band is nominated as "the zone"; the same '
+             'frames yield 0.042 to 4.145 under a different nomination. The bot does have a '
+             'canonical zone (Zone.box_top/box_bottom, the body box), so that ambiguity is '
+             'narrower here than it was there, but the three boxes were still read by eye. '
+             '(2) the test that appeared to reproduce the three frames was circular: it built '
+             'each box FROM the ratio, so it asserted only that 0.48/0.49/0.58 sit within 0.10 '
+             'of 0.5, and passed unchanged with every frame price scaled 10x. Rewritten. '
+             '(3) TBOT1 1:09:19 is measured there as OMUSDT.P at $5.18, while the spoken anchor '
+             'used for that frame ("Scalp long 524ish. Stop loss 509") is a $524 instrument, so '
+             'one of the two identifications is wrong. Read only when the setup hangs off a '
+             'zone; otherwise stop_buffer_atr applies. Sweep bracket widened to 0.0-0.60: 0.0 is '
+             'the measurement pass\'s own position, snap the stop to the structural level and '
+             'model no overshoot.',
+        sweep_bracket=(0.0, 0.60),
     ),
     KeySpec(
         key='stop_never_beyond_opposing_level',

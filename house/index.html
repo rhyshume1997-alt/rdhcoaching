@@ -12,13 +12,15 @@
 <body>
 <div id="app">
   <header id="topbar">
-    <div class="brand"><span class="dot"></span> Home Studio</div>
+    <button class="btn" id="menuBtn" title="Rooms and stuff">☰</button>
+    <div class="brand"><span class="dot"></span> <span>Home Studio</span></div>
     <input id="projectName" type="text" value="Our house" aria-label="Project name">
     <div class="viewswitch" id="viewSwitch">
       <button data-view="plan" class="on">Plan</button>
       <button data-view="doll">3D</button>
       <button data-view="walk">Walk</button>
     </div>
+    <button class="btn" id="btnTour" title="Show the house">▶ Tour</button>
     <div class="spacer"></div>
     <span id="saveState" class="hint" style="margin:0"></span>
     <button class="btn" id="btnUndo" title="Undo (Ctrl+Z)">↶</button>
@@ -26,6 +28,7 @@
     <button class="btn" id="btnExport">Export</button>
     <button class="btn" id="btnImport">Import</button>
     <button class="btn primary" id="btnAddItem">+ Add from link</button>
+    <button class="btn" id="inspBtn" title="Edit selection">✎</button>
   </header>
 
   <div id="main">
@@ -191,6 +194,32 @@
       <div id="crosshair" class="hidden"></div>
       <div id="hoverTip" class="hidden"></div>
 
+      <div id="stick" class="hidden"><div class="ring"></div><div class="knob"></div></div>
+
+      <!-- estate agent view -->
+      <div id="tourUI">
+        <div id="tourTop">
+          <div>
+            <div id="tourTitle">—</div>
+            <div id="tourSub"></div>
+          </div>
+          <div class="spacer"></div>
+          <button class="tbtn" id="tourPhotoBtn">Photos</button>
+          <button class="tbtn" id="tourExit">Exit tour</button>
+        </div>
+        <div id="tourHint">Drag to look around · use the stick to walk · tap a room to jump there</div>
+        <div id="tourRooms"></div>
+        <div id="tourPhoto">
+          <img id="tourPhotoImg" src="" alt="">
+          <div class="cap" id="tourPhotoCap"></div>
+          <div class="nav">
+            <button class="tbtn" id="tourPhotoPrev">‹ Prev</button>
+            <button class="tbtn" id="tourPhotoNext">Next ›</button>
+            <button class="tbtn" id="tourPhotoClose">Close</button>
+          </div>
+        </div>
+      </div>
+
       <div id="walkHint" class="hidden">
         <h4>Walk through the house</h4>
         <p>Click anywhere to take control of the mouse.</p>
@@ -207,6 +236,8 @@
         <p class="hint">Pick a room, a door or a piece of furniture to edit it here.</p>
       </div>
     </aside>
+
+    <div id="scrim"></div>
   </div>
 </div>
 

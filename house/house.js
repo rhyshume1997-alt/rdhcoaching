@@ -560,39 +560,49 @@ function drawPlan() {
     pctx.restore();
     /* label inside the footprint — floating labels turn a furnished plan to soup */
     var wpx = it.w * S.cam.ppm, dpx = it.d * S.cam.ppm;
-    if (Math.min(wpx, dpx) > 26 && Math.max(wpx, dpx) > 60) {
-      pctx.save();
-      pctx.translate(c.x, c.y);
-      if (dpx > wpx * 1.4) pctx.rotate(-Math.PI / 2);
+    if (Math.min(wpx, dpx) > 24 && Math.max(wpx, dpx) > 56) {
       pctx.font = '10px ui-sans-serif,system-ui,sans-serif';
-      pctx.textAlign = 'center';
-      pctx.fillStyle = 'rgba(8,8,26,.72)';
+      var turn = dpx > wpx * 1.4;
       var tw = pctx.measureText(it.name).width;
-      pctx.fillRect(-tw / 2 - 4, -7, tw + 8, 14);
-      pctx.fillStyle = '#e2e2f4';
-      pctx.fillText(it.name, 0, 3);
-      pctx.restore();
+      if (tw + 10 <= (turn ? dpx : wpx)) {          // only if the name fits on the thing
+        pctx.save();
+        pctx.translate(c.x, c.y);
+        if (turn) pctx.rotate(-Math.PI / 2);
+        pctx.textAlign = 'center';
+        pctx.fillStyle = 'rgba(8,8,26,.72)';
+        pctx.fillRect(-tw / 2 - 4, -7, tw + 8, 14);
+        pctx.fillStyle = '#e2e2f4';
+        pctx.fillText(it.name, 0, 3);
+        pctx.restore();
+      }
     }
   });
 
   /* room names last, so furniture never sits on top of them */
   lv.rooms.forEach(function (r) {
     var a = w2s(r.x, r.y), b = w2s(r.x + r.w, r.y + r.d);
-    if (b.x - a.x < 54 || b.y - a.y < 34) return;
-    pctx.textAlign = 'left';
-    pctx.fillStyle = 'rgba(8,8,26,.66)';
+    var boxW = b.x - a.x, boxH = b.y - a.y;
+    if (boxW < 46 || boxH < 28) return;
     var text = r.name, sub = fmtLen(r.w) + ' × ' + fmtLen(r.d) + ' · ' + fmtArea(roomArea(r));
+    pctx.textAlign = 'left';
     pctx.font = '600 12px ui-sans-serif,system-ui,sans-serif';
-    var tw = Math.max(pctx.measureText(text).width, 0);
+    var nameW = pctx.measureText(text).width;
+    if (nameW + 14 > boxW - 8) return;               // no room for even the name
     pctx.font = '11px ui-sans-serif,system-ui,sans-serif';
-    tw = Math.max(tw, pctx.measureText(sub).width) + 12;
-    pctx.fillRect(a.x + 5, a.y + 5, Math.min(tw, b.x - a.x - 10), 32);
+    var subW = pctx.measureText(sub).width;
+    var showSub = (subW + 14 <= boxW - 8) && boxH > 46;
+    var w = Math.max(nameW, showSub ? subW : 0) + 12;
+    var h = showSub ? 32 : 19;
+    pctx.fillStyle = 'rgba(8,8,26,.66)';
+    pctx.fillRect(a.x + 5, a.y + 5, w, h);
     pctx.fillStyle = '#dcdcf5';
     pctx.font = '600 12px ui-sans-serif,system-ui,sans-serif';
     pctx.fillText(text, a.x + 11, a.y + 20);
-    pctx.fillStyle = '#9a9ac4';
-    pctx.font = '11px ui-sans-serif,system-ui,sans-serif';
-    pctx.fillText(sub, a.x + 11, a.y + 33);
+    if (showSub) {
+      pctx.fillStyle = '#9a9ac4';
+      pctx.font = '11px ui-sans-serif,system-ui,sans-serif';
+      pctx.fillText(sub, a.x + 11, a.y + 33);
+    }
     pctx.textAlign = 'center';
   });
 
@@ -725,7 +735,7 @@ function nearestWall(wx, wy, maxDist) {
 }
 
 function planPointerDown(e) {
-  planCanvas.setPointerCapture(e.pointerId);
+  try { planCanvas.setPointerCapture(e.pointerId); } catch (err) { }
   var rect = planCanvas.getBoundingClientRect();
   var px = e.clientX - rect.left, py = e.clientY - rect.top;
   var w = s2w(px, py);
@@ -1013,8 +1023,8 @@ function init3D() {
   if (G.ready) return true;
   if (!window.THREE) { toast('3D library could not load — check your connection', 'bad'); return false; }
   var canvas = $('#glCanvas');
-  G.renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-  G.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  G.renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: !TOUCH });
+  G.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, TOUCH ? 1.5 : 2));
   G.renderer.shadowMap.enabled = true;
   G.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   G.scene = new THREE.Scene();
@@ -1037,7 +1047,7 @@ function init3D() {
   var sun = new THREE.DirectionalLight(0xfff4e0, 0.6);
   sun.position.set(12, 22, 8);
   sun.castShadow = true;
-  sun.shadow.mapSize.width = sun.shadow.mapSize.height = 2048;
+  sun.shadow.mapSize.width = sun.shadow.mapSize.height = TOUCH ? 1024 : 2048;
   var sc = sun.shadow.camera;
   sc.left = -25; sc.right = 25; sc.top = 25; sc.bottom = -25; sc.near = 1; sc.far = 90;
   G.scene.add(sun);
@@ -1047,6 +1057,7 @@ function init3D() {
     new THREE.PlaneGeometry(300, 300),
     new THREE.MeshLambertMaterial({ color: 0x141430 })
   );
+  G.ground = ground;
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = -0.06;
   ground.receiveShadow = true;
@@ -1165,6 +1176,7 @@ function build3D() {
   });
 
   G.collide = collisionRects(lv);
+  if (S.tour) tourLight(true);
   highlightSelection();
 }
 
@@ -1375,7 +1387,7 @@ function bindOrbit(canvas) {
   var down = null;
   canvas.addEventListener('pointerdown', function (e) {
     if (G.mode !== 'doll') return;
-    canvas.setPointerCapture(e.pointerId);
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) { }
     down = { x: e.clientX, y: e.clientY, btn: e.button, az: G.orbit.az, pol: G.orbit.pol,
              tx: G.orbit.target.x, tz: G.orbit.target.z, moved: false };
   });
@@ -1410,6 +1422,7 @@ function bindOrbit(canvas) {
 function bindWalk(canvas) {
   canvas.addEventListener('click', function () {
     if (G.mode !== 'walk') return;
+    if (S.tour || TOUCH) return;                    // drag to look instead
     if (!G.walk.locked && canvas.requestPointerLock) canvas.requestPointerLock();
   });
   document.addEventListener('pointerlockchange', function () {
@@ -1470,7 +1483,7 @@ function loop() {
   var dt = Math.min(G.clock.getDelta(), 0.1);
 
   if (G.mode === 'walk') {
-    stepWalk(dt);
+    if (G.glide) glideStep(dt); else stepWalk(dt);
     G.camera.position.set(G.walk.x, (level().base || 0) + G.walk.eye, G.walk.z);
     G.camera.rotation.set(0, 0, 0, 'YXZ');
     G.camera.rotation.order = 'YXZ';
@@ -1500,6 +1513,7 @@ function stepWalk(dt) {
   if (G.keys.KeyS || G.keys.ArrowDown) fz += 1;
   if (G.keys.KeyA || G.keys.ArrowLeft) fx -= 1;
   if (G.keys.KeyD || G.keys.ArrowRight) fx += 1;
+  if (G.stick.on) { fx += G.stick.x; fz += G.stick.y; speed = 1.6 * Math.min(1, Math.hypot(G.stick.x, G.stick.y) + 0.15); }
   var len = Math.hypot(fx, fz);
   var vx = 0, vz = 0;
   if (len) {
@@ -1519,7 +1533,7 @@ function stepWalk(dt) {
     if (!blocked(w.x, nz, rects)) w.z = nz; else w.vel.z = 0;
   } else { w.x = nx; w.z = nz; }
 
-  var targetEye = G.keys.KeyQ ? 1.05 : 1.65;
+  var targetEye = G.keys.KeyQ ? 1.05 : (S.tour ? 1.58 : 1.65);
   w.eye += (targetEye - w.eye) * Math.min(1, dt * 8);
 }
 function blocked(x, z, rects) {
@@ -1595,9 +1609,10 @@ function updateLookedAt() {
   /* which room am I standing in? */
   var lbl = $('#roomLabel');
   var r = roomAt(G.walk.x, G.walk.z);
-  if (r && G.walk.locked) { lbl.textContent = r.name; lbl.classList.remove('hidden'); }
+  if (r && G.walk.locked && !S.tour) { lbl.textContent = r.name; lbl.classList.remove('hidden'); }
   else lbl.classList.add('hidden');
-  showRoomPhoto(r && G.walk.locked ? r.id : null);
+  showRoomPhoto(r && (G.walk.locked || S.tour) ? r.id : null);
+  tourWatch(r);
 }
 function openLookedAt() {
   var it = G.lookItem && findItem(G.lookItem);
@@ -1640,7 +1655,7 @@ function setView(v) {
   $('#toolbar').classList.toggle('hidden', is3D);
   $('#planBar').classList.toggle('hidden', is3D);
   $('#viewBar').classList.toggle('hidden', !is3D);
-  $('#walkHint').classList.toggle('hidden', v !== 'walk');
+  $('#walkHint').classList.toggle('hidden', v !== 'walk' || TOUCH);
   $('#crosshair').classList.add('hidden');
   $('#hoverTip').classList.add('hidden');
   $('#roomLabel').classList.add('hidden');
@@ -1664,6 +1679,7 @@ function setView(v) {
     resizePlanCanvas();
   }
   updateStatus();
+  updateStick();
 }
 function ensureWalkStart() {
   var lv = level();
@@ -2105,7 +2121,11 @@ function closeModal() {
   wrap.innerHTML = '';
 }
 document.addEventListener('keydown', function (e) {
-  if (e.key === 'Escape' && !$('#modalWrap').classList.contains('hidden')) closeModal();
+  if (e.key === 'Escape' && !$('#modalWrap').classList.contains('hidden')) { closeModal(); return; }
+  if (e.key === 'Escape' && S.tour) {
+    if ($('#tourPhoto').classList.contains('on')) $('#tourPhoto').classList.remove('on');
+    else exitTour();
+  }
 });
 
 function makeItem(p) {
@@ -2650,8 +2670,18 @@ $('#btnTopDown').onclick = function () {
   G.orbit.dist = clamp(Math.max(b.x1 - b.x0, b.y1 - b.y0) * 1.1, 4, 70);
 };
 
+var lastW = window.innerWidth, lastH = window.innerHeight;
 window.addEventListener('resize', function () {
   if (S.view === 'plan') resizePlanCanvas(); else resize3D();
+  /* a rotate changes the shape of the screen — refit rather than leave the plan cropped */
+  var turned = (window.innerWidth > window.innerHeight) !== (lastW > lastH);
+  lastW = window.innerWidth; lastH = window.innerHeight;
+  if (turned && S.view === 'plan') setTimeout(fitToPlan, 120);
+});
+window.addEventListener('orientationchange', function () {
+  setTimeout(function () {
+    if (S.view === 'plan') { resizePlanCanvas(); fitToPlan(); } else resize3D();
+  }, 260);
 });
 
 /* fps read-out, handy when the shadows start costing something */
@@ -2693,6 +2723,7 @@ function start(proj, msg) {
   setTool('select');
   resizePlanCanvas();
   fitToPlan();
+  setTimeout(function () { resizePlanCanvas(); fitToPlan(); }, 180);
   if (window.THREE) { requestAnimationFrame(loop); }
   else { toast('3D library did not load — the plan still works', 'bad'); }
 }
@@ -2700,6 +2731,7 @@ function start(proj, msg) {
 /* The photo of how the room looks today, pinned in the corner as you walk it. */
 var lastPeekRoom = null;
 function showRoomPhoto(roomId) {
+  if (S.tour) roomId = null;
   if (roomId === lastPeekRoom) return;
   lastPeekRoom = roomId;
   var box = $('#photoPeek');
@@ -2708,4 +2740,408 @@ function showRoomPhoto(roomId) {
   box.innerHTML = '<img src="' + esc(photo.src) + '" alt=""><div class="cap">' + esc(photo.name) +
     (photo.note ? ' — ' + esc(photo.note) : '') + '</div>';
   box.classList.remove('hidden');
+}
+
+/* ========================================================================
+   TOUCH — the same house on a phone
+   ====================================================================== */
+var TOUCH = (window.matchMedia && window.matchMedia('(hover: none)').matches) || 'ontouchstart' in window;
+G.stick = { on: false, x: 0, y: 0 };
+
+/* Two fingers pinch and pan the plan; one finger does what a mouse does. */
+(function planTouch() {
+  var pts = {}, pinch = null;
+  planCanvas.addEventListener('pointerdown', function (e) {
+    pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+    var ids = Object.keys(pts);
+    if (ids.length === 2) {
+      drag = null;                       // abandon whatever one finger started
+      var a = pts[ids[0]], b = pts[ids[1]];
+      pinch = { dist: Math.hypot(a.x - b.x, a.y - b.y),
+                cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2,
+                ppm: S.cam.ppm, ox: S.cam.x, oy: S.cam.y };
+    }
+  }, true);
+  planCanvas.addEventListener('pointermove', function (e) {
+    if (!pts[e.pointerId]) return;
+    pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+    var ids = Object.keys(pts);
+    if (ids.length < 2 || !pinch) return;
+    e.preventDefault();
+    var a = pts[ids[0]], b = pts[ids[1]];
+    var dist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+    var cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+    var rect = planCanvas.getBoundingClientRect();
+    var k = clamp(dist / pinch.dist, 0.2, 5);
+    var ppm = clamp(pinch.ppm * k, 5, 500);
+    /* keep the point between the fingers under the fingers */
+    var wx = (pinch.cx - rect.left - pinch.ox) / pinch.ppm;
+    var wy = (pinch.cy - rect.top - pinch.oy) / pinch.ppm;
+    S.cam.ppm = ppm;
+    S.cam.x = (cx - rect.left) - wx * ppm;
+    S.cam.y = (cy - rect.top) - wy * ppm;
+    drawPlan();
+  }, true);
+  function up(e) { delete pts[e.pointerId]; if (Object.keys(pts).length < 2) pinch = null; }
+  planCanvas.addEventListener('pointerup', up, true);
+  planCanvas.addEventListener('pointercancel', up, true);
+})();
+
+/* In 3D: one finger orbits, two pinch to zoom and pan. */
+(function orbitTouch() {
+  var el = $('#glCanvas'), pts = {}, pinch = null;
+  el.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse') return;
+    pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+    var ids = Object.keys(pts);
+    if (ids.length === 2 && G.mode === 'doll') {
+      var a = pts[ids[0]], b = pts[ids[1]];
+      pinch = { dist: Math.hypot(a.x - b.x, a.y - b.y), d0: G.orbit.dist,
+                cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2,
+                tx: G.orbit.target.x, tz: G.orbit.target.z };
+    }
+  }, true);
+  el.addEventListener('pointermove', function (e) {
+    if (!pts[e.pointerId]) return;
+    pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+    var ids = Object.keys(pts);
+    if (ids.length < 2 || !pinch) return;
+    var a = pts[ids[0]], b = pts[ids[1]];
+    var dist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+    G.orbit.dist = clamp(pinch.d0 * (pinch.dist / dist), 1.5, 90);
+    var cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+    var s = G.orbit.dist * 0.0016;
+    var ca = Math.cos(G.orbit.az), sa = Math.sin(G.orbit.az);
+    var dx = cx - pinch.cx, dy = cy - pinch.cy;
+    G.orbit.target.x = pinch.tx - (dx * ca - dy * sa) * s;
+    G.orbit.target.z = pinch.tz - (dx * sa + dy * ca) * s;
+  }, true);
+  function up(e) { delete pts[e.pointerId]; if (Object.keys(pts).length < 2) pinch = null; }
+  el.addEventListener('pointerup', up, true);
+  el.addEventListener('pointercancel', up, true);
+})();
+
+/* Walking without a mouse to lock: drag anywhere to look, stick to move. */
+(function walkTouch() {
+  var el = $('#glCanvas'), look = null;
+  el.addEventListener('pointerdown', function (e) {
+    if (G.mode !== 'walk' || G.walk.locked) return;
+    look = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: 0 };
+  });
+  el.addEventListener('pointermove', function (e) {
+    if (!look || e.pointerId !== look.id) return;
+    var dx = e.clientX - look.x, dy = e.clientY - look.y;
+    look.x = e.clientX; look.y = e.clientY;
+    look.moved += Math.abs(dx) + Math.abs(dy);
+    G.walk.yaw -= dx * 0.005;
+    G.walk.pitch = clamp(G.walk.pitch - dy * 0.005, -1.35, 1.35);
+  });
+  el.addEventListener('pointerup', function (e) {
+    if (!look || e.pointerId !== look.id) return;
+    if (look.moved < 8) tapInWalk(e);      // a tap, not a look
+    look = null;
+  });
+  el.addEventListener('pointercancel', function () { look = null; });
+})();
+
+/* Tapping something while walking pulls up what it is and what it cost. */
+function tapInWalk(e) {
+  if (!ray) return;
+  var hits = screenRay(e), id = null;
+  for (var i = 0; i < hits.length; i++) {
+    var m = hits[i].object.material;
+    if (m && m.transparent) continue;
+    id = itemIdOf(hits[i].object);
+    break;
+  }
+  var tip = $('#hoverTip');
+  if (!id) { tip.classList.add('hidden'); return; }
+  var it = findItem(id);
+  if (!it) return;
+  var rect = $('#stage').getBoundingClientRect();
+  tip.innerHTML = '<div class="t">' + esc(it.name) + '</div><div class="s">' +
+    esc(fmtLen(it.w) + ' × ' + fmtLen(it.d) + ' × ' + fmtLen(it.h)) +
+    (it.price ? ' · ' + esc(money(it.price)) : '') + '</div>' +
+    (it.url ? '<div class="s"><a href="' + esc(it.url) + '" target="_blank" rel="noopener">Open the listing ↗</a></div>' : '');
+  tip.style.left = clamp(e.clientX - rect.left - 90, 8, rect.width - 190) + 'px';
+  tip.style.top = clamp(e.clientY - rect.top - 80, 8, rect.height - 120) + 'px';
+  tip.classList.remove('hidden');
+  clearTimeout(tapInWalk._t);
+  tapInWalk._t = setTimeout(function () { tip.classList.add('hidden'); }, 4000);
+  if (!S.tour) select({ type: 'item', id: id });
+}
+
+/* The on-screen stick. */
+(function stickCtl() {
+  var el = $('#stick'), knob = el.querySelector('.knob'), active = null;
+  function set(dx, dy) {
+    var r = 34, len = Math.hypot(dx, dy);
+    if (len > r) { dx = dx / len * r; dy = dy / len * r; }
+    knob.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+    G.stick.on = true;
+    G.stick.x = dx / r;
+    G.stick.y = dy / r;
+  }
+  function release() {
+    active = null;
+    knob.style.transform = '';
+    G.stick.on = false; G.stick.x = G.stick.y = 0;
+  }
+  el.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    try { el.setPointerCapture(e.pointerId); } catch (err) { }
+    var r = el.getBoundingClientRect();
+    active = { id: e.pointerId, cx: r.left + r.width / 2, cy: r.top + r.height / 2 };
+    set(e.clientX - active.cx, e.clientY - active.cy);
+  });
+  el.addEventListener('pointermove', function (e) {
+    if (!active || e.pointerId !== active.id) return;
+    e.preventDefault();
+    set(e.clientX - active.cx, e.clientY - active.cy);
+  });
+  el.addEventListener('pointerup', release);
+  el.addEventListener('pointercancel', release);
+})();
+
+function updateStick() {
+  var want = (S.view === 'walk' || S.tour) && (TOUCH || S.tour);
+  $('#stick').classList.toggle('hidden', !want);
+}
+
+/* ---------------------------------------------------- mobile chrome */
+function closePanels() {
+  $('#sidebar').classList.remove('open');
+  $('#inspector').classList.remove('open');
+  $('#scrim').classList.remove('on');
+}
+$('#menuBtn').onclick = function () {
+  var open = !$('#sidebar').classList.contains('open');
+  closePanels();
+  $('#sidebar').classList.toggle('open', open);
+  $('#scrim').classList.toggle('on', open);
+};
+$('#inspBtn').onclick = function () {
+  var open = !$('#inspector').classList.contains('open');
+  closePanels();
+  $('#inspector').classList.toggle('open', open);
+  $('#scrim').classList.toggle('on', open);
+};
+$('#scrim').onclick = closePanels;
+$('#btnDeselect').addEventListener('click', closePanels);
+
+/* On a phone, picking something from a list should show you its panel. */
+var _select = select;
+select = function (sel) {
+  _select(sel);
+  if (sel && window.innerWidth <= 900 && !S.tour) {
+    $('#sidebar').classList.remove('open');
+    $('#inspector').classList.add('open');
+    $('#scrim').classList.add('on');
+  }
+};
+
+/* ========================================================================
+   TOUR — the estate agent view
+   ====================================================================== */
+S.tour = false;
+G.glide = null;
+
+/* Where to stand to show a room off: just inside its door, facing in. */
+function vantageFor(r, lv) {
+  var cx = r.x + r.w / 2, cy = r.y + r.d / 2;
+  var best = null;
+  lv.openings.forEach(function (o) {
+    if (o.type === 'window') return;
+    var edge = null;
+    if (o.axis === 'v' && Math.abs(o.coord - r.x) < 0.08) edge = 'w';
+    if (o.axis === 'v' && Math.abs(o.coord - (r.x + r.w)) < 0.08) edge = 'e';
+    if (o.axis === 'h' && Math.abs(o.coord - r.y) < 0.08) edge = 'n';
+    if (o.axis === 'h' && Math.abs(o.coord - (r.y + r.d)) < 0.08) edge = 's';
+    if (!edge) return;
+    var mid = (o.from + o.to) / 2;
+    if (edge === 'w' || edge === 'e') { if (mid < r.y || mid > r.y + r.d) return; }
+    else { if (mid < r.x || mid > r.x + r.w) return; }
+    var step = Math.min(1.0, Math.min(r.w, r.d) * 0.35);
+    var p = edge === 'w' ? { x: r.x + step, y: mid }
+          : edge === 'e' ? { x: r.x + r.w - step, y: mid }
+          : edge === 'n' ? { x: mid, y: r.y + step }
+          :                { x: mid, y: r.y + r.d - step };
+    if (!best) best = p;
+  });
+  if (!best) {
+    /* no door on this room — stand at the short end looking down the length */
+    best = r.w > r.d ? { x: r.x + Math.min(0.9, r.w * 0.25), y: cy }
+                     : { x: cx, y: r.y + Math.min(0.9, r.d * 0.25) };
+  }
+  var dx = cx - best.x, dy = cy - best.y;
+  if (Math.hypot(dx, dy) < 0.15) { dx = r.w > r.d ? 1 : 0; dy = r.w > r.d ? 0 : 1; }
+  return { x: best.x, z: best.y, yaw: Math.atan2(-dx, -dy) };
+}
+
+function glideTo(v, dur) {
+  var from = { x: G.walk.x, z: G.walk.z, yaw: G.walk.yaw };
+  var dyaw = ((v.yaw - from.yaw + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
+  G.glide = { from: from, to: v, dyaw: dyaw, t: 0, dur: dur == null ? 0.85 : dur };
+}
+function glideStep(dt) {
+  var g = G.glide;
+  g.t += dt;
+  var k = clamp(g.t / g.dur, 0, 1);
+  var e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;   // ease in-out
+  G.walk.x = g.from.x + (g.to.x - g.from.x) * e;
+  G.walk.z = g.from.z + (g.to.z - g.from.z) * e;
+  G.walk.yaw = g.from.yaw + g.dyaw * e;
+  G.walk.pitch += ((S.tour ? -0.07 : 0) - G.walk.pitch) * Math.min(1, dt * 6);
+  if (k >= 1) G.glide = null;
+}
+
+function tourRooms() {
+  var out = [];
+  S.proj.levels.forEach(function (lv, li) {
+    lv.rooms.forEach(function (r) {
+      if (r.w * r.d < 1.6) return;                 // cupboards are not a stop on the tour
+      out.push({ level: li, lv: lv, room: r });
+    });
+  });
+  return out;
+}
+function roomPhotos(roomId) {
+  return S.proj.photos.filter(function (p) { return p.room === roomId; });
+}
+
+function renderTourChips() {
+  var list = tourRooms();
+  $('#tourRooms').innerHTML = list.map(function (e, i) {
+    var ph = roomPhotos(e.room.id)[0];
+    return '<button class="rchip" data-tour="' + i + '">' +
+      '<span class="ph"' + (ph ? ' style="background-image:url(' + esc(ph.src) + ')"' : '') + '></span>' +
+      '<span class="nm">' + esc(e.room.name) + '</span>' +
+      '<span class="mt">' + esc(fmtArea(roomArea(e.room))) + ' · ' + esc(e.lv.name.replace(' floor', '')) + '</span>' +
+      '</button>';
+  }).join('');
+}
+function markTourChip(roomId) {
+  var list = tourRooms();
+  $$('#tourRooms .rchip').forEach(function (b, i) {
+    b.classList.toggle('on', list[i] && list[i].room.id === roomId);
+  });
+}
+
+function tourGoTo(i) {
+  var e = tourRooms()[i];
+  if (!e) return;
+  if (S.level !== e.level) {
+    S.level = e.level;
+    renderSidebar();
+    build3D();
+    G.collide = collisionRects();
+    var v0 = vantageFor(e.room, e.lv);
+    G.walk.x = v0.x; G.walk.z = v0.z; G.walk.yaw = v0.yaw;   // no gliding between floors
+    G.glide = null;
+  } else {
+    glideTo(vantageFor(e.room, e.lv));
+  }
+  setTourRoom(e.room);
+}
+function setTourRoom(r) {
+  if (!r) return;
+  S.tourRoom = r.id;
+  $('#tourTitle').textContent = r.name;
+  var n = roomPhotos(r.id).length;
+  $('#tourSub').textContent = fmtLen(r.w) + ' × ' + fmtLen(r.d) + ' · ' + fmtArea(roomArea(r)) +
+    (n ? ' · ' + n + ' photo' + (n === 1 ? '' : 's') : '');
+  $('#tourPhotoBtn').style.opacity = n ? 1 : 0.4;
+  markTourChip(r.id);
+}
+
+function enterTour() {
+  if (!init3D()) { toast('3D could not start', 'bad'); return; }
+  S.tour = true;
+  closePanels();
+  document.body.classList.add('tour');
+  S.view = 'walk';
+  G.mode = 'walk';
+  $('#planWrap').classList.add('hidden');
+  $('#viewWrap').classList.remove('hidden');
+  $('#walkHint').classList.add('hidden');
+  $('#crosshair').classList.add('hidden');
+  $('#roomLabel').classList.add('hidden');
+  build3D();
+  G.collide = collisionRects();
+  tourLight(true);
+  resize3D();
+  renderTourChips();
+  updateStick();
+  $('#tourHint').style.display = '';
+  clearTimeout(enterTour._t);
+  enterTour._t = setTimeout(function () { $('#tourHint').style.display = 'none'; }, 6000);
+  /* start in the biggest room on the ground floor — the lounge, here */
+  var list = tourRooms(), best = 0, area = 0;
+  list.forEach(function (e, i) {
+    if (e.level === 0 && roomArea(e.room) > area) { area = roomArea(e.room); best = i; }
+  });
+  G.walk.pitch = -0.07;
+  G.walk.eye = 1.58;
+  tourGoTo(best);
+}
+/* Show-home lighting: lifted ambient so rooms read bright, the way a
+   viewing feels, rather than the honest gloom of one sun through a window. */
+function tourLight(on) {
+  if (!G.ready) return;
+  var mul = (S.proj.opts.light == null ? 100 : S.proj.opts.light) / 100;
+  G.sun.intensity  = (on ? 0.62 : 0.60) * mul;
+  G.hemi.intensity = (on ? 0.72 : 0.45) * mul;
+  G.amb.intensity  = (on ? 0.44 : 0.22) * mul;
+  G.torch.intensity = on ? 0.30 : 0.38;
+  G.torch.distance = on ? 9 : 8;
+  /* daylight outside, or the windows read as a night scene */
+  G.scene.background = new THREE.Color(on ? 0xdbe6f2 : 0x0a0a1c);
+  G.scene.fog = on ? new THREE.Fog(0xdbe6f2, 60, 190) : new THREE.Fog(0x0a0a1c, 40, 120);
+  G.ground.material.color.setHex(on ? 0x93a97e : 0x141430);
+}
+
+function exitTour() {
+  S.tour = false;
+  document.body.classList.remove('tour');
+  $('#tourPhoto').classList.remove('on');
+  tourLight(false);
+  setView('plan');
+  updateStick();
+}
+
+$('#btnTour').onclick = enterTour;
+$('#tourExit').onclick = exitTour;
+$('#tourRooms').onclick = function (e) {
+  var b = e.target.closest('[data-tour]');
+  if (b) tourGoTo(Number(b.dataset.tour));
+};
+
+/* photo viewer */
+var gallery = { list: [], i: 0 };
+function showGallery(i) {
+  if (!gallery.list.length) return;
+  gallery.i = (i + gallery.list.length) % gallery.list.length;
+  var p = gallery.list[gallery.i];
+  $('#tourPhotoImg').src = p.src;
+  $('#tourPhotoCap').textContent = p.name + '  (' + (gallery.i + 1) + '/' + gallery.list.length + ')';
+  $('#tourPhoto').classList.add('on');
+}
+$('#tourPhotoBtn').onclick = function () {
+  gallery.list = roomPhotos(S.tourRoom);
+  if (!gallery.list.length) { toast('No photos of this room yet'); return; }
+  showGallery(0);
+};
+$('#tourPhotoPrev').onclick = function () { showGallery(gallery.i - 1); };
+$('#tourPhotoNext').onclick = function () { showGallery(gallery.i + 1); };
+$('#tourPhotoClose').onclick = function () { $('#tourPhoto').classList.remove('on'); };
+$('#tourPhoto').addEventListener('click', function (e) {
+  if (e.target === this) this.classList.remove('on');
+});
+
+/* keep the header honest as you walk from room to room */
+var lastTourRoom = null;
+function tourWatch(r) {
+  if (!S.tour || !r || r.id === lastTourRoom) return;
+  lastTourRoom = r.id;
+  setTourRoom(r);
 }

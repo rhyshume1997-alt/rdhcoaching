@@ -21,11 +21,23 @@ in a separate `.house.json` pack that gets imported straight into the browser.
 
 ## What it does
 
+- **Tour** — the viewing. Full screen, no editor: room cards along the bottom, tap one and
+  the camera glides there and faces into the room. Drag to look round, walk with the stick
+  or `WASD`, tap anything to see what it is and what it cost, **Photos** for the real
+  pictures of the room you are standing in. `Esc` or **Exit tour** to get back.
 - **Plan** — draw rooms, drop in doors and windows, place furniture. Everything is real
   measurements, so if it does not fit on the plan it will not fit in the house.
 - **3D** — the dollhouse view. Orbit round it, drag to spin, right-drag to pan.
 - **Walk** — first person. Click to grab the mouse, `WASD` to move, `Shift` to jog,
   `Q` to crouch, `Esc` to let go. Look at something and press `E` to open its shop link.
+
+## On a phone
+
+Everything works by touch. The room list slides in from **☰**, the properties panel comes
+up from the bottom on **✎**, and the plan pinches to zoom and drags to pan. In Tour and
+Walk the camera has no mouse to lock, so you drag to look and use the on-screen stick to
+move. Rotating the phone refits the plan. Shadows and pixel ratio are dialled back on
+touch devices so it stays smooth.
 
 ## Adding stuff from websites
 

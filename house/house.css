@@ -234,3 +234,183 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 #photoPeek .cap{font-size:11.5px;color:var(--muted);margin-top:6px}
 
 #saveState{white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis}
+
+/* ========================================================================
+   PHONES — the editor folds away, the stage keeps the screen
+   ====================================================================== */
+html, body { height: 100%; height: 100dvh; }
+#app { height: 100%; height: 100dvh; }
+#menuBtn, #inspBtn { display: none; }
+
+@media (max-width: 900px) {
+  :root { --sidebar: 0px; --inspector: 0px; }
+  #topbar { padding: 0 8px; gap: 6px; }
+  #topbar .brand span:not(.dot) { display: none; }
+  #projectName { min-width: 0; width: 92px; font-size: 13px; }
+  #saveState, #btnUndo, #btnRedo, #btnExport, #btnImport { display: none; }
+  #btnAddItem { padding: 7px 9px; font-size: 12px; }
+  #menuBtn, #inspBtn { display: inline-flex; }
+  .viewswitch button { padding: 6px 10px; font-size: 12px; }
+
+  #main { grid-template-columns: 1fr; position: relative; }
+  #sidebar {
+    position: absolute; inset: 0 auto 0 0; width: min(84vw, 330px); z-index: 40;
+    transform: translateX(-101%); transition: transform .22s ease;
+    box-shadow: 0 0 40px rgba(0,0,0,.5);
+  }
+  #sidebar.open { transform: none; }
+  #inspector {
+    position: absolute; left: 0; right: 0; bottom: 0; top: auto; width: auto;
+    max-height: 62vh; border-left: 0; border-top: 1px solid var(--line); z-index: 40;
+    transform: translateY(101%); transition: transform .22s ease;
+    border-radius: 16px 16px 0 0;
+  }
+  #inspector.open { transform: none; }
+  #scrim {
+    position: absolute; inset: 0; background: rgba(4,4,12,.5); z-index: 35;
+    opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  #scrim.on { opacity: 1; pointer-events: auto; }
+
+  #toolbar { flex-direction: row; left: 8px; top: 8px; }
+  #toolbar button { width: 36px; height: 34px; }
+  #planBar, #viewBar { right: 8px; top: 8px; padding: 5px 6px; }
+  #planBar .lbl { display: none; }
+  #statusbar { left: 8px; bottom: 8px; font-size: 11px; padding: 4px 8px; max-width: 60vw; }
+  #levelbar { bottom: 8px; }
+  #photoPeek { width: 132px; right: 8px; bottom: 60px; }
+  .modal { max-height: 92vh; }
+}
+
+/* ---- on-screen stick, so a phone can walk the house ---- */
+#stick {
+  position: absolute; left: 18px; bottom: 22px; width: 116px; height: 116px;
+  border-radius: 50%; background: rgba(16,16,38,.55); border: 1px solid var(--line);
+  touch-action: none; z-index: 12; backdrop-filter: blur(4px);
+}
+#stick .knob {
+  position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; margin: -24px 0 0 -24px;
+  border-radius: 50%; background: rgba(236,236,250,.85); box-shadow: 0 2px 12px rgba(0,0,0,.4);
+}
+#stick .ring {
+  position: absolute; inset: 12px; border-radius: 50%; border: 1px dashed rgba(255,255,255,.18);
+}
+
+/* ========================================================================
+   TOUR — the estate agent view: no editor, just the house
+   ====================================================================== */
+body.tour #topbar, body.tour #sidebar, body.tour #inspector, body.tour #toolbar,
+body.tour #planBar, body.tour #viewBar, body.tour #statusbar, body.tour #levelbar,
+body.tour #menuBtn, body.tour #inspBtn, body.tour #scrim { display: none !important; }
+body.tour #main { grid-template-columns: 1fr; }
+body.tour #app { grid-template-rows: 1fr; }
+
+#tourUI { position: absolute; inset: 0; pointer-events: none; z-index: 20; display: none; }
+body.tour #tourUI { display: block; }
+#tourUI > * { pointer-events: auto; }
+
+#tourTop {
+  position: absolute; left: 0; right: 0; top: 0; padding: 14px 16px;
+  display: flex; align-items: center; gap: 10px;
+  background: linear-gradient(180deg, rgba(8,8,20,.72), rgba(8,8,20,0));
+}
+#tourTitle { font-weight: 700; font-size: 17px; letter-spacing: .2px; text-shadow: 0 2px 12px rgba(0,0,0,.7) }
+#tourSub { font-size: 12.5px; color: #c9c9e4; text-shadow: 0 2px 12px rgba(0,0,0,.7) }
+#tourTop .spacer { flex: 1 }
+.tbtn {
+  background: rgba(18,18,42,.82); border: 1px solid rgba(255,255,255,.14); color: #fff;
+  border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 600;
+  backdrop-filter: blur(8px); display: inline-flex; align-items: center; gap: 6px;
+}
+.tbtn:hover { background: rgba(40,40,80,.9) }
+.tbtn.on { background: var(--accent); border-color: var(--accent) }
+
+#tourRooms {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 30px 12px 14px;
+  display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+  background: linear-gradient(0deg, rgba(8,8,20,.8), rgba(8,8,20,0));
+}
+#tourRooms::-webkit-scrollbar { display: none }
+.rchip {
+  flex: none; border-radius: 12px; border: 1px solid rgba(255,255,255,.16);
+  background: rgba(18,18,42,.82); color: #e8e8f8; padding: 0; overflow: hidden;
+  width: 108px; text-align: left; backdrop-filter: blur(8px);
+}
+.rchip .ph { height: 58px; background: #14142c center/cover no-repeat; display: block }
+.rchip .nm { display: block; padding: 6px 8px; font-size: 12px; font-weight: 600; line-height: 1.25 }
+.rchip .mt { display: block; padding: 0 8px 7px; font-size: 10.5px; color: #a0a0c8 }
+.rchip.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) }
+
+#tourHint {
+  position: absolute; left: 50%; bottom: 132px; transform: translateX(-50%);
+  background: rgba(10,10,24,.8); border: 1px solid var(--line); border-radius: 999px;
+  padding: 7px 14px; font-size: 12.5px; color: #d6d6ee; white-space: nowrap;
+  backdrop-filter: blur(6px);
+}
+
+#tourPhoto {
+  position: absolute; inset: 0; background: rgba(6,6,14,.94); display: none;
+  align-items: center; justify-content: center; flex-direction: column; gap: 10px; padding: 16px;
+}
+#tourPhoto.on { display: flex }
+#tourPhoto img { max-width: 100%; max-height: calc(100% - 92px); object-fit: contain; border-radius: 12px }
+#tourPhoto .cap { font-size: 13px; color: #c9c9e4 }
+#tourPhoto .nav { display: flex; gap: 10px; align-items: center }
+
+@media (max-width: 900px) {
+  #tourTitle { font-size: 15px }
+  .rchip { width: 96px }
+  .rchip .ph { height: 50px }
+  #tourHint { bottom: 124px; font-size: 11.5px }
+}
+
+/* ---- tour chrome on a narrow screen ---- */
+.tbtn { white-space: nowrap; }
+#tourTop > div:first-child { min-width: 0; flex: 1; }
+#tourTitle, #tourSub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#tourHint {
+  white-space: normal; max-width: min(88vw, 460px); text-align: center; line-height: 1.35;
+  border-radius: 14px;
+}
+@media (max-width: 560px) {
+  #tourTop { padding: 10px 10px 20px; gap: 8px; }
+  #tourTitle { font-size: 15px; }
+  #tourSub { font-size: 11.5px; }
+  .tbtn { padding: 7px 11px; font-size: 12px; }
+  #tourRooms { padding: 26px 8px 10px; gap: 6px; }
+  .rchip { width: 86px; border-radius: 10px; }
+  .rchip .ph { height: 46px; }
+  .rchip .nm { padding: 5px 6px 0; font-size: 11px; }
+  .rchip .mt { padding: 1px 6px 6px; font-size: 10px; }
+  #tourHint { bottom: 118px; font-size: 11.5px; padding: 6px 12px; }
+  #stick { left: 12px; bottom: 132px; width: 104px; height: 104px; }
+  #tourPhoto .nav .tbtn { padding: 8px 12px; }
+}
+/* landscape phone: the chrome gets out of the way */
+@media (max-height: 460px) and (orientation: landscape) {
+  #tourRooms { padding: 14px 8px 8px; }
+  .rchip .ph { display: none; }
+  .rchip { width: auto; }
+  .rchip .nm { padding: 6px 10px 0; }
+  .rchip .mt { padding: 0 10px 6px; }
+  #tourHint { display: none; }
+  #stick { bottom: 86px; width: 92px; height: 92px; }
+}
+
+/* ---- the top bar has to survive a 390px phone ---- */
+@media (max-width: 560px) {
+  #topbar { gap: 4px; padding: 0 6px; }
+  #projectName { display: none; }
+  .viewswitch { padding: 2px; gap: 2px; }
+  .viewswitch button { padding: 6px 8px; font-size: 11.5px; }
+  #btnTour { padding: 6px 9px; font-size: 12px; }
+  #btnAddItem { font-size: 0; padding: 7px 10px; }
+  #btnAddItem::before { content: '＋'; font-size: 15px; line-height: 1; }
+  #menuBtn, #inspBtn { padding: 7px 9px; }
+}
+#levelbar button { white-space: nowrap; }
+@media (max-width: 560px) {
+  #statusbar { display: none; }
+  #levelbar { padding: 4px; }
+  #levelbar button { padding: 5px 10px; font-size: 12px; }
+}

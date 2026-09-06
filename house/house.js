@@ -130,7 +130,14 @@ var DEFAULT_SHAPES = [
   { id: 'art',      label: 'Art / mirror',  w: 0.6, d: 0.04, h: 0.8 },
   { id: 'lamp',     label: 'Lamp',          w: 0.4, d: 0.4, h: 1.5 },
   { id: 'plant',    label: 'Plant',         w: 0.5, d: 0.5, h: 1.1 },
-  { id: 'appliance',label: 'Appliance',     w: 0.6, d: 0.6, h: 0.85 }
+  { id: 'appliance',label: 'Appliance',     w: 0.6, d: 0.6, h: 0.85 },
+  { id: 'counter',  label: 'Kitchen units', w: 2.4, d: 0.6, h: 0.92 },
+  { id: 'wallunit', label: 'Wall units',    w: 2.0, d: 0.35, h: 0.72 },
+  { id: 'radiator', label: 'Radiator',      w: 1.0, d: 0.1, h: 0.6 },
+  { id: 'toilet',   label: 'Toilet',        w: 0.4, d: 0.7, h: 0.8 },
+  { id: 'basin',    label: 'Basin / vanity',w: 0.6, d: 0.42, h: 0.85 },
+  { id: 'bath',     label: 'Bath',          w: 1.7, d: 0.7, h: 0.55 },
+  { id: 'stairs',   label: 'Stairs',        w: 0.9, d: 2.6, h: 2.55 }
 ];
 function shapeDef(id) {
   for (var i = 0; i < DEFAULT_SHAPES.length; i++) if (DEFAULT_SHAPES[i].id === id) return DEFAULT_SHAPES[i];
@@ -162,6 +169,28 @@ function findOpening(id) { var l = level(); for (var i = 0; i < l.openings.lengt
 function findItem(id) { for (var i = 0; i < S.proj.items.length; i++) if (S.proj.items[i].id === id) return S.proj.items[i]; return null; }
 function findPhoto(id) { for (var i = 0; i < S.proj.photos.length; i++) if (S.proj.photos[i].id === id) return S.proj.photos[i]; return null; }
 function levelItems(lv) { var id = (lv || level()).id; return S.proj.items.filter(function (it) { return it.level === id && it.placed; }); }
+
+/* Flips a whole level left-to-right. New builds are often sold "handed",
+   so the plan you are given can be the mirror of the house you live in. */
+function mirrorLevel(lv) {
+  var b = null;
+  lv.rooms.forEach(function (r) {
+    if (!b) b = { x0: r.x, x1: r.x + r.w };
+    else { b.x0 = Math.min(b.x0, r.x); b.x1 = Math.max(b.x1, r.x + r.w); }
+  });
+  if (!b) return;
+  var m = b.x0 + b.x1;
+  lv.rooms.forEach(function (r) { r.x = round(m - (r.x + r.w), 3); });
+  lv.openings.forEach(function (o) {
+    if (o.axis === 'v') o.coord = round(m - o.coord, 3);
+    else { var f = o.from; o.from = round(m - o.to, 3); o.to = round(m - f, 3); }
+  });
+  S.proj.items.forEach(function (it) {
+    if (it.level !== lv.id) return;
+    it.x = round(m - it.x, 3);
+    it.rot = round(-(it.rot || 0), 1);
+  });
+}
 
 /* ---------------------------------------------------------- undo / redo */
 function snapshot() {
@@ -529,12 +558,20 @@ function drawPlan() {
     pctx.strokeStyle = 'rgba(255,255,255,.6)';
     pctx.beginPath(); pctx.moveTo(-Math.min(w, 12) / 2, d / 2 - 3); pctx.lineTo(Math.min(w, 12) / 2, d / 2 - 3); pctx.stroke();
     pctx.restore();
-    if (S.cam.ppm > 26) {
-      var top = Math.min.apply(null, itemCorners(it).map(function (p) { return w2s(p.x, p.y).y; }));
-      pctx.fillStyle = '#dcdcf5';
-      pctx.font = '11px ui-sans-serif,system-ui,sans-serif';
+    /* label inside the footprint — floating labels turn a furnished plan to soup */
+    var wpx = it.w * S.cam.ppm, dpx = it.d * S.cam.ppm;
+    if (Math.min(wpx, dpx) > 26 && Math.max(wpx, dpx) > 60) {
+      pctx.save();
+      pctx.translate(c.x, c.y);
+      if (dpx > wpx * 1.4) pctx.rotate(-Math.PI / 2);
+      pctx.font = '10px ui-sans-serif,system-ui,sans-serif';
       pctx.textAlign = 'center';
-      pctx.fillText(it.name, c.x, top - 4);
+      pctx.fillStyle = 'rgba(8,8,26,.72)';
+      var tw = pctx.measureText(it.name).width;
+      pctx.fillRect(-tw / 2 - 4, -7, tw + 8, 14);
+      pctx.fillStyle = '#e2e2f4';
+      pctx.fillText(it.name, 0, 3);
+      pctx.restore();
     }
   });
 
@@ -1231,6 +1268,71 @@ function buildItem(it) {
       g.add(leaf);
       break;
     }
+    case 'counter': {
+      var wt = 0.04;
+      g.add(boxMesh(w, h - wt, d, body, 0, (h - wt) / 2, 0));
+      g.add(boxMesh(w, wt, d + 0.02, lam('#e9e5dc'), 0, h - wt / 2, 0));
+      /* a groove per door so a long run does not read as one slab */
+      var doors = Math.max(1, Math.round(w / 0.6));
+      for (var ci = 1; ci < doors; ci++) {
+        g.add(boxMesh(0.01, h - wt - 0.1, 0.01, dark, -w / 2 + w * ci / doors, (h - wt) / 2, d / 2 + 0.006));
+      }
+      break;
+    }
+    case 'wallunit': {
+      g.add(boxMesh(w, h, d, body, 0, h / 2, 0));
+      var wd = Math.max(1, Math.round(w / 0.5));
+      for (var wi = 1; wi < wd; wi++) {
+        g.add(boxMesh(0.01, h - 0.08, 0.01, dark, -w / 2 + w * wi / wd, h / 2, d / 2 + 0.006));
+      }
+      break;
+    }
+    case 'radiator': {
+      g.add(boxMesh(w, h, Math.max(d, 0.05), lam('#f2f2f5'), 0, h / 2, 0));
+      var fins = Math.max(4, Math.round(w / 0.09));
+      for (var fi = 0; fi < fins; fi++) {
+        g.add(boxMesh(0.012, h - 0.06, Math.max(d, 0.05) + 0.02, lam('#dcdce4'),
+          -w / 2 + (fi + 0.5) * w / fins, h / 2, 0));
+      }
+      break;
+    }
+    case 'toilet': {
+      g.add(boxMesh(w * 1.1, h, 0.22, lam('#f4f4f7'), 0, h / 2, -d / 2 + 0.11));   // cistern boxing
+      var pan = new THREE.Mesh(new THREE.CylinderGeometry(w / 2, w / 2.6, h * 0.55, 16), lam('#ffffff'));
+      pan.position.set(0, h * 0.275, d * 0.1);
+      pan.castShadow = true;
+      g.add(pan);
+      g.add(boxMesh(w * 1.05, 0.05, d * 0.5, lam('#ffffff'), 0, h * 0.55, d * 0.1));
+      break;
+    }
+    case 'basin': {
+      g.add(boxMesh(w, h - 0.16, d, body, 0, (h - 0.16) / 2 + 0.16, 0));
+      g.add(boxMesh(w * 1.02, 0.16, d * 1.02, lam('#ffffff'), 0, h - 0.08, 0));
+      var tap = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.16, 8), lam('#c8ccd4'));
+      tap.position.set(0, h + 0.08, -d / 2 + 0.06);
+      g.add(tap);
+      break;
+    }
+    case 'bath': {
+      g.add(boxMesh(w, h, d, lam('#ffffff'), 0, h / 2, 0));
+      g.add(boxMesh(w - 0.12, 0.06, d - 0.12, lam('#eef2f6'), 0, h - 0.02, 0));
+      break;
+    }
+    case 'stairs': {
+      var steps = Math.max(3, Math.round(h / 0.19));
+      var rise = h / steps, going = d / steps;
+      for (var si = 0; si < steps; si++) {
+        g.add(boxMesh(w, rise, going, body, 0, rise * (si + 0.5), -d / 2 + going * (si + 0.5)));
+      }
+      /* newel posts and a handrail down one side, so it reads as a staircase */
+      var side = w / 2 + 0.03;
+      g.add(boxMesh(0.07, 0.95, 0.07, lam('#ffffff'), side, 0.47, -d / 2 + 0.05));
+      g.add(boxMesh(0.07, 0.95, 0.07, lam('#ffffff'), side, h + 0.47, d / 2 - 0.05));
+      var rail = boxMesh(0.06, 0.06, Math.hypot(d, h), lam('#ffffff'), side, h / 2 + 0.95, 0);
+      rail.rotation.x = -Math.atan2(h, d);
+      g.add(rail);
+      break;
+    }
     case 'appliance': {
       g.add(boxMesh(w, h, d, lam('#cfd4dd'), 0, h / 2, 0));
       g.add(boxMesh(w * 0.9, h * 0.55, 0.02, lam('#1b1b26'), 0, h * 0.62, d / 2 + 0.012));
@@ -1875,10 +1977,13 @@ function inspectLevel() {
       '<label class="f"><span>Floor level</span><input type="text" id="f_base" value="' + fmtIn(lv.base) + '"></label>' +
     '</div>' +
     '<p class="hint">Floor level is how high this storey sits above the ground floor.</p>' +
+    '<button class="btn sm" id="b_mirror">Mirror this level ↔</button>' +
+    '<p class="hint">New builds are often sold handed — if the plan is the mirror image of your house, flip it.</p>' +
     (S.proj.levels.length > 1 ? '<button class="btn sm danger" id="b_del">Delete level</button>' : '');
   bindText('#f_name', function (v) { lv.name = v || 'Level'; });
   bindLen('#f_h', function (v) { lv.height = clamp(v, 1.6, 6); });
   bindLen('#f_base', function (v) { lv.base = v; });
+  $('#b_mirror').onclick = function () { snapshot(); mirrorLevel(lv); changed(); fitToPlan(); };
   if ($('#b_del')) $('#b_del').onclick = function () {
     if (!confirm('Delete “' + lv.name + '” and everything on it?')) return;
     snapshot();
@@ -2501,14 +2606,20 @@ $('#filePick').addEventListener('change', function (e) {
   if (f) importProject(f);
 });
 $('#btnSample').onclick = function () {
-  if (!confirm('Load the sample house? Your current plan is replaced (export first if you want to keep it).')) return;
-  snapshot();
-  S.proj = sampleHouse();
-  S.level = 0;
-  select(null);
-  renderAll();
-  fitToPlan();
-  save();
+  if (!confirm('Reload the house as originally built? Anything you have moved or added is replaced (export first if you want to keep it).')) return;
+  fetch('house.json').then(function (r) {
+    if (!r.ok) throw new Error('missing');
+    return r.json();
+  }).then(function (data) {
+    snapshot();
+    S.proj = migrate(data);
+    S.level = 0;
+    select(null);
+    renderAll();
+    fitToPlan();
+    save();
+    toast('House layout reloaded', 'good');
+  })['catch'](function () { toast('Could not load the house file', 'bad'); });
 };
 $('#btnReset').onclick = function () {
   if (!confirm('Clear everything and start with an empty plan?')) return;
@@ -2563,23 +2674,28 @@ setInterval(function () {
 load().then(function (raw) {
   var loaded = null;
   if (raw) { try { loaded = migrate(JSON.parse(raw)); } catch (e) { loaded = null; } }
-  S.proj = loaded || sampleHouse();
-  if (!loaded) setSaveState('Sample house loaded');
-  else setSaveState('Saved');
+  if (loaded) { start(loaded, 'Saved'); return; }
+  /* first run: load the house rather than a made-up sample */
+  return fetch('house.json').then(function (r) {
+    if (!r.ok) throw new Error('no house file');
+    return r.json();
+  }).then(function (data) {
+    start(migrate(data), 'Loaded ' + (data.name || 'the house'));
+  })['catch'](function () {
+    start(sampleHouse(), 'Sample house loaded');
+  });
+});
+
+function start(proj, msg) {
+  S.proj = proj;
+  setSaveState(msg);
   renderAll();
   setTool('select');
   resizePlanCanvas();
   fitToPlan();
   if (window.THREE) { requestAnimationFrame(loop); }
   else { toast('3D library did not load — the plan still works', 'bad'); }
-})['catch'](function (err) {
-  S.proj = sampleHouse();
-  renderAll();
-  resizePlanCanvas();
-  fitToPlan();
-  requestAnimationFrame(loop);
-  console.warn(err);
-});
+}
 
 /* The photo of how the room looks today, pinned in the corner as you walk it. */
 var lastPeekRoom = null;

@@ -3,6 +3,22 @@
 Private tool, lives at **/house**. Not linked from the site, `noindex`, and blocked in
 `robots.txt`. Nothing about it touches the coaching pages.
 
+## The house
+
+`house/house.json` is The Arisaig (CALA) built to the published room sizes, and
+**handed** — the plan as CALA draw it is the mirror of this plot, so it has been
+flipped: coming in the front door, the WC and utility cupboard are on your left
+and the kitchen on your right. If that turns out to be the wrong way round,
+select a level and hit **Mirror this level ↔** to flip it back.
+
+Room sizes marked on the plan are exact. Corridors, cupboards and the stair
+position are worked out from the photos, so nudge anything that reads wrong.
+The app loads this file on first run; **Reload house layout** in Setup puts it
+back if you want a clean start.
+
+Interior photos are deliberately **not** in this repo — it is public. They live
+in a separate `.house.json` pack that gets imported straight into the browser.
+
 ## What it does
 
 - **Plan** — draw rooms, drop in doors and windows, place furniture. Everything is real
@@ -23,7 +39,9 @@ doubles as a budget and **Export shopping list (CSV)** gives you the lot in a sp
 
 ## Photos and floor plans
 
-- **Photos tab → Upload** for pictures of rooms as they are now. Attach a photo to a room
+- Import the photo pack (**Import**, pick the `.house.json`) and every room photo
+  arrives already attached to its room.
+- **Photos tab → Upload** for new pictures of rooms as they are now. Attach a photo to a room
   and it appears in the corner while you walk through that room. *Hang it on a wall* turns
   a photo into a framed picture you can place in 3D.
 - **Floor plan underlay**: upload a plan for the level, hit *Set scale* and drag along

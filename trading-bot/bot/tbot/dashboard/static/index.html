@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tbot dashboard</title>
+<link rel="stylesheet" href="/static/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>📈</text></svg>">
+</head>
+<body>
+<div id="app">
+
+  <header id="topbar">
+    <div class="brand">tbot <small>read-only · places no orders</small></div>
+
+    <span class="pill" id="conn" title="Feed health. While this is not green the numbers on screen are not live.">
+      <span class="dot" id="conn-dot"></span><span id="conn-text">starting…</span>
+    </span>
+
+    <span class="pill" id="clock-pill" title="Time of the last closed bar the engine analysed.">
+      bar <span id="bar-time">—</span>
+    </span>
+
+    <div class="spacer"></div>
+
+    <label class="pill">pair
+      <select id="sel-pair"></select>
+    </label>
+    <label class="pill">tf
+      <select id="sel-tf"></select>
+    </label>
+    <button id="btn-refresh" title="Force a fresh pipeline pass on the last closed bar">recompute</button>
+  </header>
+
+  <!-- watchlist ------------------------------------------------------ -->
+  <aside id="watchlist">
+    <div class="section-title"><span>Watchlist</span><span id="wl-count"></span></div>
+    <div id="wl-rows"><div class="empty">waiting for data…</div></div>
+    <div class="section-title"><span>Feed</span></div>
+    <div id="feed-detail" style="padding:10px 12px;font-size:11.5px;color:var(--fg-dim)"></div>
+  </aside>
+
+  <!-- chart ---------------------------------------------------------- -->
+  <main id="chartwrap">
+    <div id="chartbar">
+      <span class="pill" id="chart-title">—</span>
+      <span class="pill" id="chart-trend">—</span>
+      <span class="pill" id="chart-price">—</span>
+    </div>
+    <div id="chart"></div>
+    <canvas id="overlay"></canvas>
+    <div id="legend">
+      <div><span class="sw" style="background:rgba(239,68,68,.35);border:1px solid #ef4444"></span>supply zone</div>
+      <div><span class="sw" style="background:rgba(148,163,184,.35);border:1px solid #94a3b8"></span>demand zone</div>
+      <div><span class="sw" style="background:rgba(34,211,238,.30);border:1px solid #22d3ee"></span>order block</div>
+      <div><span class="sw" style="background:#7dd3fc;height:2px"></span>support / resistance</div>
+      <div><span class="sw" style="background:#c084fc;height:2px"></span>SR flip</div>
+      <div><span class="sw" style="background:#fbbf24;height:2px"></span>trend line</div>
+      <div><span class="sw" style="background:#e2e8f0;height:2px"></span>entry ladder</div>
+      <div><span class="sw" style="background:#ef4444;height:2px"></span>stop</div>
+      <div><span class="sw" style="background:#22c55e;height:2px"></span>take profit</div>
+    </div>
+    <div id="chart-empty"></div>
+  </main>
+
+  <!-- panels --------------------------------------------------------- -->
+  <section id="panels">
+    <nav id="tabs">
+      <button data-tab="setups" class="active">Live setups<span class="badge" id="badge-setups">0</span></button>
+      <button data-tab="rejected">Rejected<span class="badge" id="badge-rejected">0</span></button>
+      <button data-tab="settings">Settings</button>
+    </nav>
+
+    <div class="panel active" id="panel-setups">
+      <div class="empty">no qualified setups yet</div>
+    </div>
+
+    <div class="panel" id="panel-rejected">
+      <div class="empty">nothing rejected yet</div>
+    </div>
+
+    <div class="panel" id="panel-settings">
+      <div class="field">
+        <label>Pairs — one per line, e.g. BTCUSDT</label>
+        <textarea id="set-pairs" rows="5" style="background:var(--bg-3);border:1px solid var(--line);border-radius:6px;padding:7px;font-family:var(--mono);font-size:12px;resize:vertical"></textarea>
+      </div>
+      <div class="field">
+        <label>Timeframes — up to 4</label>
+        <div class="chips" id="set-tfs"></div>
+      </div>
+      <div class="field">
+        <label>Market data source</label>
+        <select id="set-source"></select>
+        <div class="hint">Public market data only. No API key, no account, no orders. <b>replay</b> is offline synthetic data for trying the dashboard with no internet.</div>
+      </div>
+      <div class="field">
+        <label>Bars of history per pair</label>
+        <input type="number" id="set-history" min="200" max="1000" step="50">
+        <div class="hint">One REST page. More history means better levels and a slower pass.</div>
+      </div>
+
+      <div id="tunables"></div>
+
+      <div class="field" style="margin-top:14px">
+        <label>Find any of the 242 config keys</label>
+        <input type="text" id="cfg-search" placeholder="e.g. zone, CF-08, 11.5">
+        <div id="cfg-results"></div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="primary" id="btn-save">Apply &amp; recompute</button>
+        <button id="btn-reset">Reset overrides</button>
+      </div>
+      <div id="settings-msg"></div>
+      <p class="footnote">
+        Every value shows the SPEC source rule ID it comes from. Changing a key re-runs the
+        pipeline on the last closed bar of every watched pair — no restart, and no order is ever
+        placed by this software.
+      </p>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightweight-charts/4.1.3/lightweight-charts.standalone.production.js"
+        onerror="window.__lwcCdnFailed=true"></script>
+<script>
+// If cdnjs is unreachable, try one mirror before giving up, and say so plainly if both fail.
+if (window.__lwcCdnFailed && !window.LightweightCharts) {
+  document.write('<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"><\/script>');
+}
+</script>
+<script src="/static/app.js"></script>
+</body>
+</html>

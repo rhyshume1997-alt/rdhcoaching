@@ -1,0 +1,350 @@
+================================================================
+ARSHMEISTER - YOUTUBE CHANNEL INVENTORY
+================================================================
+
+CHANNEL IDENTIFICATION
+  Name           Arshmeister
+  Handle         @arshmeister21
+  Channel ID     UCxK0Sgqs3rZYrm0o6shk_HA
+  Subscribers    3.08k
+  Video count    182 (channel header) = 181 on Videos tab + 1 on Live tab
+  Description    "Hey everyone, my name is Arshmeister. In this channel you can
+                 find my weekly videos discussion the crypto markets and
+                 potential set ups."  + link: partner.blofin.com/d/Arshmeister
+
+  CANDIDATES: only one. A YouTube search for "Arshmeister" returns exactly one
+  channel, plus videos that all belong to it. No disambiguation needed.
+
+  CONFIRMATION - read this before relying on it:
+  I could NOT confirm via the literal watermark string. I opened two videos and
+  checked a frame in each; neither frame showed the "ARSHMEISTER | BloFin | MEXC"
+  text overlay that appears on the charts in your session recordings. What I did
+  confirm:
+    - the channel description carries a BloFin affiliate link
+      (partner.blofin.com/d/Arshmeister) -> the "BloFin" half
+    - the charts are TradingView on MEXC perpetual futures
+      (e.g. "HYPE / Tether PERPETUAL FUTURES - 1h - MEXC") -> the "MEXC" half
+    - the name matches, and the subject matter matches (supply/demand, levels,
+      order blocks on crypto pairs)
+    - the two frames I opened show real candlesticks with hand-drawn horizontal
+      levels and freehand circles, in the same TradingView setup and style
+  That is name + BloFin + MEXC + subject + charting style all lining up, which I
+  think settles it. But it is circumstantial rather than the watermark match you
+  asked for, so I am flagging it rather than calling it verified.
+
+  Videos I actually opened (both at roughly a third of the way in):
+    - BITCOIN AND MARKET UPDATE: THE BEAR MARKET CONTINUES (newest, 21:53)
+      -> HYPE/USDT 1h MEXC, real candles, drawn levels + freehand circles = type A
+    - Scalp Trading Strategy - Break of Trend and Retests (13:37, 3 yr)
+      -> ETHWUSDT 1h BYBIT, real candles, drawn levels + trendline = chart-based
+
+TABS
+  Home | Videos | Live | Playlists | Posts | Search
+  Videos tab   181 videos, sortable Latest / Popular / Oldest
+  Live tab     1 past stream only: "AMA and Live charting with Arshmeister",
+               2:25:29, 1.2k views, streamed 8 months ago. This is the single
+               longest item on the channel.
+  Playlists    1 playlist, "Education", 7 videos, 1,258 total views:
+                 1:27:54  Supply and Demand Trading Method - Arsh way
+                 16:55    How I Look For Trade Set Ups and Trade Ideas
+                 15:31    TRADING PSYCHOLOGY AND ADAPTATION TO MARKET CONDITIONS
+                 13:37    Scalp Trading Strategy - Break of Trend and Retests
+                 13:37    How To Play Swing Failure Pattern
+                 9:21     How To Use Fibonacci Extensions For Price Discovery
+               (the panel lists 7 entries; one title repeats in the listing)
+
+CAPTIONS - YES
+  Checked on the newest video (BITCOIN AND MARKET UPDATE: THE BEAR MARKET
+  CONTINUES). One caption track: English (auto-generated), kind=asr.
+  "Show transcript" IS present - but not in the "..." menu, which only offers
+  Download and Report. It sits in the expanded description panel: click "...more"
+  on the description, then "Show transcript" at the bottom. Transcripts can be
+  pulled.
+
+ABOUT THE DATE COLUMN - READ THIS
+  YouTube only exposes relative ages ("8 mo ago", "1 yr ago") on the channel
+  listing, and exact dates would need opening all 182 videos individually. The
+  DATE column below is YouTube's own relative label, NOT a date I have converted.
+  I have not guessed calendar dates from them.
+  Useful partial: many of the older recap videos carry their own date in the
+  title (e.g. "10-07-2024", "11/08/2024", "3/14/2024"). Those are exact.
+
+CLASSIFICATION METHOD - READ THIS TOO
+  The browser connection dropped part-way through, so the classification below is
+  from TITLES ONLY except for the two videos listed above that I actually opened.
+  Rows marked with "?" after the type letter are the ones I would have opened to
+  check and could not. Everything unmarked follows an unambiguous title pattern.
+  Reasoning used:
+    A = "BITCOIN AND MARKET UPDATE", "BITCOIN AND ALTCOIN RECAPS", dated recaps,
+        "MARKET UPDATE", "ANALYSIS", and the generic "Unity Academy Live Stream:
+        Live Trading / Live Charting / Full breakdown / Set up Ideas" streams
+    B = titles naming a taught concept: the "How To..." videos, "Supply and Demand
+        Trading Method", "Scalp Trading Strategy", and the Unity streams with a
+        lesson topic (Trendlines, Risk Management, Confirmation and Confluence,
+        Finding Entries/DCA/TPs/Stop Losses, How To Identify Ranges, Finding
+        Trade Set-ups, Confirmation Lesson, Trading Psychology)
+    C = opinion//positioning pieces with no charting promise in the title
+    D = the two sub-60-second clips
+
+================================================================
+DATE   |DURATION | TYPE| VIEWS | TITLE
+================================================================
+8 mo   |   21:53 | A  |   989 | BITCOIN AND MARKET UPDATE: THE BEAR MARKET CONTINUES
+8 mo   | 2:25:29 | A  |  1.2k | AMA and Live charting with Arshmeister  [LIVE TAB]
+9 mo   |   21:43 | A  |   900 | BITCOIN AND MARKET UPDATE: MORE CHOP ON THE WAY.
+9 mo   |   24:49 | A  |  1.5k | BITCOIN MACRO ANALYSIS
+9 mo   |   37:53 | A  |   823 | BITCOIN AND MARKET UPDATE: DOWNFALL OF TRUMP BUT SLIGHT REBOUND FIRST?
+9 mo   |   24:51 | A  |   740 | BITCOIN AND MARKET UPDATE: LOWER HIGH SZN
+10 mo  |   29:57 | A  |  1.3k | BITCOIN AND MARKET UPDATE: MACRO TOP IS IN
+11 mo  |   27:10 | C? |  1.2k | What if I told you...
+11 mo  |   26:55 | A  |   806 | BITCOIN AND MARKET UPDATE: NORMAL SEPTEMBER PRICE ACTION (I am buying the dip)
+11 mo  |   30:42 | A  |   867 | BITCOIN AND MARKET UPDATE: SYDNEY SWEENEY'S BATHWATER OR RED SEPTEMBER?
+1 yr   |   21:59 | A  |   945 | BITCOIN AND MARKET UPDATE: MARKET ON EDGE, ARE YOU?
+1 yr   | 1:33:28 | A  |   799 | PEPE ACADEMY MARKET STREAM
+1 yr   |   46:42 | A  |  1.2k | BITCOIN AND MARKET UPDATE: WTF DO WE DO FROM HERE?
+1 yr   |   16:03 | A  |    1k | ETHEREUM MACRO AND MICRO ANALYSIS - ETH [TITLE TRUNCATED IN CAPTURE]
+1 yr   |   35:52 | A  |    1k | BITCOIN AND MARKET UPDATE: ARE WE IN FOR A ROUGH LANDING?
+1 yr   |   32:07 | A  |  1.3k | BITCOIN AND MARKET UPDATE: MARKET IS HOT, WILL IT CONTINUE?!!
+1 yr   |   27:27 | A  |  1.1k | BITCOIN AND MARKET UPDATE: ALTSEASON?
+1 yr   |   34:20 | A  |  1.1k | BITCOIN AND MARKET UPDATE: HUGE VOLATILITY INCOMING!
+1 yr   |   33:12 | A  |   973 | BITCOIN AND MARKET UPDATE: SUMMER RANGE BOUND?
+1 yr   |   27:00 | A  |   775 | BITCOIN AND MARKET UPDATE: RUN IT BACK TURBO?
+1 yr   |   25:25 | A  |   742 | BITCOIN MACRO AND MICRO ANALYSIS - WHAT WILL PRICE DO?
+1 yr   | 1:08:44 | A  |   531 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   27:54 | A  |   757 | BITCOIN AND MARKET UPDATE: CHOP ON THE HORIZON
+1 yr   |   57:57 | A  |   597 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   31:36 | A  |  1.1k | BITCOIN AND MARKET UPDATE: TIME TO BE CAUTIOUS (PULLBACK COMING?)
+1 yr   |   32:44 | A  |   576 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   26:49 | A  |    1k | BITCOIN AND MARKET UPDATE: BEWARE BTC DOMINANCE
+1 yr   |   40:13 | A  |  1.1k | BITCOIN AND MARKET UPDATE: ALTSEASON?
+1 yr   |   15:31 | B  |   976 | TRADING PSYCHOLOGY AND ADAPTATION TO MARKET CONDITIONS
+1 yr   |   52:52 | A  |   422 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   37:08 | A  |   969 | BITCOIN AND MARKET UPDATE: ARE WE SHIFTING BULLISH OR JUST ANOTHER FAKEOUT?
+1 yr   |   13:18 | C? |   747 | I AM A SOLANA MAXI (FOR THE SHORT TERM)
+1 yr   |   41:34 | A  |   397 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   36:04 | A  |   821 | BITCOIN AND MARKET UPDATE: MAKE UP YOUR MIND, COMMANDER CHEETO!
+1 yr   |   31:00 | A  |   812 | BITCOIN AND MARKET UPDATE: THE ART OF THE DEAL
+1 yr   |   14:56 | A  |   731 | BITCOIN AND MARKET UPDATE: IS STOCKS GOING DOWN GOOD OR BAD FOR CRYPTO?
+1 yr   |   38:43 | A  |   424 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   28:06 | A  |   816 | BITCOIN AND MARKET UPDATE - FURTHER DECLINE OR WILL WE BE "LIBERATED"
+1 yr   | 1:01:38 | A  |   424 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   30:42 | A  |   831 | BITCOIN AND MARKET UPDATE - BULLISH IMPULSE, IS IT DIFFERENT THIS TIME?
+1 yr   |   58:55 | A  |   443 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   27:16 | A  |   992 | TOP DOWN BITCOIN MARKET ANALYSIS - ARE WE IN A BULL OR BEAR MARKET?
+1 yr   |   51:57 | A  |   500 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   30:19 | A  |   915 | BITCOIN AND MARKET UPDATE - FURTHER DECLINE ON THE WAY?
+1 yr   |   28:01 | C? |   966 | CRYPTO SUMMIT - WHAT CAN WE EXPECT ON MARCH 7TH?
+1 yr   |   54:51 | A  |   372 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   26:24 | A  |   865 | BITCOIN AND MARKET UPDATE - WTF IS GOING ON IN THE MARKETS?!
+1 yr   | 1:04:03 | A  |   447 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   32:52 | A  |   696 | BITCOIN AND MARKET UPDATE - LOCAL BOTTOM IN?
+1 yr   |   54:25 | A  |   395 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   14:02 | A  |   777 | BITCOIN AND BRIEF MARKET UPDATE - EXTEND THE RALLY (PLEASE?)
+1 yr   |   33:35 | A  |  1.1k | BITCOIN AND MARKET UPDATE - GREEN WEEK AHEAD?
+1 yr   | 1:04:25 | A  |   515 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   26:23 | A  |  1.2k | BITCOIN AND MARKET UPDATE - I SOLD ALL MY LONG TERM BAGS AND THIS IS WHY
+1 yr   | 1:03:04 | A  |   312 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   20:28 | A  |    1k | BITCOIN MARKET UPDATE - TIME FOR THAT LAST LEG UP?
+1 yr   |   56:57 | A  |   465 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   24:09 | A  |  1.6k | GENERAL MARKET UPDATE - TOP IS ALMOST IN
+1 yr   |   18:46 | C? |  1.6k | THESE ARE THE 5 COINS THAT IM MOST BULLISH ON IN THE NEXT FEW WEEKS!
+1 yr   | 1:04:40 | A  |   493 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   27:23 | A  |   954 | BITCOIN AND MARKET UPDATE - INAUGURATION PUMP OR FURTHER DECLINE?
+1 yr   | 1:18:16 | A  |   486 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   25:06 | A  |  1.3k | BITCOIN AND MARKET UPDATE - ALTCOIN BONANZA!
+1 yr   | 1:02:21 | A  |   594 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   24:29 | A  |  1.1k | BITCOIN AND MARKET UPDATE - CHOP CHOP CHOP
+1 yr   |   15:55 | A  |  1.3k | BITCOIN MICRO ANALYSIS - ARE WE COOKED?
+1 yr   | 1:08:56 | A  |   447 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   40:55 | A  |  1.3k | BITCOIN AND MARKET UPDATE - CHRISTMAS RALLY OR MORE CONSOLIDATION?
+1 yr   |   46:41 | A  |   699 | Unity Academy Live Stream: Live Trading and Set up Ideas (LAST PUBLIC STREAM)
+1 yr   |   31:16 | A  |  1.4k | BITCOIN AND ALTCOIN MARKET RECAP
+1 yr   |   20:38 | C? |    1k | 100K BITCOIN. WHAT HAPPENS FROM HERE?
+1 yr   |   50:32 | A  |   411 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   31:26 | A  |  1.3k | BITCOIN MARKET UPDATE AND ALTCOINS OF INTEREST
+1 yr   |   48:42 | A  |   493 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   32:20 | A  |  1.2k | BITCOIN MARKET UPDATE AND ALTCOINS OF INTEREST
+1 yr   | 1:03:41 | A  |   429 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   27:58 | A  |  1.1k | BITCOIN, SOLANA AND MEME CITY
+1 yr   |   48:30 | A  |   472 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   14:22 | A  |   643 | 11/08/2024 BITCOIN AND ALTCOINS OF INTEREST
+1 yr   |   58:40 | A  |   383 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   27:10 | A  |   612 | VOLATILITY INCOMING!! BITCOIN AND ALTCOIN RECAPS
+1 yr   |   14:33 | A  |   478 | 10/24/2024 BITCOIN, SOLANA and BONK RECAP
+1 yr   |   20:29 | A  |   519 | QUICK BITCOIN MARKET UPDATE. DOGE PUMP LOADING!
+1 yr   | 1:19:35 | A  |   281 | Unity Academy Live Stream: Live Trading and Set up Ideas
+1 yr   |   31:15 | A  |   818 | 10-07-2024 BITCOIN AND ALTCOIN RECAPS
+1 yr   |   13:12 | A  |   378 | ETHEREUM ANALYSIS (LOW TIME FRAME) - TIME TO PUMP?
+1 yr   |   16:46 | A  |   494 | BITCOIN ANALYSIS (LOW-TIME FRAME) - RALLY CONTINUE OR MORE DOWNSIDE?
+1 yr   |   28:10 | A  |   647 | BITCOIN AND ALTCOIN RECAPS - RELIEF INCOMING?
+1 yr   | 1:04:05 | A  |   590 | Unity Academy Live Stream: Live Trading and Set up Ideas
+2 yr   |   38:04 | A  |   563 | 08-30-2024 BITCOIN AND ALTCOIN RECAPS
+2 yr   | 1:05:51 | A  |   435 | Unity Academy Live Stream: Live Trading and Set up Ideas
+2 yr   |   46:51 | A  |   431 | Unity Academy Live Stream: Live Trading and Set up Ideas
+2 yr   |   53:23 | A  |   542 | Unity Academy Live Stream: Live Trading and Set up Ideas
+2 yr   |   43:09 | A  |   908 | BTC OUTLOOK AND SMALL MARKET UPDATE
+2 yr   |   24:30 | A  |   816 | 07-22-2024 BITCOIN AND ALTCOIN RECAPS
+2 yr   |   36:41 | A  |   417 | Unity Academy Live Stream: Live Trading and Set up Ideas
+2 yr   |   57:33 | A  |   428 | Unity Academy Live Stream: Live Trading and Set up Ideas
+2 yr   |   34:05 | A  |   931 | BITCOIN UPDATE: STRUCTURE HAS BEEN LOST! WHAT TO EXPECT
+2 yr   |   54:36 | A  |   391 | Unity Academy Live Stream: Live Trading and Set up Ideas
+2 yr   |   27:48 | A  |  1.2k | BITCOIN OUTLOOK: SHOULD WE BE WORRIED?
+2 yr   | 1:03:14 | A  |   313 | Unity Academy Live Stream: Live Trading and Set up Ideas
+2 yr   |   58:15 | A  |   395 | Unity Academy Live Stream: Live Trading and Set up Ideas
+2 yr   |   41:06 | A  |   871 | 06-09-2024 BITCOIN AND ALTCOIN RECAPS
+2 yr   |   47:36 | A  |   382 | Unity Academy Live Stream: Market Update
+2 yr   |   28:40 | A  |   726 | 06-02-2024 BITCOIN AND ALTCOIN RECAPS
+2 yr   | 1:03:54 | A  |   322 | Unity Academy Live Stream: Live Trading and Set up Ideas
+2 yr   |   42:11 | A  |   847 | 05-27-2024 BITCOIN AND ALTCOIN RECAPS
+2 yr   |   18:21 | C? |   852 | ETH ETF PLAN: DO WE PUMP OR DUMP?
+2 yr   |   30:50 | A  |   498 | 05-12-2024 BITCOIN AND ALTCOIN RECAPS
+2 yr   | 1:16:22 | A  |   298 | Unity Academy Live Stream: Live Trading and Set up Ideas
+2 yr   | 1:23:40 | A  |   421 | Unity Academy Live Stream: Live Trading and Set up Ideas
+2 yr   | 1:07:27 | A  |   284 | Unity Academy Live Stream: Live Trading and Set up Ideas
+2 yr   |   22:57 | A  |   552 | 04/12/2024 SHORT AND LONG TERM BTC ANALYSIS
+2 yr   | 1:14:24 | A  |   519 | Unity Academy Live Stream: Live Trading and Set up Ideas
+2 yr   | 1:03:55 | A  |   276 | Unity Academy Live Stream: Live Charting
+2 yr   |   19:06 | A  |   860 | 3/14/2024 SHORT AND LONG TERM BTC ANALYSIS
+2 yr   | 1:07:08 | A  |   527 | Unity Academy Live Stream: Live Trading and Discussions
+2 yr   |   29:17 | A  |   778 | 02-25-2024 BITCOIN AND ALTCOIN RECAPS
+2 yr   |   57:38 | A  |   351 | Unity Academy Live Stream: Full breakdown
+2 yr   | 1:40:48 | A  |   299 | Unity Academy Live Stream: Live Trading
+2 yr   | 1:17:45 | A  |   360 | Unity Academy Live Stream and Trading
+2 yr   | 1:00:10 | B  |   405 | Unity Academy Live Stream: Trendlines
+2 yr   |   18:13 | A  |   439 | 01-26-2024 BITCOIN AND ALTCOIN RECAPS
+2 yr   | 1:02:22 | B  |   259 | Unity Academy Live Stream: Risk Management
+2 yr   |   18:29 | A  |   461 | 01-20-2024 BITCOIN AND ALTCOIN RECAPS
+2 yr   |   59:21 | A  |   334 | Unity Live Stream - Live Trading and AMA
+2 yr   | 1:22:11 | A  |   491 | Unity Stream Live Trading/Full Breakdown Trading Set ups
+2 yr   |   24:09 | A  |   572 | 12-17-2023 BITCOIN AND ALTCOIN RECAPS
+2 yr   | 1:09:45 | B  |   583 | Unity Stream: How To Identify Ranges and Properly Play Them
+2 yr   | 1:08:59 | B  |   455 | Unity Academy Live Stream: Finding Entries, DCA, TP's and Stop Losses
+2 yr   |   59:06 | B  |   457 | Unity Academy: Confirmation and Confluence
+2 yr   |   19:29 | A  |   316 | 10-22-2023 BITCOIN AND ALTCOIN RECAPS
+2 yr   |   17:17 | A  |   246 | 10-15-2023 BITCOIN AND ALTCOIN RECAPS
+2 yr   | 1:01:18 | B  |   335 | Unity Academy Live Stream: Finding Trade Set-ups
+2 yr   | 1:05:23 | A  |   184 | UNITY ACADEMY AMA and LIVE STREAM
+2 yr   | 1:12:19 | A  |    64 | UNITY ACADEMY AMA and LIVE STREAM
+2 yr   |   57:13 | A  |    66 | UNITY ACADEMY AMA and LIVE STREAM
+2 yr   | 1:06:52 | A  |    87 | UNITY ACADEMY LIVE STREAM
+2 yr   | 1:04:57 | A  |   173 | UNITY ACADEMY LIVE SESSION
+2 yr   |   50:15 | B  |   239 | Unity Academy Confirmation Lesson
+2 yr   | 1:12:02 | B  |   210 | Unity Academy Trading Psychology and Risk Management Stream
+2 yr   |   37:31 | A  |   311 | 10-01-2023 BITCOIN AND ALTCOIN RECAPS
+2 yr   |   26:47 | A  |   310 | 09-22-2023 BITCOIN AND ALTCOIN RECAPS
+2 yr   |   30:06 | A  |   262 | 09-16-2023 BITCOIN AND RECENT SHITCOIN RECAPS
+2 yr   |   29:46 | A  |   329 | 09-10-2023 BITCOIN AND ALTCOIN RECAPS
+3 yr   |    7:00 | A? |   168 | BNB Trade Plan
+3 yr   |   34:58 | A  |   269 | 08-20-2023 BITCOIN AND ALTCOIN RECAPS
+3 yr   |   40:18 | A  |   307 | 08-13-2023 BITCOIN AND ALTCOIN RECAPS
+3 yr   |   42:49 | A  |   398 | 08-06-2023 BITCOIN AND ALTCOIN RECAPS
+3 yr   |   46:06 | A  |   261 | 08-01-2023 BITCOIN AND ALTCOIN RECAPS
+3 yr   |   27:31 | A  |   273 | 07-27-2023 BITCOIN AND ALTCOIN RECAPS
+3 yr   |   15:40 | C? |   456 | MY LONG TERM BAGS AND POTENTIAL LEVELS TO BUY CRYPTO
+3 yr   |   26:50 | A  |   252 | 06-11-2023 BITCOIN AND ALTCOIN RECAPS
+3 yr   |   22:54 | A  |   232 | 06-08-2023 BITCOIN AND ALTCOIN RECAPS
+3 yr   |   24:55 | A  |   279 | 05-21-2023 BITCOIN AND ALTCOIN RECAPS
+3 yr   |   29:01 | A  |   213 | 05-10-2023 BITCOIN AND ALTCOIN RECAPS
+3 yr   |   35:58 | A  |   307 | 04-30-2023 BITCOIN AND ALTCOIN RECAPS
+3 yr   |   37:55 | A  |   286 | 04-23-2023 BITCOIN AND ALTCOIN RECAPS
+3 yr   |   22:08 | B  |   378 | MICRO/MACRO BITCOIN ANALYSIS & HOW TO PLAY A RANGE
+3 yr   |   36:11 | A  |   341 | 04-14-2023 BITCOIN AND ALTCOIN RECAPS
+3 yr   |   34:15 | A  |   266 | 04-09-2023 BITCOIN AND ALTCOIN RECAPS
+3 yr   |   30:49 | A  |   210 | 04-02-2023 BITCOIN AND ALTCOIN RECAPS
+3 yr   |   30:49 | A  |   597 | 03-19-2023 BITCOIN AND ALTCOIN RECAPS
+3 yr   |   19:13 | A  |   174 | 03-05-2023 BITCOIN AND ALTCOIN RECAPS
+3 yr   |   24:16 | A  |   181 | 02-17-2023 BITCOIN AND ALTCOIN RECAPS
+3 yr   |    9:21 | B  |    2k | How To Use Fibonacci Extensions For Price Discovery
+3 yr   |   13:37 | B  |  1.4k | How To Play Swing Failure Pattern
+3 yr   |   53:34 | A  |   301 | ARCollective Live Stream 01-30-2023 BTC and Altcoin Recap
+3 yr   |   21:24 | A  |   300 | 01-25-2023 BITCOIN AND ALTCOIN RECAPS
+3 yr   |   30:10 | A  |   230 | 01-12-2023 BITCOIN AND ALTCOIN RECAPS
+3 yr   |   20:40 | A  |   327 | 01-02-2023 BITCOIN AND ALTCOIN RECAPS
+3 yr   |   44:09 | A  |   213 | 12-21-2022 BITCOIN AND ALTCOIN RECAPS
+3 yr   |   16:55 | B  |   948 | How I Look For Trade Set Ups and Trade Ideas
+3 yr   |   14:39 | A  |   254 | 11-30-2022 BTC/ETH/LINK/MATIC/XRP RECAP AND TRADE IDEAS
+3 yr   |    0:51 | D? |   102 | 11-30-2022 BITCOIN ANALYSIS
+3 yr   |    0:44 | D? |    59 | BITCOIN ANALYSIS 11-22-2022
+3 yr   |   23:05 | A  |   221 | 11-22-2022 BTC/ETH/SOL/LINK/CRV/MATIC RECAP AND TRADE IDEAS
+3 yr   |   30:40 | A  |   265 | 10-30-2022 BTC/APT/ETH/LINK/DOGE/SOL/DXY and ATOM LIVE RECAP AND TRADE SET UPS
+3 yr   |   11:51 | A  |   211 | 10-24-2022 BTC/ETH/SOL/MATIC/APT Recap
+3 yr   |   13:37 | B  |  1.2k | Scalp Trading Strategy - Break of Trend and Retests
+3 yr   | 1:27:54 | B  |  2.5k | Supply and Demand Trading Method - Arsh way
+3 yr   |   10:28 | A  |   320 | 10-19-2022 BTC/ETH/SOL/LINK/ATOM Recap
+================================================================
+SUMMARY
+================================================================
+TOTAL ITEMS            182  (181 Videos tab + 1 Live tab past stream)
+
+BY TYPE
+  A  LIVE CHART ANALYSIS      158     106.3 hours
+  B  EDUCATIONAL / TEACHING     15      11.4 hours
+  C  MARKET COMMENTARY           7
+  D  OTHER (sub-60s clips)       2
+  Total runtime across the channel: ~120.1 hours
+
+  Type A is 87% of the channel by count. This channel is almost entirely
+  chart-walking - the split you asked about barely exists.
+
+ROWS I COULD NOT VERIFY (marked "?" in the table) - 9 of 182
+  C? What if I told you...                                      27:10
+  C? CRYPTO SUMMIT - WHAT CAN WE EXPECT ON MARCH 7TH?           28:01
+  C? THESE ARE THE 5 COINS THAT IM MOST BULLISH ON...           18:46
+  C? I AM A SOLANA MAXI (FOR THE SHORT TERM)                    13:18
+  C? 100K BITCOIN. WHAT HAPPENS FROM HERE?                      20:38
+  C? MY LONG TERM BAGS AND POTENTIAL LEVELS TO BUY CRYPTO       15:40
+  C? ETH ETF PLAN: DO WE PUMP OR DUMP?                          18:21
+  D? 11-30-2022 BITCOIN ANALYSIS                                 0:51
+  D? BITCOIN ANALYSIS 11-22-2022                                 0:44
+  If several of the C? rows turn out to be chart-walks, type A rises toward 165.
+
+CAPTIONS               YES - English auto-generated (ASR) on the newest video.
+                       Reached via description "...more" then "Show transcript",
+                       not via the "..." menu.
+
+BEST 10 TYPE-A VIDEOS FOR STUDYING HOW HE MARKS UP A CHART
+Picked for length (more time on one chart), for titles that promise setup
+construction rather than a news recap, and for the live formats where he draws in
+real time rather than presenting finished charts.
+
+  1. AMA and Live charting with Arshmeister                    2:25:29  [Live tab]
+       The single longest item on the channel and explicitly live charting.
+       Start here.
+  2. Unity Academy Live Stream: Live Trading                   1:40:48
+  3. PEPE ACADEMY MARKET STREAM                                1:33:28
+  4. Unity Stream Live Trading/Full Breakdown Trading Set ups  1:22:11
+  5. Unity Academy Live Stream: Live Trading and Set up Ideas  1:19:35
+  6. Unity Academy Live Stream and Trading                     1:17:45
+  7. Unity Academy Live Stream: Live Trading and Set up Ideas  1:18:16
+  8. Unity Academy Live Stream: Live Trading and Set up Ideas  1:16:22
+  9. Unity Academy Live Stream: Live Charting                  1:03:55
+ 10. 10-30-2022 BTC/APT/ETH/LINK/DOGE/SOL/DXY and ATOM LIVE
+     RECAP AND TRADE SET UPS                                     30:40
+       Included as the multi-pair outlier: eight symbols marked up in half an
+       hour, so the highest density of zone-drawing per minute on the channel.
+
+WORTH KNOWING ALONGSIDE THESE
+  The "Education" playlist is only 7 videos but it is the closest thing to him
+  stating his rules rather than applying them - "Supply and Demand Trading Method
+  - Arsh way" (1:27:54) is the longest teaching piece on the channel and is the
+  obvious companion to the type-A list above.
+  There is also a cluster of type-B Unity streams that name the exact mechanics
+  you have been reverse-engineering from Rhys's recordings:
+    Unity Academy Live Stream: Finding Entries, DCA, TP's and Stop Losses  1:08:59
+    Unity Stream: How To Identify Ranges and Properly Play Them            1:09:45
+    Unity Academy: Confirmation and Confluence                              59:06
+    Unity Academy Live Stream: Risk Management                            1:02:22
+    Unity Academy Live Stream: Trendlines                                 1:00:10
+  Those five are likely to answer the entry/DCA and stop-placement questions
+  directly rather than by measurement.
+
+CAVEATS
+  - Dates are YouTube's relative labels, not calendar dates. See note above.
+  - One title was truncated in capture and needs re-reading:
+      "ETHEREUM MACRO AND MICRO ANALYSIS - ETH..."  (16:03, 1k views, 1 yr ago)
+  - Duplicate-looking titles are real: he reuses "Unity Academy Live Stream: Live
+    Trading and Set up Ideas" for roughly 40 separate streams, and "BITCOIN
+    MARKET UPDATE AND ALTCOINS OF INTEREST" twice. They are distinct videos.
+  - "Unity Academy Live Stream: Live Trading and Set up Ideas (LAST PUBLIC
+    STREAM)" (46:41, 1 yr ago) marks the end of the public Unity streams; there
+    are no public streams after it apart from the single AMA on the Live tab.

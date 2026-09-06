@@ -1,0 +1,582 @@
+"""tbot.cli — the command line: ``backtest``, ``scan``, ``config``, ``explain`` and ``dashboard``.
+
+Five commands, one job each:
+
+* ``backtest`` — run the SPEC.md §12 harness over a CSV and print the §12.4 metrics report.
+* ``scan``     — run the analysis pipeline over the latest bars of a CSV and print any trade plans
+                 as human-readable **trade tickets**.
+* ``config``   — print every one of the 245 keys with its value, its default and its source ID, so
+                 provenance is inspectable (INTERFACES.md §4, ``Config.describe``).
+* ``explain``  — given a trade id from a backtest run, print its full source-rule chain: every
+                 detection, rejection, plan, fill, transition and exit behind it.
+* ``dashboard``— serve the local read-only web dashboard (:mod:`tbot.dashboard`) and print its URL.
+
+The first four commands touch nothing but the filesystem (SPEC.md §1.9).  ``dashboard`` is the
+one command that reaches the network, and only for **public market data** — candles, no API key,
+no account, no order path anywhere; see :mod:`tbot.dashboard.feed`, which is the only module in
+the package that opens a socket.  ``scripts/fetch_klines.py`` remains a *standalone* script,
+outside the package, for producing the CSVs the other commands read.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from dataclasses import dataclass
+from decimal import Decimal
+from pathlib import Path
+from typing import Any, Sequence
+
+from .config import KEY_SPEC_BY_NAME, KEY_SPECS, Config, ConfigError
+from .dashboard.exchanges import SOURCES
+from .models import Series, TradePlan, Timeframe, dec
+
+__all__ = ["main", "build_parser", "render_ticket", "cmd_dashboard"]
+
+_EXIT_OK = 0
+_EXIT_USAGE = 2
+_EXIT_FAILED = 1
+
+
+# --------------------------------------------------------------------------- shared plumbing
+
+
+def _parse_value(raw: str) -> Any:
+    """Parse a ``--set key=value`` value: JSON first (so lists/dicts/bools work), else a string."""
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        lowered = raw.strip().lower()
+        if lowered in ("true", "false"):
+            return lowered == "true"
+        return raw
+
+
+def _load_config(args: argparse.Namespace) -> Config:
+    cfg = Config.load(getattr(args, "config", None))
+    overrides: dict[str, Any] = {}
+    for item in getattr(args, "set", None) or []:
+        if "=" not in item:
+            raise SystemExit(f"--set expects key=value, got {item!r}")
+        key, _, raw = item.partition("=")
+        key = key.strip()
+        if key not in KEY_SPEC_BY_NAME:
+            raise SystemExit(f"unknown config key {key!r} — `tbot config --grep {key}` to look")
+        overrides[key] = _parse_value(raw)
+    return cfg.with_overrides(**overrides) if overrides else cfg
+
+
+def _load_series(args: argparse.Namespace) -> Series:
+    from .data import load_csv
+
+    path = Path(args.csv)
+    if not path.exists():
+        raise SystemExit(f"no such CSV: {path}")
+    series = load_csv(path, tf=args.tf, symbol=args.symbol, venue_kind=args.venue)
+    if getattr(args, "max_bars", None):
+        series = series.slice(max(0, len(series) - int(args.max_bars)), len(series))
+    return series
+
+
+def _provider(args: argparse.Namespace):
+    from .backtest.engine import default_plan_provider
+
+    return default_plan_provider
+
+
+# --------------------------------------------------------------------------- trade tickets
+
+
+def render_ticket(plan: TradePlan, *, setup: Any = None, now_price: Decimal | None = None) -> str:
+    """One trade plan as a human-readable ticket.
+
+    Order of construction is entry ladder -> stop -> take-profits (SPEC.md §8, INTERFACES.md §9.3),
+    and the ticket is printed in that order so a reader checks it the same way it was built.
+    """
+    lines: list[str] = []
+    add = lines.append
+    bar = "-" * 74
+    add(bar)
+    add(f"  {plan.direction.value.upper():<5} {plan.symbol}    "
+        f"{plan.trade_class.value} / {plan.vehicle.value}"
+        + (f" @ {plan.leverage}x" if plan.leverage and plan.leverage != Decimal(1) else ""))
+    add(f"  plan {plan.id}   setup {plan.setup_id}")
+    if setup is not None:
+        add(f"  conviction {setup.conviction.value}   confluence {setup.confluence_score} "
+            f"({', '.join(sorted(setup.confluence_classes)) or 'none'})   "
+            f"entry family {setup.entry_family.value}")
+    if now_price is not None:
+        add(f"  last close {now_price}")
+    add(bar)
+    add("  ENTRIES (ladder, light first then heavier at the DCA — CF-17/CF-18)")
+    for rung in plan.entries:
+        state = "FILLED" if rung.filled else "resting"
+        add(f"    {rung.index}. {rung.kind:<5} {rung.price}   "
+            f"{(rung.size_fraction * Decimal(100)):.1f}% of size   on {rung.level_id}   [{state}]")
+    add(f"    planned average entry  {plan.planned_average_entry}")
+    add("  STOP (one per plan — CF-14; the duplicate of S4-R34 is an execution device)")
+    add(f"    {plan.stop_price}"
+        + ("   [SYNTHETIC — spot exit is close-below-then-flip, CF-05]" if plan.stop_is_synthetic
+           else ""))
+    if plan.spot_exit_rule:
+        add(f"    spot exit rule: {plan.spot_exit_rule}")
+    add("  TAKE PROFITS (structural levels — §8.7, CF-27/CF-28)")
+    for tp in plan.take_profits:
+        mark = "HIT" if tp.hit else "   "
+        add(f"    TP{tp.index}: {tp.price}   {(tp.size_fraction * Decimal(100)):.1f}% out   "
+            f"{tp.level_id or ''} {mark}")
+    add("  SIZE AND RISK")
+    add(f"    qty {plan.qty_total}   notional {plan.notional_usd} USD   "
+        f"risk budget {plan.risk_budget_pct}%")
+    # F9: both bases are printed, with the one G14 actually gated on named first.
+    add(f"    R:R to final TP {plan.rr_to_final_tp}   (to TP1 {plan.rr_to_tp1})   "
+        f"expected move {plan.expected_move_pct}%")
+    add(f"    invalidation level {plan.invalidation_level_id}")
+    if plan.expires_at_index is not None:
+        add(f"    expires at bar {plan.expires_at_index}")
+    add(f"  SOURCE RULES: {', '.join(plan.source_ids) if plan.source_ids else '(none recorded)'}")
+    add(bar)
+    return "\n".join(lines)
+
+
+_NO_PIPELINE = (
+    "The analysis pipeline produced nothing.\n"
+    "  Either no setup qualified (a valid, expected result — PL-9: never force a setup),\n"
+    "  or tbot.pipeline / the detectors / qualification / the plan builder are not importable yet.\n"
+    "  The harness itself ran fine: this is the analysis side, not the execution side."
+)
+
+
+# --------------------------------------------------------------------------- commands
+
+
+def cmd_backtest(args: argparse.Namespace) -> int:
+    """Run the §12 harness over a CSV and print the §12.4 report."""
+    from .backtest.engine import BacktestEngine
+    from .backtest.metrics import compute_metrics
+
+    cfg = _load_config(args)
+    series = _load_series(args)
+    engine = BacktestEngine(series, cfg, plan_provider=_provider(args),
+                            starting_equity=dec(args.equity),
+                            warmup_bars=args.warmup)
+    result = engine.run()
+    report = compute_metrics(result)
+    print(report.render())
+
+    if not result.trades:
+        print(_NO_PIPELINE)
+    changed = cfg.non_default_keys()
+    if changed:
+        print(f"\nnon-default config keys this run: {', '.join(changed)}")
+
+    if args.events:
+        Path(args.events).write_text(result.events.render() + "\n", encoding="utf-8")
+        print(f"event log written to {args.events} ({len(result.events)} events)")
+    if args.save_run:
+        payload = {
+            "meta": {
+                "symbol": result.symbol, "tf": result.tf.value, "bars": result.bars,
+                "warmup_bars": result.warmup_bars,
+                "start": result.start.isoformat() if result.start else None,
+                "end": result.end.isoformat() if result.end else None,
+                "csv": str(args.csv),
+                "non_default_config": changed,
+            },
+            "metrics": report.to_dict(),
+            "trades": [
+                {
+                    "ref": t.ref, "id": t.id, "plan_id": t.plan_id, "setup_id": t.setup_id,
+                    "direction": t.direction.value, "primary_class": t.primary_class,
+                    "confluence_classes": list(t.confluence_classes),
+                    "source_ids": list(t.source_ids),
+                    "net_pnl_usd": str(t.net_pnl_usd), "r_multiple": str(t.r_multiple),
+                    "close_reason": t.close_reason.value,
+                }
+                for t in result.trades
+            ],
+            "events": [
+                {
+                    "seq": e.seq, "bar_index": e.bar_index, "timestamp": e.timestamp.isoformat(),
+                    "kind": e.kind.value, "message": e.message, "trade_id": e.trade_id,
+                    "trade_ref": e.trade_ref, "plan_id": e.plan_id, "setup_id": e.setup_id,
+                    "source_ids": list(e.source_ids),
+                }
+                for e in result.events
+            ],
+        }
+        Path(args.save_run).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        print(f"run written to {args.save_run} — `tbot explain --run {args.save_run} "
+              f"--trade <ref>` to unpack any trade")
+    return _EXIT_OK
+
+
+def cmd_scan(args: argparse.Namespace) -> int:
+    """Run the pipeline over the latest bars and print any plans as trade tickets."""
+    from .backtest.engine import BarWindow, _coerce_pipeline_output
+
+    cfg = _load_config(args)
+    series = _load_series(args)
+    provider = _provider(args)
+
+    bars = max(1, int(args.bars))
+    first = max(0, len(series) - bars)
+    seen: set[str] = set()
+    tickets: list[str] = []
+    last_price = dec(float(series.close[-1]))
+    rejections: list[Any] = []
+    for i in range(first, len(series)):
+        window = BarWindow.at(series, i)
+        output = _coerce_pipeline_output(provider(window, cfg))
+        setups = {s.id: s for s in output.setups}
+        rejections.extend(output.rejections)
+        rejections.extend(
+            (s.id, s.vetoes[0]) for s in output.setups if s.vetoes
+        )
+        for plan in output.plans:
+            if plan.id in seen:
+                continue
+            seen.add(plan.id)
+            tickets.append(render_ticket(plan, setup=setups.get(plan.setup_id),
+                                         now_price=last_price))
+
+    print(f"scan  {series.symbol} {series.tf.value}  bars {first}..{len(series) - 1}  "
+          f"(last close {last_price}, last bar {series.timestamp(-1):%Y-%m-%d %H:%M} UTC)")
+    print()
+    if tickets:
+        for ticket in tickets:
+            print(ticket)
+            print()
+        print(f"{len(tickets)} trade ticket(s).  These are plans, not orders: nothing in this "
+              f"package can place an order (SPEC.md §1.9, §12.6).")
+    else:
+        print(_NO_PIPELINE)
+    if rejections:
+        print(f"\n{len(rejections)} setup(s) rejected in this window; "
+              f"run `tbot backtest --events log.txt` for the full veto census.")
+    return _EXIT_OK
+
+
+def cmd_config(args: argparse.Namespace) -> int:
+    """Print every key with value, default and source ID — the provenance view."""
+    cfg = _load_config(args)
+    rows = cfg.describe()
+    if args.changed_only:
+        rows = [r for r in rows if r[1] != r[2]]
+    if args.grep:
+        needle = args.grep.lower()
+        rows = [r for r in rows if needle in r[0].lower() or needle in str(r[3]).lower()]
+    if args.group:
+        wanted = str(args.group)
+        rows = [r for r in rows if KEY_SPEC_BY_NAME[r[0]].group == wanted]
+
+    if args.json:
+        print(json.dumps([
+            {"key": k, "value": v, "default": d, "source_id": s,
+             "group": KEY_SPEC_BY_NAME[k].group, "changed": v != d}
+            for k, v, d, s in rows
+        ], indent=2, default=str))
+        return _EXIT_OK
+
+    def short(value: Any, width: int = 30) -> str:
+        text = json.dumps(value, default=str) if isinstance(value, (list, dict)) else str(value)
+        return text if len(text) <= width else text[: width - 3] + "..."
+
+    print(f"{'key':<40}{'value':<32}{'default':<32}source")
+    print("-" * 140)
+    changed = 0
+    for key, value, default, source in rows:
+        mark = " *" if value != default else "  "
+        changed += 1 if value != default else 0
+        print(f"{key:<38}{mark}{short(value):<32}{short(default):<32}{source}")
+    print("-" * 140)
+    print(f"{len(rows)} key(s) shown, {changed} non-default (marked *).  "
+          f"{len(KEY_SPECS)} keys exist in total (SPEC.md §11.13 = 234, plus 8 evidence-derived, "
+          "plus 3 frame-derived).")
+    print("Every value marked [OUR CHOICE] or 'OUR number' in the source column is ours, not the "
+          "trader's, and is a sweep target (INTERFACES.md §1.7).")
+    return _EXIT_OK
+
+
+def cmd_explain(args: argparse.Namespace) -> int:
+    """Print one trade's full source-rule chain."""
+    if args.run:
+        return _explain_from_run(args)
+    if not args.csv:
+        raise SystemExit("explain needs either --run <saved run.json> or --csv <file> to re-run")
+
+    from .backtest.engine import BacktestEngine
+
+    cfg = _load_config(args)
+    series = _load_series(args)
+    result = BacktestEngine(series, cfg, plan_provider=_provider(args),
+                            starting_equity=dec(args.equity), warmup_bars=args.warmup).run()
+    events = result.events.for_trade(args.trade)
+    if not events:
+        refs = ", ".join(t.ref for t in result.trades) or "(none)"
+        print(f"no trade {args.trade!r} in this run. Trades: {refs}")
+        return _EXIT_FAILED
+    trade = result.trade(args.trade)
+    print(_explain_header(args.trade, trade))
+    for event in events:
+        print("  " + event.render())
+    if trade is not None:
+        print()
+        print(_explain_footer(trade))
+    return _EXIT_OK
+
+
+def _explain_header(ident: str, trade: Any) -> str:
+    lines = ["=" * 78, f"EXPLAIN  {ident}", "=" * 78]
+    if trade is not None:
+        lines.append(
+            f"  {trade.direction.value.upper()} {trade.symbol} {trade.tf.value}  "
+            f"{trade.trade_class.value}/{trade.vehicle.value}  anchor: {trade.primary_class}"
+        )
+        lines.append(
+            f"  entry {trade.average_entry} (planned {trade.planned_average_entry})  "
+            f"initial stop {trade.initial_stop}  exit {trade.exit_price}"
+        )
+        lines.append(
+            f"  net {trade.net_pnl_usd:+.4f} USD = {trade.r_multiple:+.3f}R  "
+            f"({trade.close_reason.value}, {trade.tps_hit}/{trade.tp_count} TPs, fees "
+            f"{trade.fees_usd:.4f}, funding {trade.funding_usd:.4f})"
+        )
+    lines.append("-" * 78)
+    lines.append("  event chain (every line carries the rule IDs that produced it):")
+    return "\n".join(lines)
+
+
+def _explain_footer(trade: Any) -> str:
+    rules: list[str] = []
+    for rule in trade.source_ids:
+        if rule not in rules:
+            rules.append(rule)
+    lines = [
+        "SOURCE-RULE CHAIN",
+        f"  plan source_ids       : {', '.join(rules) if rules else '(none recorded)'}",
+        f"  confluence classes    : {', '.join(trade.confluence_classes) or '(none)'}",
+        f"  primary anchor class  : {trade.primary_class}",
+        "  execution assumptions : SPEC.md §12.2 A1 (stop first), A2 (entry then stop),",
+        "                          A3 (limits need trade-through), A4 (limits fill at price),",
+        "                          A5 (triggers at next open), A6 (stops are market),",
+        "                          A13 (trailed stops act inside the same bar).",
+        "  Anything above marked [OUR CHOICE] in `tbot config` is ours, not the trader's.",
+    ]
+    return "\n".join(lines)
+
+
+def _explain_from_run(args: argparse.Namespace) -> int:
+    path = Path(args.run)
+    if not path.exists():
+        raise SystemExit(f"no such run file: {path}")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    events = [e for e in payload.get("events", [])
+              if args.trade in (e.get("trade_ref"), e.get("trade_id"))]
+    if not events:
+        refs = ", ".join(t["ref"] for t in payload.get("trades", [])) or "(none)"
+        print(f"no trade {args.trade!r} in {path}. Trades: {refs}")
+        return _EXIT_FAILED
+    trade = next((t for t in payload.get("trades", [])
+                  if args.trade in (t["ref"], t["id"])), None)
+    print("=" * 78)
+    print(f"EXPLAIN  {args.trade}   (from {path})")
+    print("=" * 78)
+    if trade:
+        print(f"  {trade['direction'].upper()}  anchor {trade['primary_class']}  "
+              f"net {trade['net_pnl_usd']} USD  {trade['r_multiple']}R  "
+              f"({trade['close_reason']})")
+        print(f"  plan source_ids: {', '.join(trade['source_ids']) or '(none recorded)'}")
+    print("-" * 78)
+    for e in events:
+        rules = f"  [{', '.join(e['source_ids'])}]" if e["source_ids"] else ""
+        print(f"  #{e['bar_index']:<6} {e['timestamp'][:16]}  {e['kind'].upper():<12} "
+              f"{e['message']}{rules}")
+    return _EXIT_OK
+
+
+# --------------------------------------------------------------------------- parser
+
+
+# --------------------------------------------------------------------------- dashboard
+
+
+def cmd_dashboard(args: argparse.Namespace) -> int:
+    """Serve the local web dashboard and print the URL to open."""
+    try:
+        from .dashboard.server import create_app
+        from .dashboard.settings import (
+            DEFAULT_PAIRS, DEFAULT_TIMEFRAMES, DashboardSettings,
+        )
+    except ImportError as err:  # fastapi/uvicorn are dashboard-only dependencies
+        print(
+            f"the dashboard needs its extra dependencies: {err}\n"
+            f"install them with:  python -m pip install -r requirements.txt",
+            file=sys.stderr,
+        )
+        return _EXIT_USAGE
+
+    overrides: dict[str, Any] = {}
+    for item in getattr(args, "set", None) or []:
+        if "=" not in item:
+            raise SystemExit(f"--set expects key=value, got {item!r}")
+        key, _, raw = item.partition("=")
+        key = key.strip()
+        if key not in KEY_SPEC_BY_NAME:
+            raise SystemExit(f"unknown config key {key!r} — `tbot config --grep {key}` to look")
+        overrides[key] = _parse_value(raw)
+
+    pairs = tuple(dict.fromkeys(
+        p.strip().upper() for item in args.pairs for p in item.split(",") if p.strip()))
+    timeframes = tuple(dict.fromkeys(
+        t.strip() for item in args.tf for t in item.split(",") if t.strip()))
+
+    settings = DashboardSettings(
+        pairs=pairs or DEFAULT_PAIRS,
+        timeframes=timeframes or DEFAULT_TIMEFRAMES,
+        source=args.source,
+        venue_kind=args.venue,
+        history_bars=int(args.history),
+        overrides=overrides,
+        config_path=getattr(args, "config", None),
+    )
+    try:
+        settings.build_config()          # fail fast on a bad --set, before binding a port
+    except ConfigError as err:
+        print(f"config error:\n{err}", file=sys.stderr)
+        return _EXIT_USAGE
+
+    url = f"http://{'localhost' if args.host in ('127.0.0.1', '0.0.0.0') else args.host}:{args.port}/"
+    bar = "=" * 66
+    print(bar)
+    print("  tbot dashboard")
+    print(bar)
+    print(f"  open   {url}")
+    print(f"  pairs  {', '.join(settings.pairs)}")
+    print(f"  tfs    {', '.join(settings.timeframes)}")
+    print(f"  source {settings.source}"
+          + ("   (offline synthetic replay — not live market data)"
+             if settings.source == "replay" else "   (public market data only, no API key)"))
+    if overrides:
+        print(f"  config {len(overrides)} key(s) overridden: {', '.join(sorted(overrides))}")
+    print("\n  This dashboard is read-only. It cannot place, amend or cancel an order.")
+    print("  Press Ctrl-C to stop.")
+    print(bar, flush=True)
+
+    import uvicorn
+
+    app = create_app(settings)
+    try:
+        uvicorn.run(app, host=args.host, port=int(args.port), log_level=args.log_level)
+    except KeyboardInterrupt:  # pragma: no cover - interactive
+        pass
+    return _EXIT_OK
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="tbot",
+        description="Signal generation and backtesting for the SPEC.md trading system. "
+                    "This package never places an order and has no exchange access "
+                    "(SPEC.md §1.9, §12.6).",
+    )
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    def add_config_flags(p: argparse.ArgumentParser) -> None:
+        p.add_argument("--config", metavar="YAML", help="config YAML deep-merged over the defaults")
+        p.add_argument("--set", action="append", metavar="KEY=VALUE", default=[],
+                       help="override one config key (repeatable); values are parsed as JSON")
+
+    def add_data_flags(p: argparse.ArgumentParser, *, required: bool = True) -> None:
+        p.add_argument("--csv", required=required, help="OHLCV CSV (see README for the format)")
+        p.add_argument("--tf", default="1H", help="timeframe of the CSV bars, e.g. 4H (default 1H)")
+        p.add_argument("--symbol", default="UNKNOWN", help="symbol label, e.g. SOLUSDT")
+        p.add_argument("--venue", default="spot", choices=("spot", "perp"),
+                       help="perp setups need perp candles (S6-R43)")
+        p.add_argument("--max-bars", type=int, default=None,
+                       help="use only the last N bars of the file")
+
+    p_bt = sub.add_parser("backtest", help="run the §12 harness over a CSV and print the report")
+    add_data_flags(p_bt)
+    add_config_flags(p_bt)
+    p_bt.add_argument("--equity", type=float, default=10_000.0,
+                      help="starting equity in USD (default 10000) [OUR CHOICE — not a §11 key]")
+    p_bt.add_argument("--warmup", type=int, default=None,
+                      help="override the §12.1 warm-up bar count")
+    p_bt.add_argument("--events", metavar="FILE", help="write the full event log here")
+    p_bt.add_argument("--save-run", metavar="FILE",
+                      help="write a JSON run file that `explain --run` can read back")
+    p_bt.set_defaults(func=cmd_backtest)
+
+    p_scan = sub.add_parser("scan", help="print trade tickets for the latest bars of a CSV")
+    add_data_flags(p_scan)
+    add_config_flags(p_scan)
+    p_scan.add_argument("--bars", type=int, default=1,
+                        help="how many trailing bars to scan (default 1: just the last close)")
+    p_scan.set_defaults(func=cmd_scan)
+
+    p_cfg = sub.add_parser("config", help="print every key with value, default and source ID")
+    add_config_flags(p_cfg)
+    p_cfg.add_argument("--grep", metavar="TEXT", help="filter by key name or source ID")
+    p_cfg.add_argument("--group", metavar="SECTION", help="filter by SPEC.md §11 sub-section, e.g. 11.12")
+    p_cfg.add_argument("--changed-only", action="store_true", help="only non-default keys")
+    p_cfg.add_argument("--json", action="store_true", help="machine-readable output")
+    p_cfg.set_defaults(func=cmd_config)
+
+    p_exp = sub.add_parser("explain", help="print one trade's full source-rule chain")
+    p_exp.add_argument("--trade", required=True, metavar="REF",
+                       help="trade ref (T0007) or full trade id from a backtest run")
+    p_exp.add_argument("--run", metavar="FILE", help="a run JSON written by `backtest --save-run`")
+    add_data_flags(p_exp, required=False)
+    add_config_flags(p_exp)
+    p_exp.add_argument("--equity", type=float, default=10_000.0)
+    p_exp.add_argument("--warmup", type=int, default=None)
+    p_exp.set_defaults(func=cmd_explain)
+
+    p_dash = sub.add_parser(
+        "dashboard",
+        help="serve the local web dashboard (public market data only; places no orders)")
+    p_dash.add_argument("--pairs", action="append", default=[], metavar="SYMBOLS",
+                        help="comma-separated pairs, e.g. BTCUSDT,ETHUSDT (repeatable)")
+    p_dash.add_argument("--tf", action="append", default=[], metavar="TIMEFRAMES",
+                        help="comma-separated timeframes, e.g. 4H,1H (repeatable, max 4)")
+    p_dash.add_argument("--source", default="binance", choices=SOURCES,
+                        help="market-data source; 'replay' is offline synthetic data "
+                             "(default binance)")
+    p_dash.add_argument("--venue", default="spot", choices=("spot", "perp"),
+                        help="perp setups need perp candles (S6-R43)")
+    p_dash.add_argument("--history", type=int, default=900, metavar="BARS",
+                        help="bars of history per pair, 200-1000 (default 900)")
+    p_dash.add_argument("--host", default="127.0.0.1",
+                        help="bind address (default 127.0.0.1 — local machine only)")
+    p_dash.add_argument("--port", type=int, default=8000, help="port (default 8000)")
+    p_dash.add_argument("--log-level", default="warning",
+                        choices=("critical", "error", "warning", "info", "debug"))
+    add_config_flags(p_dash)
+    p_dash.set_defaults(func=cmd_dashboard)
+
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """Entry point.  Returns a process exit code; never raises for user error."""
+    parser = build_parser()
+    args = parser.parse_args(list(argv) if argv is not None else None)
+    try:
+        return int(args.func(args))
+    except ConfigError as err:
+        print(f"config error:\n{err}", file=sys.stderr)
+        return _EXIT_USAGE
+    except SystemExit as err:
+        if isinstance(err.code, str):
+            print(err.code, file=sys.stderr)
+            return _EXIT_USAGE
+        return int(err.code or _EXIT_OK)
+    except FileNotFoundError as err:
+        print(f"file not found: {err}", file=sys.stderr)
+        return _EXIT_USAGE
+
+
+if __name__ == "__main__":  # pragma: no cover
+    raise SystemExit(main())

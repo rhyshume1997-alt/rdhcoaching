@@ -1,0 +1,23 @@
+# tbot — runtime dependencies.
+#
+# Install everything with:
+#     python -m pip install -r requirements.txt
+#
+# The analysis engine (tbot.config / models / primitives / detectors / pipeline / backtest)
+# needs only the first block.  The second block is used exclusively by `tbot dashboard`
+# (tbot/dashboard/), which reads PUBLIC market data — candles — with no API key, no account
+# and no order path anywhere in it.
+
+# --- engine ---------------------------------------------------------------
+numpy>=1.26
+pandas>=2.1
+PyYAML>=6.0
+
+# --- dashboard (tbot dashboard) -------------------------------------------
+fastapi>=0.110
+uvicorn>=0.27
+httpx>=0.27          # public REST klines (backfill)
+websockets>=12.0     # public candle stream (live updates)
+
+# --- tests ----------------------------------------------------------------
+pytest>=8.0

@@ -1117,19 +1117,23 @@ class TestConfig:
         assert spec.sweep_bracket == (2.0, 2.5)
 
     def test_f9_constant_cash_risk_corroborates_the_risk_first_sizing_model(self):
-        """F9 part B — the stop-side Amount reads 750 on three pairs / two exchanges.
+        """F9 part B, CORRECTED — the constant cash risk is **$250**, not $750.
 
-        That is corroboration of the *model* (solve quantity backwards from the loss at stop),
-        never of the percentage, and the portfolio size it implies is labelled an inference.
+        "Amount" is the account BALANCE at that leg on a $1,000 nominal base, so a stop-leg
+        Amount of 750 means $250 of risk.  Five frames confirm it (Amount-1000 reproduces
+        qty x target distance) and all eight give qty x stop distance = 250.00.  What is
+        corroborated is unchanged: the *model*, solve quantity backwards from the loss at stop,
+        never the percentage.  The portfolio inference that rested on $750 is withdrawn.
         """
         for key in ("max_loss_pct_swing", "max_loss_pct_swing_hard_cap"):
             spec = KEY_SPEC_BY_NAME[key]
             assert "F9" in spec.source_id
-            assert "750" in spec.note
-            assert "INFERENCE" in spec.note.upper()
-            assert "15,000-18,750" in spec.note
-            assert "account size is never shown" in spec.note
-        # The inference is recorded in prose and nowhere else: no account-size key was added.
+            assert "CORRECTED" in spec.note
+            assert "1000 - Amount(stop leg) = $250" in spec.note
+            assert "account size" in spec.note
+            # the inference is kept ONLY as an explicit withdrawal, never as a live figure
+            assert "15,000-18,750 is WITHDRAWN" in spec.note
+        # No account-size key was derived from it then, and none is derived from it now.
         assert len(KEY_SPECS) == 245
         assert not [k for k in KEY_SPEC_BY_NAME if "account_size" in k or "portfolio_size" in k]
 

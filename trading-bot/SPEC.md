@@ -1175,6 +1175,18 @@ notional_usd    = min(notional_usd, notional_ceiling(vehicle, conviction))   # C
 if clamped: re-solve qty_total from the clamped notional (risk then lands UNDER budget)
 ```
 
+
+> **CORRECTION — the constant is $250, not $750.** `Amount` is the account **balance** at that
+> leg on a $1,000 nominal base, so `risk = 1000 - Amount(stop leg) = $250` and
+> `reward = Amount(target leg) - 1000`. Five frames confirm it: BTC 1H 1792.2, HYPE 4H 2249.04,
+> OM 1H 1741.7, SOL 4H 1531.53, BTC 1D 1651.82 — each `Amount - 1000` reproduces
+> `qty x target distance` to within 0.4%, while `750 x R:R` misses every one by 18–65%.
+> Independently, `qty x stop distance = 250.00` on all **eight** position-tool frames, 2022-11 to
+> 2025-06. What is corroborated is unchanged — a constant cash risk, i.e. the risk-first solve —
+> but the portfolio inference of 15,000–18,750 is **withdrawn**, having been built on the misread
+> field. $250 on a $1,000 nominal base is 25% per trade: a teaching template, not a live sizing
+> rule. See `docs/measurement/CORRECTION-risk-figure-v2.txt`.
+
 **Corroborated by F9 (part B).** The stop-side "Amount" on his position tool reads exactly **750**
 in all three frames where it is visible — BTCUSDT.P 1H, HYPEUSDT.P 4H and OMUSDT.P 1H, i.e. three
 pairs, two timeframes and two exchanges. A constant cash risk per trade is exactly what this

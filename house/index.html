@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Home Studio — 3D house walkthrough</title>
+<meta name="description" content="Private tool: draw your floor plan, walk the house in 3D and drop in furniture pulled straight from shop links.">
+<meta name="theme-color" content="#0b0b18">
+<link rel="stylesheet" href="/house/house.css">
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div class="brand"><span class="dot"></span> Home Studio</div>
+    <input id="projectName" type="text" value="Our house" aria-label="Project name">
+    <div class="viewswitch" id="viewSwitch">
+      <button data-view="plan" class="on">Plan</button>
+      <button data-view="doll">3D</button>
+      <button data-view="walk">Walk</button>
+    </div>
+    <div class="spacer"></div>
+    <span id="saveState" class="hint" style="margin:0"></span>
+    <button class="btn" id="btnUndo" title="Undo (Ctrl+Z)">↶</button>
+    <button class="btn" id="btnRedo" title="Redo (Ctrl+Shift+Z)">↷</button>
+    <button class="btn" id="btnExport">Export</button>
+    <button class="btn" id="btnImport">Import</button>
+    <button class="btn primary" id="btnAddItem">+ Add from link</button>
+  </header>
+
+  <div id="main">
+    <!-- ------------------- sidebar ------------------- -->
+    <aside id="sidebar">
+      <nav class="tabs" id="tabs">
+        <button data-tab="build" class="on">Build</button>
+        <button data-tab="items">Stuff</button>
+        <button data-tab="photos">Photos</button>
+        <button data-tab="setup">Setup</button>
+      </nav>
+      <div class="tabpanes">
+
+        <!-- BUILD -->
+        <section class="pane on" data-pane="build">
+          <div class="section">
+            <h3>Levels <span class="spacer"></span><button class="btn sm" id="btnAddLevel">+ Add</button></h3>
+            <div class="list" id="levelList"></div>
+          </div>
+          <div class="section">
+            <h3>Rooms on this level <span class="spacer"></span><button class="btn sm" id="btnAddRoom">+ Room</button></h3>
+            <div class="list" id="roomList"></div>
+            <p class="hint">Pick the <b>Room</b> tool and drag a rectangle on the plan. Rooms can sit side by side to make L-shapes.</p>
+          </div>
+          <div class="section">
+            <h3>Doors &amp; windows</h3>
+            <div class="list" id="openingList"></div>
+            <p class="hint">Choose the <b>Door</b> or <b>Window</b> tool and click a wall. Drag it along the wall to move it.</p>
+          </div>
+        </section>
+
+        <!-- ITEMS -->
+        <section class="pane" data-pane="items">
+          <div class="section">
+            <h3>Add something</h3>
+            <div class="row wrap">
+              <button class="btn primary" id="btnAddItem2">From a shop link</button>
+              <button class="btn" id="btnAddBlank">Blank item</button>
+            </div>
+            <p class="hint">Paste a product URL and we pull the name, photo, price and (where we can find them) the real dimensions.</p>
+          </div>
+          <div class="section">
+            <h3>Budget</h3>
+            <div id="budget"></div>
+          </div>
+          <div class="section">
+            <h3>Things <span class="spacer"></span>
+              <select id="itemFilter" style="width:auto;padding:3px 6px;font-size:12px">
+                <option value="all">All levels</option>
+                <option value="level">This level</option>
+                <option value="unplaced">Not placed yet</option>
+              </select>
+            </h3>
+            <div class="list" id="itemList"></div>
+          </div>
+          <div class="section">
+            <button class="btn" id="btnShoppingList">Export shopping list (CSV)</button>
+          </div>
+        </section>
+
+        <!-- PHOTOS -->
+        <section class="pane" data-pane="photos">
+          <div class="section">
+            <h3>Room photos <span class="spacer"></span><button class="btn sm" id="btnAddPhoto">+ Upload</button></h3>
+            <p class="hint">Photos of how a room looks now. Attach one to a room and it shows while you walk through it.</p>
+            <div class="list" id="photoList"></div>
+          </div>
+          <div class="section">
+            <h3>Floor plan underlay</h3>
+            <p class="hint">Upload a floor plan for this level, scale it once, then trace rooms straight over the top.</p>
+            <div class="row wrap">
+              <button class="btn" id="btnPlanImage">Upload plan</button>
+              <button class="btn" id="btnCalibrate">Set scale</button>
+              <button class="btn danger sm" id="btnPlanClear">Remove</button>
+            </div>
+            <label class="f" style="margin-top:10px"><span>Underlay opacity</span>
+              <input type="range" id="planOpacity" min="0" max="100" value="55">
+            </label>
+            <label class="check"><input type="checkbox" id="planLock" checked> Lock underlay in place</label>
+            <p class="hint" id="planScaleInfo"></p>
+          </div>
+        </section>
+
+        <!-- SETUP -->
+        <section class="pane" data-pane="setup">
+          <div class="section">
+            <h3>Units &amp; defaults</h3>
+            <label class="f"><span>Units</span>
+              <select id="unitSel"><option value="m">Metric (m / cm)</option><option value="ft">Imperial (ft / in)</option></select>
+            </label>
+            <div class="grid2">
+              <label class="f"><span>Wall height</span><input type="text" id="defWallH" value="2.4"></label>
+              <label class="f"><span>Wall thickness</span><input type="text" id="defWallT" value="0.1"></label>
+            </div>
+            <label class="f"><span>Currency</span>
+              <select id="currencySel"><option>£</option><option>€</option><option>$</option></select>
+            </label>
+          </div>
+          <div class="section">
+            <h3>3D quality</h3>
+            <label class="check"><input type="checkbox" id="optShadows" checked> Shadows</label>
+            <label class="check"><input type="checkbox" id="optCeilings"> Show ceilings in 3D view</label>
+            <label class="check"><input type="checkbox" id="optClip" checked> Walk-through collision (stop at walls)</label>
+            <label class="f"><span>Daylight</span><input type="range" id="optLight" min="10" max="150" value="100"></label>
+          </div>
+          <div class="section">
+            <h3>Project</h3>
+            <div class="row wrap">
+              <button class="btn" id="btnSample">Load sample house</button>
+              <button class="btn danger" id="btnReset">Start over</button>
+            </div>
+            <p class="hint">Everything is stored in this browser only. Export a <b>.house.json</b> file to back it up or move it to another device.</p>
+          </div>
+          <div class="section">
+            <h3>Controls</h3>
+            <p class="hint">
+              <b>Plan:</b> drag to move things, scroll to zoom, space+drag or middle-drag to pan.<br>
+              <b>3D:</b> drag to orbit, right-drag to pan, scroll to zoom.<br>
+              <b>Walk:</b> click to look around, <span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span> to move, <span class="kbd">Shift</span> to jog, <span class="kbd">E</span> on an item for its details, <span class="kbd">Esc</span> to release the mouse.
+            </p>
+          </div>
+        </section>
+      </div>
+    </aside>
+
+    <!-- ------------------- stage ------------------- -->
+    <div id="stage">
+      <div id="planWrap"><canvas id="planCanvas"></canvas></div>
+      <div id="viewWrap" class="hidden"><canvas id="glCanvas"></canvas></div>
+
+      <div id="toolbar">
+        <button data-tool="select" class="on" title="Select / move (V)">↖</button>
+        <button data-tool="room" title="Draw a room (R)">▭</button>
+        <button data-tool="door" title="Add a door (D)">🚪</button>
+        <button data-tool="window" title="Add a window (W)">🪟</button>
+        <button data-tool="item" title="Drop an item (I)">🪑</button>
+        <div class="sep"></div>
+        <button data-tool="measure" title="Measure (M)">📏</button>
+        <button id="btnFit" title="Fit to screen (F)">⤢</button>
+      </div>
+
+      <div class="floatbar" id="planBar">
+        <span class="lbl">Grid</span>
+        <select id="gridSel" style="width:auto;padding:3px 6px;font-size:12px">
+          <option value="0.1">10 cm</option>
+          <option value="0.25" selected>25 cm</option>
+          <option value="0.5">50 cm</option>
+          <option value="0">Off</option>
+        </select>
+        <span class="lbl">Snap</span><input type="checkbox" id="snapChk" checked style="accent-color:var(--accent)">
+      </div>
+
+      <div class="floatbar hidden" id="viewBar">
+        <button class="btn sm" id="btnWalkFromHere">Walk from here</button>
+        <button class="btn sm" id="btnTopDown">Top-down</button>
+        <span class="lbl" id="fpsLbl"></span>
+      </div>
+
+      <div id="statusbar"></div>
+      <div id="levelbar"></div>
+      <div id="roomLabel" class="hidden"></div>
+      <div id="photoPeek" class="hidden"></div>
+      <div id="crosshair" class="hidden"></div>
+      <div id="hoverTip" class="hidden"></div>
+
+      <div id="walkHint" class="hidden">
+        <h4>Walk through the house</h4>
+        <p>Click anywhere to take control of the mouse.</p>
+        <p><span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span> move · <span class="kbd">Shift</span> jog · <span class="kbd">Q</span>/<span class="kbd">E</span> crouch/stand · <span class="kbd">Esc</span> to let go</p>
+        <p>Look at an item and press <span class="kbd">E</span> to open its shop link.</p>
+      </div>
+    </div>
+
+    <!-- ------------------- inspector ------------------- -->
+    <aside id="inspector">
+      <div class="head"><span class="title" id="inspTitle">Nothing selected</span>
+        <button class="btn sm ghost" id="btnDeselect">✕</button></div>
+      <div class="body" id="inspBody">
+        <p class="hint">Pick a room, a door or a piece of furniture to edit it here.</p>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div id="modalWrap" class="hidden"></div>
+<div id="toast"></div>
+<input type="file" id="filePick" class="hidden" accept="application/json,.json">
+<input type="file" id="imgPick" class="hidden" accept="image/*" multiple>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+  // Fallback CDN so the 3D views still work if cdnjs is blocked.
+  if (!window.THREE) {
+    document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/script>');
+  }
+</script>
+<script src="/house/house.js"></script>
+</body>
+</html>

@@ -2,6 +2,8 @@
 
 User-agent: *
 Allow: /
+Disallow: /house
+
 
 # AI crawlers and answer engines
 User-agent: GPTBot

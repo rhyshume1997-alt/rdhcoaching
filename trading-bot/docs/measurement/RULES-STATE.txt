@@ -1,3 +1,7 @@
+!!! SUPERSEDED IN PLACES - see 09-CORRECTIONS-2026-09-06.md before using this file.
+!!! Corrected here: C8 the caption blocker applies to the public channel only
+!!! Nothing below is deleted. The corrections file says what changed and why.
+
 ================================================================
 CONSOLIDATED RULE STATE  —  v3
 Supersedes v1 and v2 and everything scattered across the other

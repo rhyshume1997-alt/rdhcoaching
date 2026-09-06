@@ -1,3 +1,7 @@
+!!! SUPERSEDED IN PLACES - see 09-CORRECTIONS-2026-09-06.md before using this file.
+!!! Corrected here: C5 BNB worked example; C6 R:R distribution; C7 the 50% line
+!!! Nothing below is deleted. The corrections file says what changed and why.
+
 ================================================================
 TRADING BOT RULE SET — HANDOVER SPECIFICATION
 Output of five measurement passes against video frames of a crypto
@@ -26,8 +30,8 @@ BEFORE YOU WRITE ANY CODE, ASK ME
        - entry geometry uses the BODY band only
        - the WICK band is used only when locating the stop
    Measured example (BNB 1D):
-       wick band   242.20 to 248.56   (pale)
-       body band   237.79 to 242.20   (darker, bordered)
+       wick band   242.20 to 248.56   (pale)     [C5: read 249.25 corrected]
+       body band   237.79 to 242.20   (darker, bordered)  [C5: 237.80 to 242.49]
 
 2. ENTRY PLACEMENT                                    confidence: high
    Entry sits on the PROXIMAL edge of the body band, meaning the edge price

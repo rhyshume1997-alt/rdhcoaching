@@ -1,3 +1,7 @@
+!!! SUPERSEDED IN PLACES - see 09-CORRECTIONS-2026-09-06.md before using this file.
+!!! Corrected here: Section B's conclusion (stop at ~0.5x zone height) is WITHDRAWN, see 00-MASTER.txt Part 2. Its OM zone bounds 5.2267/4.9400 are the superseded reading; the getImageData re-read gives 5.23382/4.93664. Raw readings stand.
+!!! Nothing below is deleted. The corrections file says what changed and why.
+
 ================================================================
 CHART FRAME READINGS - PASS 2
 Sessions 5, 6, 8 and TBOT1 (RDH TBOT vid 1 = 6u7mxH4xM-4)

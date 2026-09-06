@@ -1,3 +1,7 @@
+!!! SUPERSEDED IN PLACES - see 09-CORRECTIONS-2026-09-06.md before using this file.
+!!! Corrected here: C8 the caption blocker, and the unmapped video IDs
+!!! Nothing below is deleted. The corrections file says what changed and why.
+
 Local pipeline job. Everything here runs on my machine from the terminal. No
 browser automation, which is the point: five previous passes fought a live
 YouTube player for frames and captions and lost both fights. Doing it locally

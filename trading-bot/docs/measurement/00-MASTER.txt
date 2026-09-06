@@ -1,3 +1,7 @@
+!!! SUPERSEDED IN PLACES - see 09-CORRECTIONS-2026-09-06.md before using this file.
+!!! Corrected here: C5 BNB worked example and Part 4 row; C6 R:R distribution; C7 the 50% line; C8 the caption blocker; C9 the validation gate
+!!! Nothing below is deleted. The corrections file says what changed and why.
+
 ================================================================
 MASTER RECORD — ARSHMEISTER METHOD REVERSE-ENGINEERING
 Everything from seven sessions of work, consolidated.
@@ -32,8 +36,8 @@ ZONE CONSTRUCTION                                    confidence: high
   paler WICK band reaching the wick extremes. Where both exist, entry geometry
   uses the BODY band only; the wick band is used only to locate the stop.
   Worked example, BNB 1D 2023-10-24:
-      wick band   242.20 to 248.56   (pale)
-      body band   237.79 to 242.20   (darker, bordered)
+      wick band   242.20 to 248.56   (pale)     [C5: read 249.25 corrected]
+      body band   237.79 to 242.20   (darker, bordered)  [C5: 237.80 to 242.49]
       entry       237.74             (body band bottom edge, 0.5 px)
 
 ENTRY PLACEMENT                                      confidence: high
@@ -164,7 +168,9 @@ POSITION TOOLS, full figures
       Stop 3.711 (2.18%) | Target 7.890 (4.63%) | Qty 67.367 | R:R 2.13
       zone 170.39 to 168.03
   2022-11-30   BTCUSDT 4h        qty 0.708   stop 353.06 (2.12%)  target 1765.31
-  2023-10-24   BNBUSDT 1D        qty 18.657  stop 13.4 (5.64%)    target 28.6
+  2023-10-24   BNBUSDT 1D        qty 18.657  stop 13.4 (5.64%)    target 30.42
+                 [C5 CORRECTED: target was 28.6, which is the 12.6-scale figure and
+                  implies R:R 2.13. The printed label is 2.27. 13.4 x 2.27 = 30.42.]
   2024-06-09   BTCUSDT.P 1D      qty 0.056   stop 4483.7 (6.77%)  target 11690.3
   2025-06-10   ONDOUSDT.P 1W     qty 1025.851 stop 0.2437 (29.51%) target 0.3895
 

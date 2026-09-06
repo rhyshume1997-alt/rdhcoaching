@@ -1,3 +1,7 @@
+!!! SUPERSEDED IN PLACES - see 09-CORRECTIONS-2026-09-06.md before using this file.
+!!! Corrected here: STALE. Its 'ALREADY ESTABLISHED, do not re-derive' block contains TWO claims this project has since withdrawn: the $750 risk figure and the 0.5x zone-height stop. Do not paste this into a fresh session as written.
+!!! Nothing below is deleted. The corrections file says what changed and why.
+
 Extraction job against a public YouTube channel. READ ONLY — do not subscribe,
 like, comment or change anything. Forcing playback quality to 1080p is fine and
 expected (playback-only, touches nothing on the channel).

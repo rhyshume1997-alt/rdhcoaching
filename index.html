@@ -1174,6 +1174,7 @@ h1,h2,h3{font-family:'Bebas Neue','Supreme',sans-serif;font-weight:400;line-heig
 // Paste your Loom share link here (e.g. "https://www.loom.com/embed/abc123"). Leave "" to send button to the form.
 var LOOM_URL = "https://www.loom.com/embed/765e43aab52c4c49b7a9f58638c2bf4a";
 var GA_ID = "G-R3VB8DS79R";
+var ADS_ID = "AW-18229022937";
 
 /* ===== YEAR ===== */
 document.getElementById('year').textContent = new Date().getFullYear();
@@ -1383,6 +1384,7 @@ function loadGA(){
   window.gtag = gtag;
   gtag('js', new Date());
   gtag('config', GA_ID);
+  gtag('config', ADS_ID);          // Google Ads conversion tracking
 }
 /* OpenAI Ads pixel - only initialises after analytics/advertising consent */
 function loadPixel(){

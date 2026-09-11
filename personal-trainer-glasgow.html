@@ -343,6 +343,7 @@ h1,h2,h3{font-family:'Bebas Neue','Supreme',sans-serif;font-weight:400;line-heig
 .field input,.field textarea{width:100%;padding:14px 16px;border-radius:13px;background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--ink);font-family:inherit;font-size:15px;transition:.25s;resize:vertical}
 .field input:focus,.field textarea:focus{outline:none;border-color:var(--blue);background:rgba(82,113,255,.06);box-shadow:0 0 0 3px rgba(82,113,255,.12)}
 .field textarea{min-height:84px}
+.field label .opt{font-weight:500;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-2);margin-left:7px}
 .field select{width:100%;padding:14px 16px;border-radius:13px;background-color:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--ink);font-family:inherit;font-size:15px;transition:.25s;cursor:pointer;
   -webkit-appearance:none;-moz-appearance:none;appearance:none;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239d9db4' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
@@ -1109,7 +1110,7 @@ h1,h2,h3{font-family:'Bebas Neue','Supreme',sans-serif;font-weight:400;line-heig
           <p class="move">The next move is yours.</p>
         </div>
         <div class="form-card">
-          <form id="applyForm" action="https://formspree.io/f/mqegvgqd" method="POST">
+          <form id="applyForm" action="https://formspree.io/f/mqegvgqd" method="POST" onsubmit="return false">
             <div id="formInner">
               <!-- STEP 1 -->
               <div class="form-step" id="formStep1">
@@ -1117,6 +1118,7 @@ h1,h2,h3{font-family:'Bebas Neue','Supreme',sans-serif;font-weight:400;line-heig
                 <p class="fsub">Takes two minutes. No payment, no commitment.</p>
                 <div class="field"><label>Name</label><input type="text" name="name" id="fName" required placeholder="Your name"></div>
                 <div class="field"><label>Email</label><input type="email" name="email" id="fEmail" required placeholder="you@email.com"></div>
+                <div class="field"><label>Mobile</label><input type="tel" name="phone" id="fPhone" required autocomplete="tel" inputmode="tel" pattern="[0-9 +()-]{7,}" placeholder="07…"></div>
                 <div class="field"><label>Where are you right now?</label>
                   <select name="stage" id="fStage" class="select" required>
                     <option value="" disabled selected>Pick the one that fits</option>
@@ -1387,7 +1389,7 @@ document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeVi
   var backBtn = document.getElementById('step2Back');
   if(!step1 || !step2 || !step1Btn) return;
   step1Btn.addEventListener('click', function(){
-    var fields = ['fName','fEmail','fStage'].map(function(id){ return document.getElementById(id); });
+    var fields = ['fName','fEmail','fPhone','fStage'].map(function(id){ return document.getElementById(id); });
     for(var i=0;i<fields.length;i++){
       if(fields[i] && !fields[i].checkValidity()){ fields[i].reportValidity(); return; }
     }
@@ -1404,7 +1406,7 @@ document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeVi
     });
   }
   // Enter inside step 1 advances instead of triggering a (blocked) submit
-  ['fName','fEmail'].forEach(function(id){
+  ['fName','fEmail','fPhone'].forEach(function(id){
     var el = document.getElementById(id);
     if(el) el.addEventListener('keydown', function(e){
       if(e.key === 'Enter'){ e.preventDefault(); step1Btn.click(); }
@@ -1416,6 +1418,12 @@ document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeVi
 var form = document.getElementById('applyForm');
 if(form) form.addEventListener('submit', function(e){
   e.preventDefault();
+  var s2 = document.getElementById('formStep2');
+  if(s2 && s2.style.display === 'none'){        // still on step 1: advance, never send
+    var b1 = document.getElementById('step1Btn');
+    if(b1) b1.click();
+    return;
+  }
   var btn = document.getElementById('submitBtn');
   btn.disabled = true; btn.textContent = 'Sending...';
   fetch(form.action, {

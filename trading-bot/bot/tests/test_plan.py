@@ -196,6 +196,81 @@ def test_size_multipliers_scale_the_loss_proportionally(mult: float) -> None:
     assert money_close(rep.loss_at_stop_usd, dec(400) * dec(mult))
 
 
+# ------------------------------------------------- entry-ladder monotonicity (regression)
+#
+# `check_plan_consistency` walked the ladder from the size-weighted AVERAGE instead of from
+# rung 0's price.  The average is not a rung; it is a convex combination of all of them, so it
+# can sit anywhere inside the ladder.  Latent for months because the old dca_size_split_3 of
+# [0.2, 0.3, 0.5] put the average at 97.1 on the fixtures, coincidentally just ABOVE rung 1 at
+# 97.0.  Correcting the split to his stated 15/32.5/52.5 moved it to 96.925 and the check
+# started rejecting a perfectly valid ladder.
+#
+# What the bug actually did, established by construction rather than assumed:
+#   * FALSE REJECT of a valid ladder whenever the average lands beyond rung 1.  Demonstrated.
+#   * MISREPORTS which rung is at fault on an inverted ladder, because only the FIRST
+#     comparison used the average; every later one was already rung-to-rung.
+#   * It did NOT silently accept an invalid ladder.  An inversion at rung 1 is caught either by
+#     its own comparison or by the next rung's, so the plan was still rejected.  The earlier
+#     claim that it "could fail in either direction" was wrong and is withdrawn.
+
+
+def test_consistency_accepts_a_valid_ladder_whose_average_falls_beyond_rung_1() -> None:
+    """The regression itself: 100 / 97 / 96 at his stated split, average 96.925.
+
+    A strictly descending long ladder is valid by definition.  The old check compared rung 1
+    (97.0) against the average (96.925) and rejected it.
+    """
+    plan = hand_plan(
+        stop_pct=8.0, budget=big_budget(),
+        entries=((100.0, 0.15), (97.0, 0.325), (96.0, 0.525)),
+    )
+    assert PL.blended_entry(plan.entries) == dec("96.925")     # average sits BELOW rung 1
+    rep = PL.check_plan_consistency(plan, equity_usd=EQUITY)
+    assert rep.ok, rep.problems
+    assert not [p for p in rep.problems if "step away" in p]
+
+
+def test_consistency_still_rejects_an_inverted_ladder() -> None:
+    """Guard against over-correcting: rung 1 above rung 0 on a long is still invalid."""
+    plan = hand_plan(
+        stop_pct=8.0, budget=big_budget(),
+        entries=((98.0, 0.15), (99.0, 0.325), (97.0, 0.525)),
+    )
+    rep = PL.check_plan_consistency(plan, equity_usd=EQUITY)
+    assert not rep.ok
+    assert any("entry rung 1" in p and "step away" in p for p in rep.problems)
+
+
+def test_consistency_names_the_first_inverted_rung_not_the_second() -> None:
+    """The under-reporting half.  On 100 / 101 / 102 both DCA rungs are inverted.
+
+    Walking from the average (101.7) hid rung 1 and reported only rung 2.  Walking from rung 0
+    reports both, so the message points at where the ladder first goes wrong.
+    """
+    plan = hand_plan(
+        stop_pct=8.0, budget=big_budget(),
+        entries=((100.0, 0.1), (101.0, 0.1), (102.0, 0.8)),
+    )
+    rep = PL.check_plan_consistency(plan, equity_usd=EQUITY)
+    assert not rep.ok
+    stepping = [p for p in rep.problems if "step away" in p]
+    assert any("entry rung 1" in p for p in stepping), stepping
+    assert any("entry rung 2" in p for p in stepping), stepping
+
+
+def test_consistency_walks_shorts_from_rung_0_too() -> None:
+    """Mirror image: a short ladder steps UP, and its average can fall beyond rung 1 the same way."""
+    plan = hand_plan(
+        stop_pct=8.0, budget=big_budget(), direction=Direction.SHORT,
+        entries=((100.0, 0.15), (103.0, 0.325), (104.0, 0.525)),
+        tps=((99.0, 0.5), (92.0, 0.5)),                       # a short takes profit DOWNWARD
+    )
+    assert PL.blended_entry(plan.entries) == dec("103.075")    # average sits ABOVE rung 1
+    rep = PL.check_plan_consistency(plan, equity_usd=EQUITY)
+    assert rep.ok, rep.problems
+    assert not [p for p in rep.problems if "step away" in p]
+
+
 def test_notional_clamp_puts_risk_under_budget() -> None:
     """CF-02: notional is clamped, qty re-solved, and the realised risk lands **under** budget."""
     budget = SizingBudget(

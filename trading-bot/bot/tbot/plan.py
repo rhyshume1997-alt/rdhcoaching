@@ -1060,11 +1060,15 @@ def check_plan_consistency(
         problems.append(f"short stop {stop} is not above the blended entry {entry}")
 
     # Rungs must step monotonically away from RUNG 0, not from the blended average.
-    # `entry` here is the size-weighted average (CF-18), which is not a rung and can sit
-    # anywhere inside the ladder; comparing rung 1 against it is a category error that can
-    # reject a valid ladder or accept an inverted one. Latent until dca_size_split_3 was
-    # corrected to his stated 15/32.5/52.5 - the old 20/30/50 happened to put the average
-    # (97.1) just above rung 1 (97.0) in the fixtures, which hid it.
+    # `entry` is the size-weighted average (CF-18) - not a rung, and a convex combination of
+    # all of them, so it can sit anywhere inside the ladder. Two consequences, both established
+    # by construction in tests/test_plan.py rather than assumed:
+    #   * FALSE REJECT of a valid ladder whenever the average lands beyond rung 1. Latent until
+    #     dca_size_split_3 was corrected to his stated 15/32.5/52.5 - the old 20/30/50 put the
+    #     average at 97.1, coincidentally just above rung 1 at 97.0 in the fixtures.
+    #   * MISREPORTS which rung is at fault, since only the FIRST comparison used the average.
+    # It did NOT silently accept an invalid ladder: an inversion is caught either by its own
+    # comparison or by the next rung's, so the plan was still rejected.
     prev = dec(plan.entries[0].price) if plan.entries else entry
     for r in plan.entries[1:]:
         p = dec(r.price)

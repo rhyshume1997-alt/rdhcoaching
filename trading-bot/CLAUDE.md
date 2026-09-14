@@ -144,8 +144,10 @@ implement. None is done.
   average rather than from rung 0's price. Latent for months: the old `[0.2, 0.3, 0.5]`
   split put the average at 97.1, coincidentally just above rung 1 at 97.0 in the
   fixtures. Correcting the split to his stated 15/32.5/52.5 moved it to 96.925 and
-  exposed it. Fixed. It could fail in either direction — reject a valid ladder or accept
-  an inverted one.
+  exposed it. Fixed, with four regression tests. **Correction to an earlier note here:** it
+  did *not* fail in both directions. It falsely rejected valid ladders and misreported which
+  rung was at fault, but it never silently accepted an inverted one — a later rung-to-rung
+  comparison always caught it. Established by construction, not assumed.
 - **Config keys that are declared but never read.** `rr_measured_to` was one; changing it
   did nothing until it was wired. `rr_measured_from` is still inert — harmless today
   because it duplicates `size_and_stop_computed_from`, but don't assume a key is live.

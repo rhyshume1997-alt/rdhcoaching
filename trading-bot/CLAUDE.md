@@ -141,6 +141,12 @@ implement. None is done.
   of what it should. See `tests/test_risk.py::TestQ8HisWorkedSizingExample`.
 - **R:R basis.** TradingView's position tool measures to the *final* target. Measuring to
   TP1 instead vetoed 27% of valid setups. See F9.
+- **A partial fill is UNDER-risked, not over.** Tempting to reason that an adverse realised
+  entry (+781 bps in the first real run) breaches the loss cap, because quantity was solved
+  from the planned full-fill average. It does not: `qty = qty_total * rung.size_fraction`
+  (`engine.py:899`), so an unfilled rung removes its quantity too. Rung 0 alone lands at
+  **0.31x** the budgeted loss. Pricing the entry without re-pricing the quantity gets this
+  exactly backwards.
 - **Percentages measured over hand-drawings.** Two readings (8.10% on 1H, 26.99% on 4H)
   look like clean thresholds and are measured across sketches, not candles. Both are
   recorded as explicitly rejected in FRAME_FINDINGS.md.
@@ -153,6 +159,13 @@ implement. None is done.
   did *not* fail in both directions. It falsely rejected valid ladders and misreported which
   rung was at fault, but it never silently accepted an inverted one — a later rung-to-rung
   comparison always caught it. Established by construction, not assumed.
+- **`tbot/manage.py` is unreachable.** The whole `TradeManager` state machine is tested
+  (`tests/test_manage.py`) and imported by nothing in the package. `engine.py` imports only
+  `config` and `models` and reimplements fills, stops and trailing itself. So
+  `_reverify_budget` (`manage.py:265`) — written for exactly the case where "after a fill the
+  average moved; the stop did not" — has never executed in a backtest. Worse than a dead
+  config key: a dead *subsystem* with a green test suite in front of it. Found on the first
+  real-data run, 2026-09-14.
 - **Config keys that are declared but never read.** `rr_measured_to` was one; changing it
   did nothing until it was wired. `rr_measured_from` is still inert — harmless today
   because it duplicates `size_and_stop_computed_from`, but don't assume a key is live.

@@ -241,11 +241,13 @@ def test_consistency_still_rejects_an_inverted_ladder() -> None:
     assert any("entry rung 1" in p and "step away" in p for p in rep.problems)
 
 
-def test_consistency_names_the_first_inverted_rung_not_the_second() -> None:
+def test_consistency_reports_every_inverted_rung_not_just_the_last() -> None:
     """The under-reporting half.  On 100 / 101 / 102 both DCA rungs are inverted.
 
-    Walking from the average (101.7) hid rung 1 and reported only rung 2.  Walking from rung 0
-    reports both, so the message points at where the ladder first goes wrong.
+    Walking from the average (101.7) surfaced only rung 2; walking from rung 0 surfaces both.
+    The fix therefore reports MORE, not differently - the old code hid one of two real
+    problems behind the average.  The plan was rejected either way, so nothing bad got
+    through, but the diagnostic was lossy as well as wrong.
     """
     plan = hand_plan(
         stop_pct=8.0, budget=big_budget(),

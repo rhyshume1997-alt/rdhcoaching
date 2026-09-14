@@ -1066,7 +1066,9 @@ def check_plan_consistency(
     #   * FALSE REJECT of a valid ladder whenever the average lands beyond rung 1. Latent until
     #     dca_size_split_3 was corrected to his stated 15/32.5/52.5 - the old 20/30/50 put the
     #     average at 97.1, coincidentally just above rung 1 at 97.0 in the fixtures.
-    #   * MISREPORTS which rung is at fault, since only the FIRST comparison used the average.
+    #   * UNDER-REPORTS: only the FIRST comparison used the average, so an inversion at
+    #     rung 1 could hide behind it while a later rung still tripped. The fix surfaces
+    #     MORE problems, not different ones.
     # It did NOT silently accept an invalid ladder: an inversion is caught either by its own
     # comparison or by the next rung's, so the plan was still rejected.
     prev = dec(plan.entries[0].price) if plan.entries else entry

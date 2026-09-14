@@ -46,7 +46,7 @@ trading_bot/
     │   ├── risk.py         portfolio caps, concurrency, sizing solver
     │   ├── backtest/       bar-by-bar simulator, no lookahead by construction
     │   └── dashboard/      FastAPI + Lightweight Charts local web UI
-    └── tests/              1,065 tests
+    └── tests/              1,067 tests
 ```
 
 ## Conventions that matter
@@ -76,7 +76,7 @@ was wrong, change the default and say so explicitly.
 
 ## Current state
 
-- 1,065 tests passing (`cd bot && python -m pytest -q`)
+- 1,067 tests passing (`cd bot && python -m pytest -q`)
 - 245 config keys
 - Runs end to end on synthetic data; four CLI commands work
 - **Never run on real market data.** Not once. This is the single biggest gap.
@@ -85,7 +85,7 @@ was wrong, change the default and say so explicitly.
 
 ```bash
 cd bot
-python -m pytest -q                              # 1,065 tests
+python -m pytest -q                              # 1,067 tests
 python -m tbot config                            # every key with its source rule
 python -m tbot config --grep stop                # filter
 python -m tbot backtest --csv data/synthetic_4h.csv
@@ -99,15 +99,35 @@ python scripts/fetch_klines.py --help            # pull real OHLCV (needs intern
 
 1. **Run it on real data.** Nothing here has been validated against a real candle.
    `scripts/fetch_klines.py` pulls Binance/Bybit klines. Everything below depends on this.
-2. **Sweep `swing_k`** (bracket 2–4). Every structure rule, SFP, fib anchor and order
-   block depends on swing detection, and the value is currently a guess. Video evidence
-   bounds it at ≤4 but cannot distinguish 2, 3 or 4.
-3. **Sweep `sufficient_gap_pct_by_tf`** for 2H/4H/8H/12H. He states 15m, 30m, 1H, 1D and
-   2D and skips exactly the range he trades most. Two video passes confirmed the numbers
-   do not exist on screen either. Not interpolable — his own slopes disagree by 3×.
-4. **Test the 77–82% win rate claim.** Coded as a hypothesis in SPEC §12.5, never tested.
-5. **Build `detectors/indicators.py`** — RSI divergence and EMA200 confluence classes.
+2. **Sweep `swing_k`** (bracket 2–4). Stop looking for his number — there isn't one.
+   A written-record pass (CONFLICTS.md, 2026-09-14) established that he defines structure
+   *relationally* (HH/HL/LH/LL and which breaks which) and never by a candle count, and
+   that he never uses "pivot" as a TA term at all. `swing_k` is our scaffolding for
+   finding candidates in code. The sweep decides it.
+3. **Sweep `sufficient_gap_pct_by_tf` — every row, not just 2H/4H/8H/12H.** The five
+   "stated" rows are video-only too; no percentage-by-timeframe table exists in writing
+   anywhere. He states the gap criterion three times and gives a number zero times.
+   Not interpolable — his own slopes disagree by 3×.
+4. **Decide what replaces BVOL24H.** The ticker is dead (CF-48). The bot degrades
+   gracefully, so `bvol_size_multiplier` silently never halves leverage. Either wire a
+   live volatility source or delete the three keys.
+5. **Test the 77–82% win rate claim.** Coded as a hypothesis in SPEC §12.5, never tested.
+6. **Build `detectors/indicators.py`** — RSI divergence and EMA200 confluence classes.
    The pipeline stage exists and reports itself unavailable rather than silently skipping.
+
+## Known behavioural gaps (CONFLICTS.md, 2026-09-14)
+
+Found by reading his written notes. Each is a rule he states that the bot does not
+implement. None is done.
+
+- **CF-49** a 50%-filled zone is *demoted to plain support*, not killed. The bot has one
+  boolean where he has two states.
+- **CF-50** the half-candle rule — "1 whole candle and 2 halves is a valid zone".
+  `min_zone_bodies` counts whole bodies and rejects zones he accepts.
+- **CF-51** "not ever alone" — a zone requires S/R confluence specifically, not three of
+  anything.
+- **CF-52** funding-rate filter. Doesn't exist in the bot at all.
+- **CF-53** never average up unless resistance has flipped to support.
 
 ## Traps that have already caught someone
 
@@ -119,6 +139,13 @@ python scripts/fetch_klines.py --help            # pull real OHLCV (needs intern
 - **Percentages measured over hand-drawings.** Two readings (8.10% on 1H, 26.99% on 4H)
   look like clean thresholds and are measured across sketches, not candles. Both are
   recorded as explicitly rejected in FRAME_FINDINGS.md.
+- **The consistency check used to compare rungs against the blended average.**
+  `check_plan_consistency` started its monotonic ladder walk from the size-weighted
+  average rather than from rung 0's price. Latent for months: the old `[0.2, 0.3, 0.5]`
+  split put the average at 97.1, coincidentally just above rung 1 at 97.0 in the
+  fixtures. Correcting the split to his stated 15/32.5/52.5 moved it to 96.925 and
+  exposed it. Fixed. It could fail in either direction — reject a valid ladder or accept
+  an inverted one.
 - **Config keys that are declared but never read.** `rr_measured_to` was one; changing it
   did nothing until it was wired. `rr_measured_from` is still inert — harmless today
   because it duplicates `size_and_stop_computed_from`, but don't assume a key is live.

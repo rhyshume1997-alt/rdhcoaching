@@ -346,8 +346,13 @@ def test_entry_split_ratios(cfg: Config) -> None:
     S6 ``[00:38:49]``: entries at 17.28 / 17.858 / 18.181 with quantities *"let's do 35, let's do
     55, and let's do 100"*, average read back as **17.921**.  (35x17.28 + 55x17.858 +
     100x18.181)/190 = 17.9215 — exact, so the quantities are real.  Three legs = 35:55:100 =
-    18.4/29.0/52.6, which the shipped [0.20, 0.30, 0.50] already matched; its label moves from
-    "OUR ratio" to derived.
+    18.4/29.0/52.6, which the shipped [0.20, 0.30, 0.50] matched.
+
+    SUPERSEDED for three legs.  He STATES the ladder in writing three times — Discord
+    #class-session-one M2, #class-session-five M8 ("the 15/30-35/50-55% method/rule") and the
+    linked risk doc ("15% at entry / 30% at DCA 1 / 50% at DCA 2").  Stated outranks derived, so
+    three legs are now his midpoints, 15/32.5/52.5.  The TWO-leg 39/61 is untouched: he never
+    states a two-leg split, so the S6 arithmetic remains its best source.
 
     Two legs are the same ladder with the third rung unfilled: S6 ``[00:48:10]`` reads the average
     back as **17.63** on *"a total of 90 coins"*, and (35x17.28 + 55x17.858)/90 = 17.6332 — exact
@@ -360,7 +365,7 @@ def test_entry_split_ratios(cfg: Config) -> None:
     assert PL.entry_split(cfg, 1) == (dec(1),)
     assert PL.entry_split(cfg, 2) == (dec("0.39"), dec("0.61"))
     assert PL.entry_split(cfg, 2, wick_heavy=True) == (dec("0.25"), dec("0.75"))   # S6-R27
-    assert PL.entry_split(cfg, 3) == (dec("0.2"), dec("0.3"), dec("0.5"))
+    assert PL.entry_split(cfg, 3) == (dec("0.15"), dec("0.325"), dec("0.525"))
     with pytest.raises(PL.PlanError):
         PL.entry_split(cfg, 4)
 
@@ -658,7 +663,7 @@ def test_the_leverage_stop_ceiling_does_not_bind_spot(cfg: Config) -> None:
 
 
 def test_tp_count_by_trade_class(cfg: Config) -> None:
-    assert PL.tp_count_for(cfg, TradeClass.SWING) == 2
+    assert PL.tp_count_for(cfg, TradeClass.SWING) == 3    # stated: "TP1 40% TP2 30% TP3 30%"
     assert PL.tp_count_for(cfg, TradeClass.SCALP) == 3
     assert PL.tp_count_for(cfg, TradeClass.COUNTER_TREND) == 3     # a scalp after CF-03
     assert PL.tp_count_for(cfg, TradeClass.PRICE_DISCOVERY) == 5
@@ -683,9 +688,10 @@ def test_take_profits_sit_on_structural_levels_in_the_trade_direction(cfg: Confi
                 level("t3", 120.0)],
         average_entry=dec(100), trade_class=TradeClass.SWING, at_index=59,
     )
-    assert [t.price for t in tps] == [dec(104.0), dec(110.0)]
-    assert [t.level_id for t in tps] == ["t1", "t2"]
-    assert [t.size_fraction for t in tps] == [dec("0.5"), dec("0.5")]
+    assert [t.price for t in tps] == [dec(104.0), dec(110.0), dec(120.0)]
+    assert [t.level_id for t in tps] == ["t1", "t2", "t3"]
+    # tp_count_swing is 3 (his stated default), so tp_split_3 applies: 40/30/30
+    assert [t.size_fraction for t in tps] == [dec("0.4"), dec("0.3"), dec("0.3")]
 
 
 def test_take_profits_respect_the_min_separation_and_prefer_touch_count(cfg: Config) -> None:
@@ -707,8 +713,14 @@ def test_take_profits_are_capped_at_the_measured_move_target(cfg: Config) -> Non
         average_entry=dec(100), trade_class=TradeClass.SWING, at_index=59,
         measured_move_target=dec(110),
     )
-    assert [t.price for t in tps] == [dec(104.0), dec(108.0)]
+    # The rule under test is unchanged: `way_out` at 200 sits beyond the measured move and is
+    # dropped.  What changed is tp_count_swing 2 -> 3 (his stated "TP1 40% TP2 30% TP3 30%"):
+    # only two structural levels survive the cap, so the measured move itself becomes the third
+    # target, explicitly labelled rather than silently invented.
+    assert [t.price for t in tps] == [dec(104.0), dec(108.0), dec(110)]
+    assert [t.level_id for t in tps] == ["t1", "t2", None]
     assert any("measured_move_target_dropped" in n for n in notes)
+    assert any("measured_move_target_used_as_final_tp" in n for n in notes)
 
 
 def test_too_few_structural_levels_means_no_plan(cfg: Config) -> None:
@@ -827,7 +839,7 @@ def test_deep_zone_earns_a_second_dca(uncapped: Config) -> None:
     assert build.ok, build.reasons
     assert build.plan is not None
     assert [r.size_fraction for r in build.plan.entries] == [
-        dec("0.2"), dec("0.3"), dec("0.5")
+        dec("0.15"), dec("0.325"), dec("0.525")
     ]
 
 

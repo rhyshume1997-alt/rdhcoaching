@@ -142,7 +142,7 @@ KEY_SPECS: tuple[KeySpec, ...] = (
         members=None,
         minimum=0.0,
         maximum=100.0,
-        source_id='CF-01; Q9 stated 2-3% band, S7 `[00:20:00]`; = counter_trend_size_multiplier x max_loss_pct_swing',
+        source_id='CF-01; Q9 stated 2-3% band, S7 `[00:20:00]`. VIDEO-ONLY, POSSIBLY MISATTRIBUTED. DISCORD CHECK 2026-09-14: absent from the written record — seven session note channels, the linked risk doc, and server-wide `from:arshmeister` search. The written S7 has no risk percentage at all, and 2-3% appears exactly ONCE in the whole written corpus (#class-session-one M3), bound to SCALPS by timeframe (below 4h), not to direction. max_loss_pct_scalp=2.5 already sits inside that band. See CONFLICTS.md.',
         group='11.1',
         note='',
     ),
@@ -634,7 +634,7 @@ KEY_SPECS: tuple[KeySpec, ...] = (
         members=None,
         minimum=0.0,
         maximum=100.0,
-        source_id='CF-08, P15; Q1 stated, S7 `[00:07:14]`-`[00:08:54]` ("my rule for order blocks are like around 70 80%")',
+        source_id='CF-08, P15; Q1 stated, S7 `[00:07:14]`-`[00:08:54]` ("my rule for order blocks are like around 70 80%"). VIDEO-ONLY. DISCORD CHECK 2026-09-14: absent from the written record — seven session note channels, the linked risk doc, and server-wide `from:arshmeister` search. #class-session-six defines what an order block IS and where it should sit, and says nothing about what kills one.',
         group='11.2',
         note='Q1: single-candle order blocks die at ~75% of liquidity taken, NOT at the zone 50% line. Measured with ob_liquidity_measure (P15). Band 70-80: sweep 70 / 75 / 80.',
     ),
@@ -670,7 +670,7 @@ KEY_SPECS: tuple[KeySpec, ...] = (
         members=None,
         minimum=None,
         maximum=None,
-        source_id='CF-11; Q13 stated rows 15m/30m/1H/1D/2D (S5 `[00:36:38]` `[00:54:07]` `[00:35:30]` `[00:36:05]` `[01:17:59]`); 2H/4H/8H/12H/3D+ [OUR CHOICE]',
+        source_id='CF-11; Q13 stated rows 15m/30m/1H/1D/2D (S5 `[00:36:38]` `[00:54:07]` `[00:35:30]` `[00:36:05]` `[01:17:59]`); 2H/4H/8H/12H/3D+ [OUR CHOICE]. DISCORD CHECK 2026-09-14: the five "stated" rows are ALSO video-only — no percentage-by-timeframe table exists in writing anywhere. `sufficient` returns four hits server-wide, three being the #class-session-five zone definitions already held. He states the gap criterion three times (S5 M1, S5 M3, S6 M7) and gives a number zero times. Treat every row as a sweep target, not just the missing four.',
         group='11.2',
         note='Q13: HIS rows = 15m 3.0, 30m 4.0 (corrected from 3.5), 1H 4.0, 1D 8.0, 2D 13.0. '
              'INTERPOLATED [OUR CHOICE] rows = 2H 5.0, 4H 6.0, 8H 7.0, 12H 7.5, 3D/1W 15.0 - his '
@@ -1133,15 +1133,28 @@ KEY_SPECS: tuple[KeySpec, ...] = (
     ),
     KeySpec(
         key='dca_size_split_3',
-        default=[0.2, 0.3, 0.5],
+        default=[0.15, 0.325, 0.525],
         spec_type='list',
         py_type='list',
         members=None,
         minimum=None,
         maximum=None,
-        source_id='CF-18; Q3 derived, S6 `[00:38:49]`-`[00:40:05]` — 35:55:100 = 18.4/29.0/52.6, avg 17.9215 exact',
+        source_id='CF-18; Q3 STATED in writing x3 — Discord #class-session-one M2 and '
+                  '#class-session-five M8 ("the 15/30-35/50-55% method/rule"), and the linked '
+                  'risk-management doc ("15% at entry / 30% at DCA 1 / 50% at DCA 2"). '
+                  'SUPERSEDES the derived [0.2,0.3,0.5] from S6 `[00:38:49]`-`[00:40:05]`.',
         group='11.3',
-        note='Q3: value unchanged; provenance upgraded from "OUR ratio" to derived.',
+        note='Q3: default is the midpoint of his stated ranges — 15 / 30-35 / 50-55. Stated in '
+             'plain words three times across two sessions and a written risk doc, which outranks '
+             'the S6 transcript arithmetic that produced the old 20/30/50. UNRESOLVED, see '
+             'CONFLICTS.md: whether the percentages apply to CAPITAL or to QUANTITY. His prose '
+             'says "15% of my allowed capital", but the only worked example (DOT: 20/50/150 at '
+             '29.23/28.48/27.93 -> 220 units at 28.1732, arithmetic exact) was entered into a '
+             'contracts-based calculator. That example CANNOT settle the basis: its prices span '
+             'only 4.45%, so capital- and quantity-weighting land within 0.6 points of each '
+             'other. The same example also runs a 9/23/68 ladder, not his stated one — read as '
+             'round teaching numbers, not as an execution.',
+        sweep_bracket=(0.10, 0.20),
     ),
     KeySpec(
         key='dca_size_split_wick_heavy_2',
@@ -1511,7 +1524,7 @@ KEY_SPECS: tuple[KeySpec, ...] = (
         members=None,
         minimum=1.0,
         maximum=None,
-        source_id='P1 — [OUR CHOICE]; S7-A7; bounded (not fixed) by F4, S7 frame 34:30',
+        source_id='P1 — [OUR CHOICE]; S7-A7; bounded (not fixed) by F4, S7 frame 34:30. NO FRACTAL DEFINITION EXISTS. DISCORD CHECK 2026-09-14: absent from the written record — seven session note channels, the linked risk doc, and server-wide `from:arshmeister` search. Four lines converge: (1) the written sessions define structure RELATIONALLY (HH/HL/LH/LL and which breaks which), never by candle count; (2) S6 `[01:21:06]` "you can take it from many swing low points. It does not matter which one"; (3) no N-bar rule in the eight transcripts (QUESTIONS_FOR_TRADER Q6); (4) he never uses "pivot" as a TA term server-wide — both hits are Federal Reserve pivots. swing_k is OUR scaffolding for finding candidates in code, not his rule. Stop hunting it; sweep it.',
         group='11.4',
         note='Q6 ABSENT: no fractal width, lookback or N-bar rule anywhere in eight sessions. '
              'Stays 3 and stays [OUR CHOICE]. F4 NARROWS THE SWEEP, it does not decide the '
@@ -1849,15 +1862,19 @@ KEY_SPECS: tuple[KeySpec, ...] = (
     ),
     KeySpec(
         key='tp_count_swing',
-        default=2,
+        default=3,
         spec_type='int',
         py_type='int',
         members=None,
         minimum=0.0,
         maximum=None,
-        source_id='CF-27; S4-R1/R2, S6-R20',
+        source_id='CF-27; S4-R1/R2, S6-R20; CORRECTED by Discord #class-session-one M4 and '
+                  'the linked risk doc, both STATED: "TP1 40% TP2 30% TP3 30%"',
         group='11.6',
-        note='',
+        note='Was 2. He writes "TP strategy for me - TP1 40% TP2 30% TP3 30%" as his default, '
+             'twice in writing, and tp_split_3 already matches that exactly. Also stated: "I am '
+             'all out at TP3 if it hits, not leaving runners" — the three splits sum to 1.0, so '
+             'no residual arises and tp_residual_policy never engages on a 3-TP swing.',
     ),
     KeySpec(
         key='tp_count_scalp',
@@ -2299,7 +2316,7 @@ KEY_SPECS: tuple[KeySpec, ...] = (
         members=None,
         minimum=None,
         maximum=None,
-        source_id='CF-35; S3-R7',
+        source_id='CF-35; S3-R7. TICKER IS DEAD: BVOL24H does not resolve on TradingView (checked 2026-09-14 across every asset class; the single BVOL hit is an unrelated Gate perpetual on a DeFi token and must NOT be substituted). regime.py degrades gracefully so the bot still runs, but bvol_event can never fire, so bvol_size_multiplier never halves leverage — a SILENT loss of a size reduction, not a crash. Needs a replacement volatility source or removal',
         group='11.7',
         note='',
     ),
@@ -2311,7 +2328,7 @@ KEY_SPECS: tuple[KeySpec, ...] = (
         members=None,
         minimum=0.0,
         maximum=None,
-        source_id='CF-35; S3-R1, S3-C2',
+        source_id='CF-35; S3-R1, S3-C2. TICKER IS DEAD: BVOL24H does not resolve on TradingView (checked 2026-09-14 across every asset class; the single BVOL hit is an unrelated Gate perpetual on a DeFi token and must NOT be substituted). regime.py degrades gracefully so the bot still runs, but bvol_event can never fire, so bvol_size_multiplier never halves leverage — a SILENT loss of a size reduction, not a crash. Needs a replacement volatility source or removal',
         group='11.7',
         note='',
     ),
@@ -2323,7 +2340,7 @@ KEY_SPECS: tuple[KeySpec, ...] = (
         members=None,
         minimum=0.0,
         maximum=1.0,
-        source_id='CF-35; S3-R5',
+        source_id='CF-35; S3-R5. TICKER IS DEAD: BVOL24H does not resolve on TradingView (checked 2026-09-14 across every asset class; the single BVOL hit is an unrelated Gate perpetual on a DeFi token and must NOT be substituted). regime.py degrades gracefully so the bot still runs, but bvol_event can never fire, so bvol_size_multiplier never halves leverage — a SILENT loss of a size reduction, not a crash. Needs a replacement volatility source or removal',
         group='11.7',
         note='',
     ),

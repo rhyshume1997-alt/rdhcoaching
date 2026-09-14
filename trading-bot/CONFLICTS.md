@@ -2190,3 +2190,126 @@ window plus all subsequent touches; the entry price is the bin with the highest 
 intersections, breaking ties toward the price nearest the zone's outer edge (which is where his
 "lightest entry at the SR point" sits). This is the machine version of S4-R4, S5-R23 and S5-A15.
 Params: `pmt_bin_atr = 0.05`.
+
+---
+
+# Discord written-record pass — 2026-09-14
+
+Source: the instructor's own Discord server (Pepe Academy). Seven `#class-session-*` note
+channels read verbatim, plus the risk-management Google Doc he links in session one, plus
+server-wide `from:arshmeister` searches. This is his **written** record, distinct from the
+video transcripts in `transcripts/`.
+
+**Standing finding that shapes everything below.** The written corpus is a *definitions*
+layer. He states a rule and defers every magnitude to class. Across seven sessions it
+yields exactly four numbers: three trendline touches, 50% zone fill, 48–72h, and the
+golden pocket. Where a written source and a transcript disagree on a **definition**, the
+written source wins. Where a **number** exists only in a transcript, it stays — there is
+no written alternative.
+
+## CF-46 — DCA ladder: the percentages are stated, the basis is not  **UNRESOLVED**
+
+`dca_size_split_3` corrected to **[0.15, 0.325, 0.525]** — the midpoint of his stated
+15 / 30-35 / 50-55, written three times (`#class-session-one` M2, `#class-session-five` M8,
+and the risk doc). Supersedes the derived `[0.2, 0.3, 0.5]`.
+
+What is *not* settled is whether those percentages apply to **capital** or to **quantity**.
+His prose says "15% of my allowed capital". His only worked example (DOT) was typed into a
+contracts-based calculator:
+
+```
+20 @ 29.23 + 50 @ 28.48 + 150 @ 27.93  =  220 units at 28.1732   (exact)
+```
+
+That example **cannot** settle the basis: its prices span only 4.45%, so capital- and
+quantity-weighting land within 0.6 points of each other. It also runs a 9/23/68 ladder,
+not his stated one — read as round teaching numbers, not an execution.
+
+Needs a ladder with prices far enough apart to separate the two. Until then `plan.py`
+keeps its current basis and this stays open.
+
+## CF-47 — "entries are valid once" vs the re-entry mechanism  **UNRESOLVED**
+
+Risk doc: *"My entries are valid once unless otherwise stated. If you miss the play, move
+on. Once a trade hits a TP, the trade becomes immediately invalid."*
+
+Against `reentry_trigger = sfp_or_close_reclaim` (CF-21, S2-R13, S6-R24) and
+`reentry_max_attempts_per_level = 2` (OUR number).
+
+**Not treated as a correction.** The passage sits in a document addressed to subscribers
+about acting on *his posted calls*, and reads as "don't chase a call you missed" rather
+than as a mechanical re-entry rule. The transcripts independently describe a re-entry
+trigger. Both keys unchanged; recorded so the next session does not read the doc as
+settling it.
+
+## CF-48 — BVOL24H is a dead instrument  **BLOCKING, needs a decision**
+
+`BVOL24H` does not resolve on TradingView (checked 2026-09-14, every asset class). The
+one `BVOL` hit is an unrelated Gate perpetual on a DeFi token and must not be substituted.
+
+`regime.py` degrades gracefully, so the bot runs. The consequence is quieter and worse:
+`bvol_event` can never fire, so `bvol_size_multiplier = 0.5` never halves leverage. The
+bot permanently runs without a size reduction it believes it has.
+
+`METHOD.md` calls this "the layer to build first". It is pointing at a feed that does not
+exist. Either substitute a live volatility source (DVOL, or realised vol from our own
+candles) or remove the three keys. Not a config edit.
+
+Also from `#class-session-three`: the zone coordinates are **explicitly perishable** —
+"currently 0.8-1.71... it can change. This all depends of liquidity in the market." The
+shipped `[0.81, 1.4]` differs from the written figure, but neither should be hardcoded.
+
+## CF-49 — a 50%-filled zone is DEMOTED, not killed  **NOT YET IMPLEMENTED**
+
+`#class-session-five` M5: *"You can continue to play that area if 50% fills but its no
+longer a zone confluence, **its just support**."*
+
+`primitives.py:708` sets `is_dead = fill_pct >= zone_fill_invalidation_pct`, and
+`manage.py:590` treats that as terminal. One boolean where he has two states. Every
+post-fill setup he would still take as a plain support level is currently discarded.
+
+He also applies the threshold loosely — M7, *"we filled close to 50% so we will call this
+a 50% fill"* — so the exact number matters less than the missing demoted state.
+
+## CF-50 — the half-candle rule  **NOT YET IMPLEMENTED**
+
+`min_zone_bodies = 2` counts whole bodies. `#class-session-five` M6: *"2 halves make one
+whole. Meaning, if you ever get a zone with 1 whole candle and 2 halves, that is a valid
+zone."* His own PEPE example is 3½ candles. A whole-body count rejects a zone he accepts.
+
+## CF-51 — "not ever alone"  **NOT YET IMPLEMENTED**
+
+`#class-session-five` M5 rule 2: *"You set these zones with confluence of support and
+resistance, **not ever alone**."* Restated for trendlines in `#class-session-seven`.
+
+`min_confluence_count = 3` is a raw object count — three of anything passes. He requires
+an S/R specifically. Different rule, and stricter.
+
+## CF-52 — funding-rate filter  **DOES NOT EXIST IN THE BOT**
+
+Risk doc: `0.01` neutral, `+0.75` high, `-0.75` low. *"When a funding fee is high
+(positive) chances for a sell off is super high and I recommend not longing or having a
+tight stop loss."* Zero config keys. Funding rates come off the same public endpoints the
+dashboard already uses.
+
+## CF-53 — no averaging up without a flip  **DOES NOT EXIST IN THE BOT**
+
+Risk doc: *"DO NOT average up on longs UNLESS a previous resistance is turned to support.
+Only time you should add size."* Mirrored for shorts.
+
+## Corroborated, no change
+
+| Claim | Source | Status |
+|---|---|---|
+| Position size 6–12% of port, futures = 10% of total, 10x | risk doc | **Resolves CONFLICTS #1**, the project's longest-standing blocker. `margin_pct_leverage = 10.0` sits inside his stated band. |
+| Never more than 2 concurrent positions | risk doc | Conflicts with `max_concurrent_leverage_global = 4`. His reason is mechanical: four positions leave no margin to fund the DCA legs. |
+| Stop to BE at TP1, to TP1 at TP2 | session one + risk doc | **Resolves CONFLICTS #4** — third independent statement, backs the Session 4 version. |
+| TP splits 40/30/30 | session one + risk doc | `tp_split_3` already exact. `tp_count_swing` corrected 2 → 3. |
+| Swing ≥ 4H, scalp < 4H | session one | `swing_tf_floor = 4H` exact. |
+| Max loss 5% swing, 2–3% scalp | session one | `max_loss_pct_swing_hard_cap = 5.0`, `max_loss_pct_scalp = 2.5`. Exact. |
+| Zones are bodies | session five | Confirmed. **But S/R levels use "whatever the highest touch points are (wicks vs bodies)"** — a different rule for a different object. Check `detectors/levels.py`. |
+| Trendline valid at 3 touches | session seven | `trendlines.py` already requires ≥ 3. |
+| Order block = last opposing candle before the directional change | session six | Matches. No mitigation, imbalance or displacement requirement stated. |
+| No DCA on breakout entries | session seven | `dca_count_breakdown = 0` already. |
+| Golden pocket 0.618–0.66 | session six | Exact. The 0.786 half is absent from writing, not contradicted. |
+| Zone detection: impulse → consolidation → continuation + timeframe-scaled gap | session five M1/M3 | **Kills the archive's "zone DETECTION is not specified anywhere" claim.** Matches `detectors/zones.py`. |

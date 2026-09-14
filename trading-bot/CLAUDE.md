@@ -46,7 +46,7 @@ trading_bot/
     │   ├── risk.py         portfolio caps, concurrency, sizing solver
     │   ├── backtest/       bar-by-bar simulator, no lookahead by construction
     │   └── dashboard/      FastAPI + Lightweight Charts local web UI
-    └── tests/              1,067 tests
+    └── tests/              1,071 tests
 ```
 
 ## Conventions that matter
@@ -76,7 +76,7 @@ was wrong, change the default and say so explicitly.
 
 ## Current state
 
-- 1,067 tests passing (`cd bot && python -m pytest -q`)
+- 1,071 tests passing (`cd bot && python -m pytest -q`)
 - 245 config keys
 - Runs end to end on synthetic data; four CLI commands work
 - **Never run on real market data.** Not once. This is the single biggest gap.
@@ -85,7 +85,7 @@ was wrong, change the default and say so explicitly.
 
 ```bash
 cd bot
-python -m pytest -q                              # 1,067 tests
+python -m pytest -q                              # 1,071 tests
 python -m tbot config                            # every key with its source rule
 python -m tbot config --grep stop                # filter
 python -m tbot backtest --csv data/synthetic_4h.csv
@@ -111,8 +111,13 @@ python scripts/fetch_klines.py --help            # pull real OHLCV (needs intern
 4. **Decide what replaces BVOL24H.** The ticker is dead (CF-48). The bot degrades
    gracefully, so `bvol_size_multiplier` silently never halves leverage. Either wire a
    live volatility source or delete the three keys.
-5. **Test the 77–82% win rate claim.** Coded as a hypothesis in SPEC §12.5, never tested.
-6. **Build `detectors/indicators.py`** — RSI divergence and EMA200 confluence classes.
+5. **The backtest is O(n²) and that blocks the sweep.** `SAMPLE_RUN.md`: ~22 min for
+   800 bars, "grows with the square of the series length" — the harness re-runs every
+   detector from bar 0 on each bar. Measured: 600 bars ~12 min, 1500 bars ~77 min. A
+   sweep over `swing_k` × `sufficient_gap_pct_by_tf` × instruments is days of wall clock
+   at that cost. Either cache detector output across bars or the sweep is impractical.
+6. **Test the 77–82% win rate claim.** Coded as a hypothesis in SPEC §12.5, never tested.
+7. **Build `detectors/indicators.py`** — RSI divergence and EMA200 confluence classes.
    The pipeline stage exists and reports itself unavailable rather than silently skipping.
 
 ## Known behavioural gaps (CONFLICTS.md, 2026-09-14)

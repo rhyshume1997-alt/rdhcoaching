@@ -134,6 +134,47 @@ implement. None is done.
 - **CF-52** funding-rate filter. Doesn't exist in the bot at all.
 - **CF-53** never average up unless resistance has flipped to support.
 
+## The first real-data run: what it found (2026-09-14)
+
+600 bars of Bybit SOLUSDT 4H. Equity 10000 -> -660.06. **Not a strategy result** — the
+run contains a defect that produces 97.3% of the loss.
+
+**7 of 9 take-profit fills were on the wrong side of the entry.** A long entered at
+103.4317 with TP0 at 75.0782 — 27% *below* it. The hit test is `high >= tp.price`, so it
+fires on the entry bar and books the loss as a take-profit. Those 7 total −10,370.74 of
+the −10,660.06 net.
+
+The split by entry family is perfect:
+
+| family | fill type | n | TP geometry |
+|---|---|---|---|
+| trigger | market, next bar's open (A5) | 12 | wrong side — all 12 |
+| retest | limit, at rung price (A3/A4) | 5 | correct side — all 5 |
+
+Both profitable trades in the run are retest/limit. `select_take_profits` *does* guard the
+side (`plan.py:802-806`) but against the **planned** average entry at build time; a trigger
+rung then fills wherever the market is and nothing re-validates. T0009's planned entry
+back-solves to ~70.80 against the CF-02 notional ceiling; it filled at 103.4317, **46%
+away**, and every level inverted at that instant.
+
+**All 17 trades opened and closed on the same bar.** Forced, not inferred: every trade has
+`bars_in_trade >= 1` (`engine.py:879` increments before every close path), so the sum is
+at least 17; a mean printing as `1.0` caps the sum below 17.85; the sum is an integer.
+
+**The liquidation is a non-event.** T0022's open loss was 1.46 USD against equity of
+−630.07. Equity was already negative, and `_check_liquidation` trips on any open loss once
+it is. Cost 4.70 USD. The A12 banner is real but points at the aftermath.
+
+**Careful with stop-distance statistics.** The median stop is 22.59% of the *realised*
+entry, which looks comfortably wider than the 1.54% median candle — but on the 12 drifted
+trades that number is measuring the drift, not the stop. T0009's stop was 1.12% of its
+*planned* entry, i.e. inside a typical candle. `stop_buffer_zone_fraction` is not cleared
+by that statistic; it needs recomputing against planned entries.
+
+**Still unestablished:** why a trigger plan fills so far from its planned entry.
+`anchor_beyond_price` vetoed 163 candidates, so the gate exists and these 12 passed it at
+plan time — which points at staleness rather than plan construction. Not proven.
+
 ## Traps that have already caught someone
 
 - **Margin vs notional.** "10%" is the margin he commits, not position face value. At 10×

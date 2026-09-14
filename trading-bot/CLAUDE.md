@@ -171,9 +171,49 @@ trades that number is measuring the drift, not the stop. T0009's stop was 1.12% 
 *planned* entry, i.e. inside a typical candle. `stop_buffer_zone_fraction` is not cleared
 by that statistic; it needs recomputing against planned entries.
 
-**Still unestablished:** why a trigger plan fills so far from its planned entry.
-`anchor_beyond_price` vetoed 163 candidates, so the gate exists and these 12 passed it at
-plan time — which points at staleness rather than plan construction. Not proven.
+**ROOT CAUSE FOUND — `pipeline.py:972-984`.** Not staleness. The plan geometry is wrong at
+construction, confirmed on live data: the dashboard served a SHORT with a planned entry
+23.18% below a live price of 103.57, built against the current bar.
+
+```python
+# --- G0: is this even a candidate?  A retest is bid *behind* price, never chased.
+if setup.entry_family is not EntryFamily.TRIGGER:      # <-- trigger is EXEMPT
+    wrong_side = (entry_price > close) if direction is Direction.LONG else (
+        entry_price < close)
+```
+
+Two defects stacked:
+
+1. **Trigger-family setups skip the gate entirely.** The `is not TRIGGER` guard excludes
+   them. Every drifted trade is trigger family; every clean one is retest. 12/12 and 5/5.
+2. **The gate tests SIDE, not DISTANCE.** Even for retests, an entry 25% away passes if it
+   is on the correct side. Its own veto text — *"would chase the close"* — shows it was
+   written to answer "is this a chase?", never "how far away is this?".
+
+**No maximum-distance check exists anywhere in `tbot/`.** Verified three ways: no config
+key among the 245 (`sfp_max_close_distance_atr` is SFP proximity, `reentry_max_attempts_
+per_level` is a count); no distance-to-entry value gates any decision path; and
+`distance_to_entry_pct` exists in exactly **one** place — `dashboard/serialize.py:248`,
+rendered at `static/app.js:442-443`. **The number is computed and shown to the user, in
+the presentation layer only.** The decision path never sees the figure the UI puts on
+screen at −23.18%.
+
+Full chain: gate exempts trigger → trigger entries planned arbitrarily far from market →
+they fill at the next bar's open (A5) → stop and TP geometry inverts against the realised
+fill → TPs sit behind price and fire instantly. Trigger trades drifted 27–56%.
+
+**Sizing is pinned to a constant, and the call path is why.** `engine.py:430`
+(`PlanProvider.__call__(window, config)` carries no portfolio) → `pipeline.py:911-915`
+falls back to `PortfolioState(equity_usd=DEFAULT_STARTING_EQUITY)` → `engine.py:132` =
+10,000. The constant alone does not show why it never updates; the missing portfolio
+argument does. Independently confirmed live: the dashboard printed
+`125.634447 x 79.596005 = $10,000.00` from a different code path.
+
+**OPEN DESIGN QUESTION — do not patch this tired.** What is the maximum acceptable
+distance from price to entry, and does a trigger plan (a) get vetoed before arming, or
+(b) re-derive its stop/TP geometry against the realised fill? Different fixes, different
+risk profiles. Picking one at the end of a long day is how a good diagnosis becomes a bad
+patch.
 
 ## Traps that have already caught someone
 

@@ -127,6 +127,7 @@ __all__ = [
     "default_plan_provider",
     "DEFAULT_IN_SAMPLE_FRACTION",
     "assert_no_future_reference",
+    "assert_context_not_ahead",
     "DEFAULT_STARTING_EQUITY",
 ]
 
@@ -235,6 +236,32 @@ def assert_no_future_reference(obj: Any, now: int, *, path: str = "", _depth: in
                                        _seen=_seen)
 
 
+def assert_context_not_ahead(context: "Mapping[str, Series] | None", as_of: datetime,
+                             *, path: str = "window.context") -> None:
+    """Raise :class:`LookaheadError` if any context series carries a bar later than ``as_of``.
+
+    The third half of the SPEC.md §12.1 no-lookahead assertion, and the one a second symbol
+    needs.  :func:`assert_no_future_reference` compares **bar indices** against ``now``, which
+    is meaningless across symbols: bar 40 of BTC is not bar 40 of SOL, so an index-based check
+    would pass a context series that runs a month into the future.  The cross-symbol rule has to
+    be stated in **timestamps**.
+
+    A bar stamped exactly ``as_of`` is legal: that is the same closed instant the subject is
+    standing on.  Anything after it is the future (GAPS.md GAP 3 A1).
+    """
+    if not context:
+        return
+    for name, other in context.items():
+        if other is None or len(other) == 0:
+            continue
+        last = other.timestamp(-1)
+        if last > as_of:
+            raise LookaheadError(
+                f"{path}[{name!r}] runs to {last} while the subject stands on {as_of}: a second "
+                f"symbol is a second way to leak the future (SPEC.md §12.1)"
+            )
+
+
 def _truncate_context(context: "Mapping[str, Series] | None",
                       as_of: datetime) -> "Mapping[str, Series]":
     """Cut every context series to the bars at or before ``as_of``.
@@ -277,6 +304,12 @@ class BarWindow:
     #: exists, the other tradeable symbols.  Empty when the caller injected nothing.
     #: **Every entry is subject to the same no-lookahead rule as ``series``** (GAPS.md GAP 3 A1).
     context: Mapping[str, Series] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        # Enforced on construction rather than only in `at`, so a BarWindow built by hand -- by
+        # a test, or by a future caller -- cannot exist in a future-leaking state either.
+        if self.context:
+            assert_context_not_ahead(self.context, self.series.timestamp(-1))
 
     @classmethod
     def at(cls, series: Series, index: int,

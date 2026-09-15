@@ -14,6 +14,7 @@ unimplemented :class:`tbot.execution.ExecutionAdapter`.
 from __future__ import annotations
 
 from .engine import (
+    assert_context_not_ahead,
     BacktestEngine,
     BacktestResult,
     BarWindow,
@@ -47,6 +48,7 @@ __all__ = [
     "OpenTrade",
     "PipelineOutput",
     "RejectionRecord",
+    "assert_context_not_ahead",
     "run_backtest",
     "split_backtest",
     "SplitResult",

@@ -676,3 +676,49 @@ def test_default_provider_only_forwards_context_to_entries_that_declare_it():
     # and with nothing to inject, nobody gets anything
     bare = BarWindow.at(subject, 5)
     assert _supported_injections(new_style, bare) == {}
+
+
+def test_context_audit_rejects_a_series_running_past_the_current_bar():
+    """A second symbol is a second way to leak the future, and indices cannot catch it."""
+    from tbot.backtest.engine import LookaheadError, assert_context_not_ahead
+
+    subject = _shifted_series(20, symbol="SUBJ")
+    future = _shifted_series(40, symbol="BUDDY")          # runs 20 bars past the subject
+    as_of = subject.timestamp(10)
+
+    with pytest.raises(LookaheadError, match="second way to leak the future"):
+        assert_context_not_ahead({"BUDDY": future}, as_of)
+
+    # a bar stamped exactly `as_of` is the same closed instant, and is legal
+    assert_context_not_ahead({"BUDDY": future.head(11)}, as_of)
+    assert_context_not_ahead({}, as_of)
+    assert_context_not_ahead(None, as_of)
+
+
+def test_bar_window_cannot_be_constructed_with_a_leaking_context():
+    """Enforced in __post_init__, so a hand-built window cannot bypass `at`."""
+    from tbot.backtest.engine import LookaheadError
+
+    subject = _shifted_series(20, symbol="SUBJ")
+    future = _shifted_series(40, symbol="BUDDY")
+    with pytest.raises(LookaheadError):
+        BarWindow(series=subject.head(11), now=10, total_bars=20, symbol="SUBJ",
+                  tf=Timeframe.H1, context={"BUDDY": future})
+
+
+def test_index_based_audit_cannot_catch_a_cross_symbol_leak():
+    """Why the timestamp audit had to be added: the existing one passes this happily.
+
+    `assert_no_future_reference` compares bar INDICES against `now`. Bar 40 of one symbol is
+    not bar 40 of another, so an index-based check has nothing to compare and lets a context
+    series that runs a month past the current bar straight through.
+    """
+    from tbot.backtest.engine import LookaheadError, assert_context_not_ahead
+
+    subject = _shifted_series(20, symbol="SUBJ")
+    future = _shifted_series(40, symbol="BUDDY")
+    as_of = subject.timestamp(10)
+
+    assert_no_future_reference({"BUDDY": future}, 10, path="ctx")   # passes: nothing to see
+    with pytest.raises(LookaheadError):
+        assert_context_not_ahead({"BUDDY": future}, as_of)          # the real check

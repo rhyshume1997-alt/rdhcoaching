@@ -46,6 +46,7 @@ __all__ = [
     "true_range",
     "atr_array",
     "atr_at",
+    "atr_value",
     # P1
     "swing_points",
     "confirmed_swings",
@@ -179,16 +180,32 @@ def atr_array(series: Series, period: int) -> np.ndarray:
     return out
 
 
+def atr_value(series: Series, config: Config, index: int | None = None) -> float:
+    """``ATR(atr_period)`` at ``index`` as a **float** — the hot path, no Decimal round-trip.
+
+    :func:`atr_at` is the Decimal face of the same number and is what rules should use.  This
+    exists because the measured hot path did ``float(atr_at(...))``: a float out of the cached
+    ATR array, boxed into a ``Decimal``, then immediately unboxed again.  At 156,715 ``atr_at``
+    calls per bar (``_touches`` -> :func:`tolerance_band` -> here) that round-trip was the single
+    largest leaf cost in the backtest.
+
+    **Bit-exact with the old path by construction**: ``dec()`` of a float is exact and ``float()``
+    of that Decimal returns the identical float, so every caller sees the same value it saw
+    before.  Nothing here changes a rule or a threshold.
+    """
+    if len(series) == 0:
+        raise ValueError("atr_at: empty series has no ATR")
+    i = len(series) - 1 if index is None else _norm_index(series, index)
+    return float(atr_array(series, config.atr_period)[i])
+
+
 def atr_at(series: Series, config: Config, index: int | None = None) -> Decimal:
     """``ATR(atr_period)`` on this series at ``index`` (default: the last bar), as a Decimal.
 
     Source: SPEC.md §4 preamble, ``atr_period`` (**[OUR CHOICE]**, default 14).  Every ``*_atr``
     config key is a multiple of this value, always measured *on the object's own timeframe*.
     """
-    if len(series) == 0:
-        raise ValueError("atr_at: empty series has no ATR")
-    i = len(series) - 1 if index is None else _norm_index(series, index)
-    return dec(float(atr_array(series, config.atr_period)[i]))
+    return dec(atr_value(series, config, index))
 
 
 def _norm_index(series: Series, index: int) -> int:
@@ -200,7 +217,7 @@ def _norm_index(series: Series, index: int) -> int:
 
 
 def _atr_value(series: Series, config: Config, index: int | None) -> float:
-    return float(atr_at(series, config, index))
+    return atr_value(series, config, index)
 
 
 # =========================================================================== P1
@@ -891,7 +908,7 @@ def tolerance_band(
 
     **Limit orders are placed at the level price itself, not at the band edge.**
     """
-    band = dec(float(atr_at(series, config, at_index)) * config.level_tolerance_atr)
+    band = dec(atr_value(series, config, at_index) * config.level_tolerance_atr)
     price = dec(level_price)
     return price - band, price + band
 

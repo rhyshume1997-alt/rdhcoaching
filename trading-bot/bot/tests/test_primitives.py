@@ -1474,3 +1474,57 @@ class TestAlignSeries:
         assert corr is not None
         # 20 bars of offset on a period-8 cosine is half a period: the truth is -1, not +1
         assert float(corr) == pytest.approx(-1.0, abs=1e-9)
+
+
+class TestAtrValueIsBitExact:
+    """``atr_value`` is the float face of ``atr_at``; the two may never disagree.
+
+    The hot path used to do ``float(atr_at(...))`` — a float out of the cached ATR array, boxed
+    into a Decimal, then immediately unboxed. ``atr_value`` skips the round-trip. That is only
+    safe while the two return the same number, so this pins it rather than trusting the argument.
+    """
+
+    def test_atr_value_equals_float_of_atr_at_on_every_bar(self):
+        from tbot.data import synthetic
+        from tbot.primitives import atr_at, atr_value
+
+        s = synthetic(seed=5, tf=Timeframe.H4, symbol="ATRTEST").series
+        cfg = Config()
+        for i in range(len(s)):
+            assert atr_value(s, cfg, i) == float(atr_at(s, cfg, i)), f"bar {i}"
+
+    def test_atr_value_defaults_to_the_last_bar_like_atr_at(self):
+        from tbot.data import synthetic
+        from tbot.primitives import atr_at, atr_value
+
+        s = synthetic(seed=5, tf=Timeframe.H4, symbol="ATRTEST").series
+        cfg = Config()
+        assert atr_value(s, cfg) == float(atr_at(s, cfg))
+        assert atr_value(s, cfg) == atr_value(s, cfg, len(s) - 1)
+
+    def test_atr_value_rejects_an_empty_series_the_same_way(self):
+        from tbot.models import Series as _S
+        from tbot.primitives import atr_value
+
+        empty = _S.from_arrays([], [], [], [], [], volume=[], tf="4H", symbol="E")
+        with pytest.raises(ValueError, match="empty series has no ATR"):
+            atr_value(empty, Config())
+
+    def test_tolerance_band_is_unchanged_by_the_float_path(self):
+        """P9's band is what the hot path actually consumes; prove it moved by zero."""
+        from decimal import Decimal
+
+        from tbot.data import synthetic
+        from tbot.primitives import atr_array, tolerance_band
+
+        s = synthetic(seed=5, tf=Timeframe.H4, symbol="ATRTEST").series
+        cfg = Config()
+        for i in range(0, len(s), 7):
+            price = Decimal(str(float(s.close[i])))
+            low, high = tolerance_band(s, cfg, price, i)
+            # the pre-change expression, spelled out
+            expected_band = Decimal(str(
+                float(Decimal(str(float(atr_array(s, cfg.atr_period)[i]))))
+                * cfg.level_tolerance_atr))
+            assert high - price == expected_band, f"bar {i}"
+            assert price - low == expected_band, f"bar {i}"

@@ -137,6 +137,87 @@ implement. None is done.
 - **CF-52** funding-rate filter. Doesn't exist in the bot at all.
 - **CF-53** never average up unless resistance has flipped to support.
 
+## The first real-data run: what it found (2026-09-14)
+
+600 bars of Bybit SOLUSDT 4H. Equity 10000 -> -660.06. **Not a strategy result** — the
+run contains a defect that produces 97.3% of the loss.
+
+**7 of 9 take-profit fills were on the wrong side of the entry.** A long entered at
+103.4317 with TP0 at 75.0782 — 27% *below* it. The hit test is `high >= tp.price`, so it
+fires on the entry bar and books the loss as a take-profit. Those 7 total −10,370.74 of
+the −10,660.06 net.
+
+The split by entry family is perfect:
+
+| family | fill type | n | TP geometry |
+|---|---|---|---|
+| trigger | market, next bar's open (A5) | 12 | wrong side — all 12 |
+| retest | limit, at rung price (A3/A4) | 5 | correct side — all 5 |
+
+Both profitable trades in the run are retest/limit. `select_take_profits` *does* guard the
+side (`plan.py:802-806`) but against the **planned** average entry at build time; a trigger
+rung then fills wherever the market is and nothing re-validates. T0009's planned entry
+back-solves to ~70.80 against the CF-02 notional ceiling; it filled at 103.4317, **46%
+away**, and every level inverted at that instant.
+
+**All 17 trades opened and closed on the same bar.** Forced, not inferred: every trade has
+`bars_in_trade >= 1` (`engine.py:879` increments before every close path), so the sum is
+at least 17; a mean printing as `1.0` caps the sum below 17.85; the sum is an integer.
+
+**The liquidation is a non-event.** T0022's open loss was 1.46 USD against equity of
+−630.07. Equity was already negative, and `_check_liquidation` trips on any open loss once
+it is. Cost 4.70 USD. The A12 banner is real but points at the aftermath.
+
+**Careful with stop-distance statistics.** The median stop is 22.59% of the *realised*
+entry, which looks comfortably wider than the 1.54% median candle — but on the 12 drifted
+trades that number is measuring the drift, not the stop. T0009's stop was 1.12% of its
+*planned* entry, i.e. inside a typical candle. `stop_buffer_zone_fraction` is not cleared
+by that statistic; it needs recomputing against planned entries.
+
+**ROOT CAUSE FOUND — `pipeline.py:972-984`.** Not staleness. The plan geometry is wrong at
+construction, confirmed on live data: the dashboard served a SHORT with a planned entry
+23.18% below a live price of 103.57, built against the current bar.
+
+```python
+# --- G0: is this even a candidate?  A retest is bid *behind* price, never chased.
+if setup.entry_family is not EntryFamily.TRIGGER:      # <-- trigger is EXEMPT
+    wrong_side = (entry_price > close) if direction is Direction.LONG else (
+        entry_price < close)
+```
+
+Two defects stacked:
+
+1. **Trigger-family setups skip the gate entirely.** The `is not TRIGGER` guard excludes
+   them. Every drifted trade is trigger family; every clean one is retest. 12/12 and 5/5.
+2. **The gate tests SIDE, not DISTANCE.** Even for retests, an entry 25% away passes if it
+   is on the correct side. Its own veto text — *"would chase the close"* — shows it was
+   written to answer "is this a chase?", never "how far away is this?".
+
+**No maximum-distance check exists anywhere in `tbot/`.** Verified three ways: no config
+key among the 245 (`sfp_max_close_distance_atr` is SFP proximity, `reentry_max_attempts_
+per_level` is a count); no distance-to-entry value gates any decision path; and
+`distance_to_entry_pct` exists in exactly **one** place — `dashboard/serialize.py:248`,
+rendered at `static/app.js:442-443`. **The number is computed and shown to the user, in
+the presentation layer only.** The decision path never sees the figure the UI puts on
+screen at −23.18%.
+
+Full chain: gate exempts trigger → trigger entries planned arbitrarily far from market →
+they fill at the next bar's open (A5) → stop and TP geometry inverts against the realised
+fill → TPs sit behind price and fire instantly. Trigger trades drifted 27–56%.
+
+**Sizing is pinned to a constant, and the call path is why.** `engine.py:430`
+(`PlanProvider.__call__(window, config)` carries no portfolio) → `pipeline.py:911-915`
+falls back to `PortfolioState(equity_usd=DEFAULT_STARTING_EQUITY)` → `engine.py:132` =
+10,000. The constant alone does not show why it never updates; the missing portfolio
+argument does. Independently confirmed live: the dashboard printed
+`125.634447 x 79.596005 = $10,000.00` from a different code path.
+
+**OPEN DESIGN QUESTION — do not patch this tired.** What is the maximum acceptable
+distance from price to entry, and does a trigger plan (a) get vetoed before arming, or
+(b) re-derive its stop/TP geometry against the realised fill? Different fixes, different
+risk profiles. Picking one at the end of a long day is how a good diagnosis becomes a bad
+patch.
+
 ## Traps that have already caught someone
 
 - **Margin vs notional.** "10%" is the margin he commits, not position face value. At 10×
@@ -144,6 +225,12 @@ implement. None is done.
   of what it should. See `tests/test_risk.py::TestQ8HisWorkedSizingExample`.
 - **R:R basis.** TradingView's position tool measures to the *final* target. Measuring to
   TP1 instead vetoed 27% of valid setups. See F9.
+- **A partial fill is UNDER-risked, not over.** Tempting to reason that an adverse realised
+  entry (+781 bps in the first real run) breaches the loss cap, because quantity was solved
+  from the planned full-fill average. It does not: `qty = qty_total * rung.size_fraction`
+  (`engine.py:899`), so an unfilled rung removes its quantity too. Rung 0 alone lands at
+  **0.31x** the budgeted loss. Pricing the entry without re-pricing the quantity gets this
+  exactly backwards.
 - **Percentages measured over hand-drawings.** Two readings (8.10% on 1H, 26.99% on 4H)
   look like clean thresholds and are measured across sketches, not candles. Both are
   recorded as explicitly rejected in FRAME_FINDINGS.md.
@@ -156,6 +243,13 @@ implement. None is done.
   did *not* fail in both directions. It falsely rejected valid ladders and misreported which
   rung was at fault, but it never silently accepted an inverted one — a later rung-to-rung
   comparison always caught it. Established by construction, not assumed.
+- **`tbot/manage.py` is unreachable.** The whole `TradeManager` state machine is tested
+  (`tests/test_manage.py`) and imported by nothing in the package. `engine.py` imports only
+  `config` and `models` and reimplements fills, stops and trailing itself. So
+  `_reverify_budget` (`manage.py:265`) — written for exactly the case where "after a fill the
+  average moved; the stop did not" — has never executed in a backtest. Worse than a dead
+  config key: a dead *subsystem* with a green test suite in front of it. Found on the first
+  real-data run, 2026-09-14.
 - **Config keys that are declared but never read.** `rr_measured_to` was one; changing it
   did nothing until it was wired. `rr_measured_from` is still inert — harmless today
   because it duplicates `size_and_stop_computed_from`, but don't assume a key is live.

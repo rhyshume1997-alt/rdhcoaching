@@ -176,6 +176,15 @@ def _run_payload(args: argparse.Namespace, result: Any, report: Any,
                 "source_ids": list(t.source_ids),
                 "net_pnl_usd": str(t.net_pnl_usd), "r_multiple": str(t.r_multiple),
                 "close_reason": t.close_reason.value,
+                # The geometry R is measured against.  Without these the record cannot answer
+                # "how far was the fill from its own stop", which is the question that found
+                # the min_stop_pct defect - and answering it needed a re-run rather than a
+                # query, because a run file carrying r_multiple but not its inputs states a
+                # ratio whose terms are unrecoverable.
+                "average_entry": str(t.average_entry),
+                "planned_average_entry": str(t.planned_average_entry),
+                "initial_stop": str(t.initial_stop),
+                "initial_risk_usd": str(t.initial_risk_usd),
             }
             for t in result.trades
         ],

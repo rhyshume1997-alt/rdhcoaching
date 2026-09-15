@@ -312,6 +312,46 @@ def test_a3_can_be_relaxed_by_config(cfg):
     assert len([e for e in result.events if e.kind is EventKind.FILL]) == 1
 
 
+def test_saved_run_records_the_terms_r_is_measured_from(cfg):
+    """A run file must record the terms of ``r_multiple``, not only the ratio.
+
+    ``r_multiple`` divides by ``|realised average entry - initial stop| x filled qty``
+    (:meth:`BacktestEngine._close`).  A record carrying the quotient but neither term states a
+    number whose meaning cannot be recovered, and that is not hypothetical: when realised stop
+    distances turned out to span three orders of magnitude, the saved runs could not say so and
+    the question needed an instrumented re-run instead of a query.
+
+    Built on a plan that trades **by construction** rather than on whatever a sample CSV happens
+    to produce, so this test cannot quietly degrade into a skip.
+    """
+    from types import SimpleNamespace
+
+    from tbot import cli
+    from tbot.backtest.metrics import compute_metrics
+
+    bars = [(100.0, 101.0, 99.0, 100.0),
+            (100.0, 100.5, 90.0, 100.0),     # fills the 95 limit
+            (100.0, 115.0, 99.0, 112.0)]     # trades through TP at 110
+    plan = make_plan(entries=((95.0, 1.0),), stop=80.0, tps=((110.0, 1.0),), qty=2.0)
+    result = run(make_series(bars), cfg, OneShotProvider(plan, at_index=0))
+    assert result.trades, "fixture must close a trade or the test proves nothing"
+
+    payload = cli._run_payload(SimpleNamespace(csv="x.csv"), result,
+                               compute_metrics(result), [])
+
+    for t in payload["trades"]:
+        for field in ("average_entry", "planned_average_entry", "initial_stop",
+                      "initial_risk_usd"):
+            assert field in t, f"{t['ref']} does not record {field}"
+        # The recorded terms must reproduce the recorded ratio.  A record that is internally
+        # inconsistent is worse than one that says nothing.
+        risk = Decimal(t["initial_risk_usd"])
+        if risk > 0:
+            implied = Decimal(t["net_pnl_usd"]) / risk
+            assert abs(implied - Decimal(t["r_multiple"])) < Decimal("0.0001"), (
+                f"{t['ref']}: recorded r_multiple does not follow from the recorded terms")
+
+
 def test_a4_maker_fee_on_entry_and_tp_with_no_price_improvement(cfg):
     """Hand-computed: buy 2 @ 95 limit, sell 2 @ 110 limit, maker both sides, no slippage."""
     bars = [(100.0, 101.0, 99.0, 100.0),

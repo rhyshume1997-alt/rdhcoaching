@@ -459,3 +459,93 @@ one volume rule was extracted. GAP 5's first action is to read those hits and re
 whether he uses volume as a confirmation signal. **If he never does, say so plainly** — then it is
 ours to invent or to deliberately leave alone, and that is a decision for a human, not for this
 file.
+
+---
+
+# THE FIRST VERDICT RUN — 1,500 bars, out-of-sample, 2026-09-15
+
+Run on `68759b3` via `tbot backtest --csv data/sol_4h.csv --tf 4H --symbol SOLUSDT --split`,
+shipped defaults, nothing tuned, no `--set` flags. The CLI builds its config through
+`Config.load`, so this run used the corrected `dca_size_split_3` and `tp_count_swing` values
+(see `f6b267c`) and is unaffected by the defaults defect found the same evening.
+
+**This is the first run in this project with enough trades on both sides to conclude anything.**
+Every earlier number was measured either through `pipeline.py:972` before it was fixed, or on a
+sample below the 30-trade floor.
+
+## The numbers
+
+| | in-sample | out-of-sample |
+|---|---|---|
+| analysable bars | 667 | 333 |
+| date range | 2026-01-07 -> 2026-07-20 | 2026-07-20 -> 2026-09-14 |
+| closed trades | 77 | **35** |
+| win rate (net P&L > 0) | 57.14% (44W/27L/6BE) | **37.14%** (13W/22L) |
+| 95% Wilson | 46.0% - 67.6% | 23.2% - 53.7% |
+| net P&L on 10,000 | **-639.02** | **-483.28** |
+| expectancy | -0.3847 R | -2.5637 R |
+| mean win / mean loss (USD) | +29.13 / -77.02 = **0.38:1** | +20.53 / -34.10 = **0.60:1** |
+| full TP-ladder completion | 1 of 77 | **0 of 35** |
+| max drawdown | 11.55% | 6.02% |
+| close reasons | trail_out 49, stop 27, tp_final 1 | stop 19, trail_out 16 |
+
+## The answer to the question this run was built to ask
+
+**No. This rule set, as extracted and as currently implemented, does not show edge
+out-of-sample on SOL 4H.** 35 closed trades is above the floor, so this is a result and not a
+shrug. Both segments lose money.
+
+It also loses **in-sample**, which removes the usual overfitting story: nothing has been fitted
+to this data (no sweep has ever been run), and a rule set that loses on the segment it could
+have been fitted to is simply losing.
+
+Per SPEC.md 12.5 this is a result and must not trigger fitting toward the 77-82% claim. The
+claim remains what CONFLICTS.md already ruled it: a recollection with no sample and no win
+definition, not usable for validation.
+
+## Why it loses — both halves are measured, not inferred
+
+**Winners are truncated.** The TP ladder completed once in 112 trades. `tp_residual_policy =
+trail_out` (CF-28) with `trail_on_tp1 = break_even` (CF-29) means a trade that tags TP1 and
+reverses books a partial plus a break-even remainder. Both are sourced rules working as
+specified.
+
+**Losers overrun.** 27 of 77 in-sample and 19 of 35 out-of-sample came in worse than -1R.
+
+Together the dollar win/loss ratio is 0.38:1 and 0.60:1. Break-even needs roughly 0.75:1 at a
+57% win rate and 1.70:1 at 37%. The gap is not marginal.
+
+## The stop-distance defect is structural, confirmed at n=77 and n=35
+
+The dollar value of 1R - `|net_pnl_usd / r_multiple|`, which is
+`|realised average entry - initial stop| x filled qty` - spans:
+
+    in-sample       min 1.2699   median 57.139   max 368.35    290x
+    out-of-sample   min 0.2347   median 25.322   max 118.63    505x
+
+The earlier 2,167x was measured on 27 trades and could have been a small-sample artefact. It is
+not. Risk-first sizing is supposed to make 1R a constant; it varies by two and a half orders of
+magnitude, so **`expectancy_R` aggregated across these trades remains meaningless and USD must
+be read first.**
+
+`min_stop_pct = 0.5` (CF-06, S7-C8, SOURCED) exists and is implemented at `plan.py:576-583`, but
+is checked against the **planned** entry, and `plan.py:585-591` deliberately lets an
+opposing-level clip land back inside the floor. Neither is re-checked against the price actually
+paid. That fix is not in this run.
+
+## What this verdict does and does not license
+
+It **does** say: the rule set as it stands today is not tradeable on this symbol and timeframe,
+and no amount of parameter sweeping should be started on the strength of hope.
+
+It does **not** say the extraction is wrong, or that the method does not work for him. Confounds
+that remain open, none of them resolved here:
+
+- the `min_stop_pct` defect above, which is a bot bug and not his rule
+- one symbol, one timeframe, eight months, one market regime
+- CF-49 to CF-53, five stated rules still unimplemented
+- trigger rot: on the earlier 900-bar window, 12 of 17 trigger plans were geometrically invalid
+  by the time they filled, and why plans rot between arming and filling is undiagnosed
+
+The honest next step is to fix the stop-distance defect and re-run this exact command, so the
+before and after differ by one change. Not to tune anything.

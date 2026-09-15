@@ -74,7 +74,7 @@ bar; below that the command refuses with a usage error rather than reporting an 
 
 ## GAP 2 — No correlation control on concurrent positions
 
-**Status:** OPEN.
+**Status:** DONE (2026-09-15). See "What shipped" at the end of this entry.
 
 **What is missing.** `max_concurrent_leverage_global = 4` (`config.py:306`) counts *tickets*, not
 *exposures*. Four alt longs in a correlated market is one position with four tickets and four
@@ -108,6 +108,40 @@ arriving at a similar limit*. The key must say so. Do not present a correlation 
 (default 2), `correlation_threshold` (default 0.7), `correlation_lookback_bars` (default 90). When
 enabled, veto a new position if it would exceed the cap among open positions correlated above the
 threshold. **Reuse `regime.rolling_correlation` — do not write a second one.**
+
+**What shipped.** `risk.py` gains `correlation_cap_gate()`; the four keys land in group 11.1,
+all four marked `[OUR CHOICE]`, and `max_correlated_concurrent`'s note spells out that his
+"never more than 2" is a **margin** rule and ours is a different rationale landing near the
+same number. `regime.rolling_correlation` is reused; a test asserts `risk.py` contains no
+`corrcoef`/`np.cov`/`pearson` of its own.
+
+Called from `pipeline.py` at the CF-04 capacity check — the only place holding both the
+portfolio and a per-symbol series map. The enabled-check lives **inside** the gate, not at the
+call site: `max_correlated_concurrent_enabled` is `risk.py`'s key and INTERFACES.md §7 lets
+only its owner read it. (Reading it in `pipeline.py` broke
+`test_pipeline_reads_only_the_keys_it_owns`; the fix was to stop reading it, not to widen the
+allow-list.)
+
+**Correlation is signed, not absolute.** Two same-direction positions in anti-correlated assets
+partially hedge; an `abs()` would veto the one combination that reduces risk. Tested.
+
+**Two limitations that are real and must not be forgotten:**
+
+1. **`OpenSlot` carries no direction.** A long and a short in the same asset read as
+   concentration when they are closer to flat. Conservative for a mixed book, correct for a
+   one-way one — and his is one-way (spot accumulation). Fixing it means adding `direction`
+   to `OpenSlot`, which touches every caller; deliberately not done in this commit.
+2. **The gate is data-starved today.** It can only assess a live slot whose series is present
+   in the map it is handed, and `pipeline.ctx.context` carries USDT.D / BTC.D / BVOL, not a
+   universe feed. In the current single-symbol harness that is every slot, so the gate would
+   assess nothing even if enabled. Unassessed slots are counted and **named in the gate's
+   reasons** rather than dropped silently (INTERFACES.md §9.6), so this is visible rather
+   than quiet. **This is the same plumbing GAP 3 is about** — GAP 2 only becomes operational
+   once a universe feed exists.
+
+12 tests (11 in `tests/test_risk.py`, 1 wiring test in `tests/test_pipeline.py`), including the
+acceptance test `test_correlation_cap_is_a_no_op_while_disabled` and a pipeline test proving
+rejections and plan ids are unchanged bar-for-bar with the flag off. Suite 1,087 -> **1,099**.
 
 ---
 

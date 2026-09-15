@@ -315,6 +315,73 @@ KEY_SPECS: tuple[KeySpec, ...] = (
         note='',
     ),
     KeySpec(
+        key='max_correlated_concurrent_enabled',
+        default=False,
+        spec_type='bool',
+        py_type='bool',
+        members=None,
+        minimum=None,
+        maximum=None,
+        source_id='[OUR CHOICE] — GAPS.md GAP 2; no correlation test exists anywhere in the corpus',
+        group='11.1',
+        note='OFF by default. CF-04 counts TICKETS, not exposures: four alt longs in a '
+             'correlated market is one position with four tickets and four times the intended '
+             'risk, and nothing checked for that. Turning this on changes which trades are '
+             'taken, so it stays off until a sweep says otherwise.',
+    ),
+    KeySpec(
+        key='max_correlated_concurrent',
+        default=2,
+        spec_type='int',
+        py_type='int',
+        members=None,
+        minimum=0.0,
+        maximum=None,
+        source_id='[OUR CHOICE] — a DIFFERENT rationale for a similar limit; see note',
+        group='11.1',
+        note='How many live positions may sit above correlation_threshold of each other before '
+             'a new one is vetoed. HIS OWN RULE IS "never more than 2 concurrent positions" '
+             '(risk doc, CONFLICTS.md:2305), which already conflicts with '
+             'max_concurrent_leverage_global = 4 from CF-04 — but HIS REASON IS NOT '
+             'CORRELATION. It is margin: four positions leave no margin to fund the DCA legs. '
+             'Ours is a different rationale that happens to land on a similar number. Do not '
+             'read this key as his rule; the 2 is ours and the agreement is a coincidence '
+             'worth noticing, not evidence.',
+        sweep_bracket=(1.0, 4.0),
+    ),
+    KeySpec(
+        key='correlation_threshold',
+        default=0.7,
+        spec_type='decimal',
+        py_type='float',
+        members=None,
+        minimum=-1.0,
+        maximum=1.0,
+        source_id='[OUR CHOICE] — GAPS.md GAP 2; he never quantifies "correlated"',
+        group='11.1',
+        note='Pearson correlation of closes at or above which two open positions count as one '
+             'exposure. 0.7 is a convention, not a measurement — sweep it. Measured on the '
+             'SIGNED correlation, not the absolute value: a negative correlation between two '
+             'same-direction positions is a hedge, not a concentration.',
+        sweep_bracket=(0.5, 0.9),
+    ),
+    KeySpec(
+        key='correlation_lookback_bars',
+        default=90,
+        spec_type='bars',
+        py_type='int',
+        members=None,
+        minimum=3.0,
+        maximum=None,
+        source_id='[OUR CHOICE] — matches regime.rolling_correlation\'s own default (CF-35)',
+        group='11.1',
+        note='Window handed to regime.rolling_correlation. 90 is that function\'s existing '
+             'default, itself OUR construct for the DXY gate (CF-35: the corpus never proposes '
+             'a correlation test at all). Reused rather than re-invented so both callers move '
+             'together when it is swept.',
+        sweep_bracket=(30.0, 180.0),
+    ),
+    KeySpec(
         key='max_concurrent_spot',
         default=5,
         spec_type='int',
@@ -3239,6 +3306,10 @@ class Config:
     max_concurrent_leverage_scalp: int = 2
     max_concurrent_leverage_global: int = 4
     max_concurrent_spot: int = 5
+    max_correlated_concurrent_enabled: bool = False
+    max_correlated_concurrent: int = 2
+    correlation_threshold: float = 0.7
+    correlation_lookback_bars: int = 90
     spot_exit_mode: str = 'close_below_level_then_flip'
     spot_synthetic_stop_for_sizing: bool = True
     spot_invalidation_timeframe: str = '1D'

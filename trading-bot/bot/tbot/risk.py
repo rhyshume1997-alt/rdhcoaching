@@ -31,7 +31,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
-from typing import Iterable, Literal, Mapping, Sequence
+from typing import Any, Iterable, Literal, Mapping, Sequence
 
 import tbot.primitives as P
 from tbot.config import Config
@@ -69,6 +69,7 @@ __all__ = [
     "loss_budget_usd",
     "sizing_budget",
     "concurrency_gate",
+    "correlation_cap_gate",
     "spot_deployment_gate",
     "is_loss",
     "losses_today",
@@ -509,6 +510,87 @@ def concurrency_gate(
     if n >= cap:
         return Gate("concurrency", False, (f"{key}_reached ({n}/{cap})",), ids)
     return Gate("concurrency", True, source_ids=ids)
+
+
+def correlation_cap_gate(
+    config: Config,
+    portfolio: PortfolioState,
+    *,
+    symbol: str,
+    series_by_symbol: Mapping[str, Any] | None = None,
+) -> Gate:
+    """**[OUR CHOICE]** — GAPS.md GAP 2. Cap how many *correlated* positions may run at once.
+
+    CF-04 counts tickets. Four alt longs in a correlated market is one position with four
+    tickets: the CF-01 per-trade budget is enforced four times over on what is, in risk terms,
+    one bet. This gate counts live positions whose price series correlates with the candidate's
+    at or above ``correlation_threshold`` and refuses the candidate once that reaches
+    ``max_correlated_concurrent``.
+
+    **This is not his rule.** He states *"never more than 2 concurrent positions"* (risk doc,
+    CONFLICTS.md:2305) and his reason is margin — four positions leave nothing to fund the DCA
+    legs. Ours is a different rationale that lands near the same number. See
+    ``max_correlated_concurrent``'s note.
+
+    Correlation is **signed**, not absolute: two same-direction positions in negatively
+    correlated assets partially hedge each other and must not be counted as concentration.
+
+    Reuses :func:`tbot.regime.rolling_correlation` (CF-35) rather than defining a second
+    correlation.
+
+    Two honest limitations, both recorded in GAPS.md:
+
+    * ``OpenSlot`` carries no direction, so a long and a short in the same asset read as
+      concentration when they are closer to flat. The gate is therefore conservative for a
+      mixed book and correct for a one-way one (his is one-way: spot accumulation).
+    * A slot whose series is absent from ``series_by_symbol`` **cannot be assessed** and is not
+      counted. The count of unassessed slots is reported in the gate's reasons rather than
+      being silently dropped (INTERFACES.md §9.6). In today's single-symbol harness that is
+      every slot, which is one more reason the flag ships off.
+    """
+    ids = ("GAPS.md-GAP2", "CF-35", "[OUR CHOICE]")
+    if not config.max_correlated_concurrent_enabled:
+        return Gate("correlation_cap", True, source_ids=ids)
+
+    from .regime import rolling_correlation  # local: risk.py must not import regime at module load
+
+    series_by_symbol = series_by_symbol or {}
+    subject = series_by_symbol.get(symbol)
+    if subject is None:
+        return Gate("correlation_cap", True,
+                    ("no series for the candidate symbol: correlation not assessed",), ids)
+
+    cap = int(config.max_correlated_concurrent)
+    threshold = dec(config.correlation_threshold)
+    lookback = int(config.correlation_lookback_bars)
+
+    correlated: list[str] = []
+    unassessed = 0
+    for slot in portfolio.live_slots():
+        if not slot.symbol or slot.symbol == symbol:
+            continue
+        other = series_by_symbol.get(slot.symbol)
+        if other is None:
+            unassessed += 1
+            continue
+        corr = rolling_correlation(subject, other, lookback_bars=lookback)
+        if corr is None:
+            unassessed += 1
+            continue
+        if corr >= threshold:
+            correlated.append(f"{slot.symbol} {corr:.2f}")
+
+    notes: tuple[str, ...] = ()
+    if unassessed:
+        notes = (f"{unassessed} live slot(s) had no usable series and were not assessed",)
+
+    if len(correlated) >= cap:
+        return Gate(
+            "correlation_cap", False,
+            (f"max_correlated_concurrent_reached ({len(correlated)}/{cap} at or above "
+             f"{threshold} over {lookback} bars: {', '.join(correlated)})", *notes),
+            ids)
+    return Gate("correlation_cap", True, notes, ids)
 
 
 # --------------------------------------------------------------------------- CF-44 daily halt

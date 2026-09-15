@@ -354,7 +354,7 @@ def create_app(
 
     @app.get("/api/config")
     async def api_config(grep: str | None = None, limit: int = 60) -> dict[str, Any]:
-        """Search all 247 keys — value, default and the source rule id behind each one."""
+        """Search all 251 keys — value, default and the source rule id behind each one."""
         names = list(KEY_SPEC_BY_NAME)
         if grep:
             needle = grep.strip().lower()

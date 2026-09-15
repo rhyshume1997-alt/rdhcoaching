@@ -46,6 +46,14 @@ max_concurrent_leverage_swing: 2
 max_concurrent_leverage_scalp: 2
 # [int] source: CF-04; S4-C8 | range: [0.0, +inf]
 max_concurrent_leverage_global: 4
+# [bool] source: [OUR CHOICE] — GAPS.md GAP 2; no correlation test exists anywhere in the corpus | OFF by default. CF-04 counts TICKETS, not exposures: four alt longs in a correlated market is one position with four tickets and four times the intended risk, and nothing checked for that. Turning this on changes which trades are taken, so it stays off until a sweep says otherwise.
+max_correlated_concurrent_enabled: false
+# [int] source: [OUR CHOICE] — a DIFFERENT rationale for a similar limit; see note | range: [0.0, +inf] | sweep_bracket: [1.0, 4.0] | How many live positions may sit above correlation_threshold of each other before a new one is vetoed. HIS OWN RULE IS "never more than 2 concurrent positions" (risk doc, CONFLICTS.md:2305), which already conflicts with max_concurrent_leverage_global = 4 from CF-04 — but HIS REASON IS NOT CORRELATION. It is margin: four positions leave no margin to fund the DCA legs. Ours is a different rationale that happens to land on a similar number. Do not read this key as his rule; the 2 is ours and the agreement is a coincidence worth noticing, not evidence.
+max_correlated_concurrent: 2
+# [decimal] source: [OUR CHOICE] — GAPS.md GAP 2; he never quantifies "correlated" | range: [-1.0, 1.0] | sweep_bracket: [0.5, 0.9] | Pearson correlation of closes at or above which two open positions count as one exposure. 0.7 is a convention, not a measurement — sweep it. Measured on the SIGNED correlation, not the absolute value: a negative correlation between two same-direction positions is a hedge, not a concentration.
+correlation_threshold: 0.7
+# [bars] source: [OUR CHOICE] — matches regime.rolling_correlation's own default (CF-35) | range: [3.0, +inf] | sweep_bracket: [30.0, 180.0] | Window handed to regime.rolling_correlation. 90 is that function's existing default, itself OUR construct for the DXY gate (CF-35: the corpus never proposes a correlation test at all). Reused rather than re-invented so both callers move together when it is swept.
+correlation_lookback_bars: 90
 # [int] source: CF-04; S4-R31 | range: [0.0, +inf]
 max_concurrent_spot: 5
 # [enum] source: CF-05; S8-R36, TBOT1-R18 | one of: close_below_level_then_flip, close_below_level, hard_stop

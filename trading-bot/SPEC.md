@@ -1752,7 +1752,7 @@ transcripts and exist only because the bot cannot run without them. Sweep these 
 
 | Group | Keys |
 |---|---|
-| 11.1 Risk and position sizing | 29 |
+| 11.1 Risk and position sizing | 29 (+4 GAP-2-derived: `max_correlated_concurrent_enabled`, `max_correlated_concurrent`, `correlation_threshold`, `correlation_lookback_bars` — all [OUR CHOICE], GAPS.md GAP 2) |
 | 11.2 Level and zone lifecycle | 30 (+3 frame-derived: `zone_wick_band_enabled`, `zone_wick_band_max_ratio` (F1), `stop_buffer_zone_fraction` (F6)) |
 | 11.3 Flip confirmation and entry mechanics | 32 (+2 Discord-derived: `max_entry_distance_enabled`, `max_entry_distance_pct` (DISCORD CHECK 2026-09-15)) |
 | 11.4 Structure and trend | 28 |
@@ -1777,7 +1777,8 @@ The implemented surface is larger: **234 + 8 evidence-derived** keys (`CHANGELOG
 Q1–Q15) **+ 3 frame-derived** keys (`FRAME_FINDINGS.md` F1: `zone_wick_band_enabled`,
 `zone_wick_band_max_ratio`; F6: `stop_buffer_zone_fraction`) **+ 2 Discord-derived** keys
 (`CHANGELOG_EVIDENCE.md`, DISCORD CHECK 2026-09-15: `max_entry_distance_enabled`,
-`max_entry_distance_pct`) = **247**, which is what `tbot.config.KEY_SPECS` holds.
+`max_entry_distance_pct`) **+ 4 GAP-2-derived** keys (GAPS.md GAP 2, the correlated-exposure
+cap) = **251**, which is what `tbot.config.KEY_SPECS` holds.
 
 **`sweep_bracket`.** A `KeySpec` may carry a machine-readable `(low, high)` bracket wherever
 evidence has bounded a key without deciding it, so a parameter sweep reads its search range off the

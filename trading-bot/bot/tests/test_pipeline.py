@@ -604,3 +604,19 @@ def test_entry_distance_gate_never_touches_the_trigger_family(series, cfg):
         for setup in record.setups:
             if setup.id in far:
                 assert setup.entry_family is not EntryFamily.TRIGGER
+
+
+# --------------------------------------------- GAP 2 wiring (GAPS.md, 2026-09-15) [OUR CHOICE]
+
+
+def test_correlation_cap_wiring_is_inert_while_disabled(series, cfg):
+    """With the flag off the pipeline must behave exactly as before the gate existed."""
+    assert cfg.max_correlated_concurrent_enabled is False
+    on = cfg.with_overrides(max_correlated_concurrent_enabled=True)
+    for i in range(60, len(series), 7):
+        base = pipeline.analyse_bar(series.head(i + 1), cfg)
+        # no portfolio is injected here, so even enabled it cannot refuse anything
+        got = pipeline.analyse_bar(series.head(i + 1), on)
+        assert [(r.gate, r.reason) for r in got.rejections] == \
+               [(r.gate, r.reason) for r in base.rejections]
+        assert [p.id for p in got.output.plans] == [p.id for p in base.output.plans]

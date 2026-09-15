@@ -124,7 +124,12 @@ from tbot.qualify import (
     trade_class_for_tf,
 )
 from tbot.regime import RegimeState, evaluate_regime
-from tbot.risk import PortfolioState, concurrency_gate, sizing_budget
+from tbot.risk import (
+    PortfolioState,
+    concurrency_gate,
+    correlation_cap_gate,
+    sizing_budget,
+)
 
 __all__ = [
     "MODULE_SOURCE_IDS",
@@ -879,6 +884,16 @@ def _qualify_once(ctx: _Ctx, setup: Setup, cluster: ConfluenceCluster, anchor: A
             vehicle=Vehicle.LEVERAGE, trade_class=setup.trade_class,
         )
         capacity = gate.allowed
+        # GAPS.md GAP 2 [OUR CHOICE], off by default.  CF-04 above counts tickets; this counts
+        # correlated *exposures*.  It runs here rather than inside `sizing_budget` because this
+        # is the only place that holds both the portfolio and a per-symbol series map.
+        # The enabled-check lives inside the gate: `max_correlated_concurrent_enabled` is
+        # risk.py's key and INTERFACES.md 7 lets only its owner read it.
+        if capacity:
+            capacity = correlation_cap_gate(
+                cfg, ctx.portfolio, symbol=series.symbol,
+                series_by_symbol={**ctx.context, series.symbol: series},
+            ).allowed
 
     return qualify(
         setup, cfg,

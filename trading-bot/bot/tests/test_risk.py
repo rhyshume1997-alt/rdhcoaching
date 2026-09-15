@@ -831,3 +831,158 @@ class TestQ8HisWorkedSizingExample:
         margin = notional / dec(cfg.default_leverage)
         assert float(margin / self.EQUITY_USD * dec(100)) == pytest.approx(7.29, abs=0.01)
         assert margin < R.margin_ceiling_usd(cfg, equity_usd=self.EQUITY_USD)
+
+
+# ---------------------------------------------- GAP 2: correlated-exposure cap (GAPS.md, 2026-09-15)
+#
+# Entirely OUR engineering idea. The corpus proposes no correlation test anywhere -- CF-35 only
+# records that the DXY relationship broke. His own "never more than 2 concurrent positions"
+# (risk doc, CONFLICTS.md:2305) is a MARGIN rule: four positions leave nothing to fund the DCA
+# legs. Ours is a different rationale that lands near the same number, and the keys say so.
+
+
+def _corr_series(closes, symbol: str):
+    """A minimal Series with the given closes -- enough for rolling_correlation."""
+    from datetime import timedelta as _td
+
+    from tbot.models import Series as _Series
+    from tbot.models import Timeframe as _Timeframe
+
+    step = _td(minutes=_Timeframe.parse("4H").minutes)
+    idx = [NOW + i * step for i in range(len(closes))]
+    return _Series.from_arrays(
+        idx,
+        [float(c) for c in closes], [float(c) + 0.5 for c in closes],
+        [float(c) - 0.5 for c in closes], [float(c) for c in closes],
+        volume=[1_000.0] * len(closes), tf="4H", symbol=symbol,
+    )
+
+
+_RISING = [100.0 + i for i in range(40)]
+_ALSO_RISING = [50.0 + 0.5 * i for i in range(40)]      # corr with _RISING = +1
+_FALLING = [200.0 - i for i in range(40)]               # corr with _RISING = -1
+
+
+def _corr_cfg(**kw):
+    base = dict(max_correlated_concurrent_enabled=True, max_correlated_concurrent=2,
+                correlation_threshold=0.7, correlation_lookback_bars=90)
+    base.update(kw)
+    return Config().with_overrides(**base)
+
+
+def test_correlation_cap_defaults_are_ours_and_off():
+    cfg = Config()
+    assert cfg.max_correlated_concurrent_enabled is False
+    assert cfg.max_correlated_concurrent == 2
+    assert cfg.correlation_threshold == 0.7
+    assert cfg.correlation_lookback_bars == 90
+    from tbot.config import KEY_SPEC_BY_NAME
+    for key in ("max_correlated_concurrent_enabled", "max_correlated_concurrent",
+                "correlation_threshold", "correlation_lookback_bars"):
+        assert "[OUR CHOICE]" in KEY_SPEC_BY_NAME[key].source_id, key
+
+
+def test_correlation_cap_is_a_no_op_while_disabled():
+    """ACCEPTANCE: with the flag off the gate must never refuse anything, whatever the book."""
+    series = {"S": _corr_series(_RISING, "S"),
+              "C0": _corr_series(_ALSO_RISING, "C0"),
+              "C1": _corr_series(_ALSO_RISING, "C1"),
+              "C2": _corr_series(_ALSO_RISING, "C2")}
+    pf = portfolio(open_slots=(slot(0), slot(1), slot(2)))
+    gate = R.correlation_cap_gate(Config(), pf, symbol="S", series_by_symbol=series)
+    assert gate.allowed and gate.reasons == ()
+
+
+def test_correlation_cap_vetoes_once_the_cap_is_reached():
+    series = {"S": _corr_series(_RISING, "S"),
+              "C0": _corr_series(_ALSO_RISING, "C0"),
+              "C1": _corr_series(_ALSO_RISING, "C1")}
+    pf = portfolio(open_slots=(slot(0), slot(1)))
+    gate = R.correlation_cap_gate(_corr_cfg(), pf, symbol="S", series_by_symbol=series)
+    assert not gate.allowed
+    assert "max_correlated_concurrent_reached (2/2" in gate.reasons[0]
+    assert "C0" in gate.reasons[0] and "C1" in gate.reasons[0]
+
+
+def test_correlation_cap_allows_below_the_cap():
+    series = {"S": _corr_series(_RISING, "S"), "C0": _corr_series(_ALSO_RISING, "C0")}
+    pf = portfolio(open_slots=(slot(0),))
+    assert R.correlation_cap_gate(_corr_cfg(), pf, symbol="S", series_by_symbol=series).allowed
+
+
+def test_correlation_cap_ignores_negatively_correlated_positions():
+    """A same-direction position in an anti-correlated asset is a hedge, not concentration.
+
+    The gate measures the SIGNED correlation for exactly this reason; an abs() here would
+    veto the one combination that actually reduces risk.
+    """
+    series = {"S": _corr_series(_RISING, "S"),
+              "C0": _corr_series(_FALLING, "C0"),
+              "C1": _corr_series(_FALLING, "C1")}
+    pf = portfolio(open_slots=(slot(0), slot(1)))
+    gate = R.correlation_cap_gate(_corr_cfg(), pf, symbol="S", series_by_symbol=series)
+    assert gate.allowed
+
+
+def test_correlation_cap_reports_slots_it_could_not_assess():
+    """Nothing is dropped silently (INTERFACES.md 9.6): unassessed slots are named in reasons."""
+    series = {"S": _corr_series(_RISING, "S")}          # C0/C1 have no series at all
+    pf = portfolio(open_slots=(slot(0), slot(1)))
+    gate = R.correlation_cap_gate(_corr_cfg(), pf, symbol="S", series_by_symbol=series)
+    assert gate.allowed, "an unassessable slot must not be counted as correlated"
+    assert gate.reasons and "2 live slot(s) had no usable series" in gate.reasons[0]
+
+
+def test_correlation_cap_passes_when_the_candidate_has_no_series():
+    pf = portfolio(open_slots=(slot(0), slot(1)))
+    gate = R.correlation_cap_gate(_corr_cfg(), pf, symbol="S", series_by_symbol={})
+    assert gate.allowed
+    assert "no series for the candidate symbol" in gate.reasons[0]
+
+
+def test_correlation_cap_skips_the_candidates_own_symbol():
+    """Re-entering the same symbol is CF-21's problem, not this gate's."""
+    series = {"S": _corr_series(_RISING, "S")}
+    same = R.OpenSlot(position_id="P9", account=Account.LEVERAGE_SWING,
+                      vehicle=Vehicle.LEVERAGE, trade_class=TradeClass.SWING,
+                      state=PositionState.OPEN, notional_usd=dec(500), symbol="S")
+    pf = portfolio(open_slots=(same, same))
+    gate = R.correlation_cap_gate(_corr_cfg(max_correlated_concurrent=1), pf,
+                                  symbol="S", series_by_symbol=series)
+    assert gate.allowed and gate.reasons == ()
+
+
+def test_correlation_cap_counts_only_live_slots():
+    series = {"S": _corr_series(_RISING, "S"),
+              "C0": _corr_series(_ALSO_RISING, "C0"),
+              "C1": _corr_series(_ALSO_RISING, "C1")}
+    pf = portfolio(open_slots=(slot(0), slot(1, state=PositionState.CLOSED)))
+    gate = R.correlation_cap_gate(_corr_cfg(), pf, symbol="S", series_by_symbol=series)
+    assert gate.allowed, "a closed position must not consume a correlated slot"
+
+
+def test_correlation_cap_threshold_is_honoured():
+    """Correlation +1 clears 0.7 but not a threshold above it."""
+    series = {"S": _corr_series(_RISING, "S"),
+              "C0": _corr_series(_ALSO_RISING, "C0"),
+              "C1": _corr_series(_ALSO_RISING, "C1")}
+    pf = portfolio(open_slots=(slot(0), slot(1)))
+    assert not R.correlation_cap_gate(_corr_cfg(correlation_threshold=0.99), pf,
+                                      symbol="S", series_by_symbol=series).allowed
+    # raise it above what these series can reach and the same book is allowed through
+    weak = {"S": _corr_series(_RISING, "S"),
+            "C0": _corr_series([100.0 + (i % 7) for i in range(40)], "C0"),
+            "C1": _corr_series([100.0 + (i % 5) for i in range(40)], "C1")}
+    assert R.correlation_cap_gate(_corr_cfg(), pf, symbol="S", series_by_symbol=weak).allowed
+
+
+def test_correlation_cap_reuses_the_regime_primitive():
+    """GAPS.md GAP 2 says reuse rolling_correlation; assert no second implementation appeared."""
+    from pathlib import Path
+
+    src = Path(R.__file__).read_text(encoding="utf-8")
+    assert "rolling_correlation" in src, "the gate must call the regime primitive"
+    # no second IMPLEMENTATION: risk.py must not compute a correlation of its own.
+    for smell in ("corrcoef", "np.cov", "pearson"):
+        assert smell not in src, (
+            f"risk.py computes its own correlation ({smell}) - reuse regime.rolling_correlation")

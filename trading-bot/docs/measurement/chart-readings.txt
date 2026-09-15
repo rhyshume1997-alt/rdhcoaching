@@ -1,0 +1,116 @@
+================================================================
+CHART FRAME READINGS - Sessions 5, 6, 7
+Source: private YouTube recordings (TradingView screen capture,
+        "ARSHMEISTER | BloFin | MEXC" watermark)
+Read at 1080p playback. Nothing on the videos or channel altered.
+================================================================
+
+Q1 SWING WIDTH
+S7 23:28 | tf=1D  | no candles - freehand sketch over blank chart | unreadable
+S7 24:38 | tf=1D  | no candles - freehand sketch over blank chart | unreadable
+S7 28:40 | tf=4H  | LINE chart, not candles                       | unreadable
+S7 29:45 | tf=4H  | LINE chart, not candles                       | unreadable
+S7 30:19 | tf=4H  | marked swing HIGH (blue arc) | left>=20 right=4  | partly obscured (right side truncated by live edge)
+S7 33:48 | tf=3D  | marked swing LOW (fib anchor) | left>=15 right=6 | partly obscured (candles small, heavy overdraw; right side truncated)
+S7 34:30 | tf=4H  | marked swing HIGH (arrow tip) | left=4  right=21 | confident
+S7 34:30 | tf=4H  | marked swing LOW (blue arc)   | left>=20 right=8 | partly obscured (right side truncated by live edge)
+
+Q1 CONCLUSION: smallest consistent width = 4 candles either side,
+from 3 readable frames (4 marked points) out of 7 requested.
+Binding evidence is the 34:30 swing high: the 5th candle to its left
+exceeds it, so 4 is a hard ceiling on the left there. Three of the
+four right-side counts are truncated by the chart's live edge, so
+those are floors, not true counts - the true right-side requirement
+could be larger than 4 and this data cannot rule that out.
+
+Q2 BREAKOUT SIZE BY TIMEFRAME
+S5 35:30   | tf=1H  | no measure tool / no % on screen (freehand sketch phase) | confident
+S5 36:05   | tf=1H  | measure: 20.561 (8.10%) 20,561                           | confident *
+S5 51:21   | tf=1H  | nothing at 51:21; measure appears ~51:25: 7.042 (4.48%) 7,042 | confident
+S5 55:51   | tf=30m | measure: 0.821 (0.51%) 821  (drifts to 0.876 (0.55%) 876 by 55:54) | confident
+S5 1:00:22 | tf=2H  | rectangle tool being drawn, top 175.358 / bottom 171.183; NO % readout | confident (no % present)
+S5 1:24:41 | tf=1D  | long-position tool, no % readout. Levels: 32.01 / 29.77 / 29.20 / 28.22 / 27.01 / 25.58 / 24.45 / 23.44 / 21.54 | confident (no % present)
+
+  * the 8.10% at 36:05 is measured across his hand-drawn illustration,
+    not across real candles - treat as an illustration, not a reading.
+
+Additional % figures found while checking other frames:
+S5 1:30:30 | tf=12H | ONLY the OHLC legend bar-change: -0.00000060 (-2.58%) | confident
+                    | this is the current candle's own change, not a measure tool
+                      and not a stated threshold. Do not read it as a 12H rule.
+S6 52:38   | tf=1D  | measure: -0.739 (-4.19%) -739 | confident
+
+Q2 CONCLUSION: no % figure for 2H, 4H, 8H or 12H found.
+The only 2H frame (S5 1:00:22) has no percentage readout at all - he
+is drawing a rectangle, not measuring. The only 12H frame (S5 1:30:30)
+shows only the standard legend bar-change. Every genuine measure-tool
+reading in these frames sits on 1H or 30m. The gap you describe in the
+spoken content is not filled by anything on screen in these frames.
+
+Q3 ZONE BOX EDGES
+S5 1:30:30 | BONK 12H, yellow zone box | BODIES | confident
+  Top = highest body top of the cluster. Bottom sits on a drawn red
+  level just under the body lows.
+  Upper wick excluded: largest ~90% of box height, typical ~45%.
+  Lower wick excluded: typical ~50-65%, deepest ~110%.
+
+S5 1:24:41 | ZEC 1D, two yellow zone boxes | BODIES | partly obscured
+  Box A (left):  upper wick ~25% of box height excluded,
+                 lower wick ~60% of box height excluded.
+                 Bottom coincides with a drawn horizontal level.
+  Box B (right): upper wick ~10% excluded, lower wick ~35% excluded.
+
+S6 52:38 | LINK 1D, "Bullish OB" zone | BOTH - drawn as two nested boxes | confident
+  Inner (darker) box: top to BODY lows.
+  Outer (lighter) box: same top, extended down to the WICK lows.
+  Wick portion = ~83% of the inner body-box height.
+  i.e. the body box is ~55% of the full body+wick box.
+  This frame is the clearest statement of his convention: he draws the
+  body zone and then extends it to the wick as a separate outer band.
+
+Q4 POSITION SIZE TOOL
+S6 8:36  | ORDI 1D | short-position tool on chart, NO numeric labels rendered | confident
+         | price levels only: 41.23 / 40.11 (entry band), 35.52 (last),
+         |                    35.51, 27.86, 23.68
+         | no account size, no qty, no leverage, no position value shown
+
+S6 9:40  | ORDI 1D | two entry lines labelled:  "25 coins" @ 40.11
+         |                                      "15 Coins" @ 35.51
+         | Average Cost Calculator (coinguides.org) just opened, fields empty | confident
+
+S6 10:53 | Average Cost Calculator:
+         |   row 1:  15  @ $35.51
+         |   row 2:  25  @ $40.11
+         |   result: "The average cost for 40 Contracts/Shares is $38.385"
+         | Windows Calculator showing: 2.85
+         | chart gains a 38.38 level label | confident
+
+S6 11:27 | Average Cost Calculator (mid-edit):
+         |   row 1:  7   @ $35.51   <- being retyped, result line is stale
+         |   row 2:  15  @ $40.11
+         |   result line (from previous calc): "average cost for 23
+         |            Contracts/Shares is $38.51"
+         | Windows Calculator: 2.85 x 23 = 65.55 | confident
+
+S7 25:54 | freehand sketch on a 1D BTC chart, no sizing tool present
+         | checked 25:57 as well, same | unreadable (tool not on screen)
+
+Q4 CONCLUSION:
+  account size      - NEVER SHOWN in any of these frames
+  leverage          - NEVER SHOWN
+  position value    - NEVER SHOWN
+  entry             - 35.51 and 40.11 (scaled, two tranches)
+  average entry     - 38.385 (for 40 units) / 38.51 (for 23 units)
+  quantity          - 15 + 25 = 40 units, later reworked to 7 + 15 = 22
+                      (result line still reads 23 from the prior pass)
+  stop              - not labelled as a stop anywhere on screen
+  loss if stopped   - 65.55 is the only candidate: 2.85 x 23 on the
+                      Windows Calculator. 2.85 is consistent with the
+                      distance from the 38.385 average entry down to
+                      the 35.51 lower entry, but he never labels it,
+                      so read this as inferred arithmetic, not a
+                      stated risk figure.
+  He is not using a TradingView position-size tool at all in these
+  frames - he uses a web average-cost calculator plus the Windows
+  calculator, and the on-chart position tool has its stats labels
+  turned off.

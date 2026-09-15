@@ -1,0 +1,88 @@
+Read-only frame measurement across YouTube videos. Do not subscribe, like,
+comment or change anything. Forcing playback quality to 1080p is fine and
+expected. Some of these are the operator's own private videos and he is logged
+in as the channel owner, so they play normally.
+
+WHAT THIS IS FOR
+Reverse-engineering a chart-marking method into a trading bot rule set. One rule
+has four confirmations and one measured exception, and this job tests whether
+the exception has a condition behind it or whether the rule is simply wrong.
+
+THE RULE UNDER TEST
+Entry sits on the PROXIMAL edge of the zone's body band, meaning the edge price
+reaches first. Long into demand from above puts the entry on the top edge, short
+into supply from below puts it on the bottom edge.
+
+Confirmations (entry fraction measured from the zone's top edge, so 0.00 is the
+top and 1.00 is the bottom):
+    2023-10-24 public, BNB 1D    SHORT   1.00, on the bottom edge
+    2024-06-09 public, BTC 1D    LONG    0.00, on the top edge
+    S8 @ 1:02:28,      DOGE 2h   SHORT   1.00
+    S8 @ 1:03:38,      DOGE 2h   SHORT   1.00
+    S8 @ 1:28:33,      SOL 4h    LONG    0.01
+Exception, re-measured and confirmed real (R:R gate passed, no nested band):
+    TBOT1 @ 1:09:19,   OM 1h     LONG    0.173, a sixth of the way inside
+
+THE HYPOTHESIS
+He enters at the edge when the zone is VIRGIN, meaning no candle has traded into
+it yet, and enters INSIDE the zone when price has already penetrated it. On the
+OM chart a capitulation candle appears to have already swept below the zone
+before price rallied away. On the SOL and DOGE charts the zones look untouched.
+If that distinction holds, the edge rule survives with a condition attached
+rather than a hole in it.
+
+THE MEASUREMENT
+For each frame below, report:
+  1. The zone box's top and bottom, in price, read with getImageData on the raw
+     video frame.
+  2. Whether ANY candle to the LEFT of the position tool has penetrated the zone.
+     Penetrated means a wick or body crossing the proximal edge into the box.
+     If yes, give the deepest penetration as a fraction of zone height, and say
+     whether it was a wick or a body.
+  3. Where the current price sits relative to the zone: above it, below it, or
+     inside it.
+  4. The entry line's fraction from the zone top, re-measured independently
+     rather than taken from the table above.
+
+FRAMES
+  videoId 6u7mxH4xM-4  ("RDH TBOT vid 1")   @ 1:09:19   OMUSDT.P 1h    LONG
+  videoId rr3p4LjMY6U  ("Session 8")        @ 1:28:33   SOLUSDT.P 4h   LONG
+  videoId rr3p4LjMY6U  ("Session 8")        @ 1:02:28   DOGEUSDT.P 2h  SHORT
+  videoId rr3p4LjMY6U  ("Session 8")        @ 1:03:38   DOGEUSDT.P 2h  SHORT
+And if reachable, the two public ones for a cross-check, on channel
+@arshmeister21:
+  2023-10-24  "Unity Academy: Confirmation and Confluence"      @ ~19:48
+  2024-06-09  "06-09-2024 BITCOIN AND ALTCOIN RECAPS"           @ ~13:41
+
+VERDICT TO REPORT
+Does penetration predict entry placement across all six? State it plainly.
+If the OM zone turns out to be untouched, or one of the edge-entry zones turns
+out to be already penetrated, the hypothesis is dead and the entry rule has a
+genuine hole. Say so. A dead hypothesis is a useful result.
+
+METHOD NOTES, all of these have cost previous sessions time
+  - Seeking while PAUSED often fails to repaint and returns a stale frame from
+    the previous seek. Use: seekTo(target - 3), playVideo(), poll currentTime
+    until it passes the target, then pauseVideo(). Verify currentTime in output.
+  - Playback quality silently collapses to 144p while still reporting "hd720".
+    Call setPlaybackQualityRange('hd1080','hd1080') and setPlaybackQuality
+    ('hd1080') before and after each seek, and confirm video.videoWidth is 1920
+    before trusting any frame.
+  - Do NOT read geometry in one magnified view and prices in another and then
+    combine them. That has produced an error every single time on this project.
+    Read both from the same frame.
+  - Calibrate price-per-pixel from the position tool's stop leg, which prints
+    its own price span.
+  - Validate every frame with the gate
+        (entry_row - target_row) / (stop_row - entry_row)
+    which must reproduce the printed R:R. It has already caught a stop label
+    box's bottom edge being mistaken for the stop line. Frames that fail the
+    gate are unreadable, not estimates.
+  - Position tool label boxes carry white halos that sit on box edges and cannot
+    be resolved closer than about 10 px. Read box edges on columns well clear of
+    any label.
+  - The tool's "Amount" field is the account balance on a $1,000 nominal base,
+    not the risk. risk = 1000 - Amount(stop leg).
+
+Mark anything you cannot establish as unreadable rather than estimating it.
+These values go into software and a wrong number is worse than a gap.

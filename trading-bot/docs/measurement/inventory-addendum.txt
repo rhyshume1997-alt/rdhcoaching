@@ -1,0 +1,104 @@
+================================================================
+ADDENDUM TO THE ARSHMEISTER INVENTORY
+Corrections and re-reads after the verification pass.
+Pair this with the inventory file from that pass — its table is the
+authoritative one and supersedes my earlier draft entirely.
+================================================================
+
+WHAT I GOT WRONG
+  1. Two whole classification families. I put the named-lesson Unity streams and
+     the standalone "How To..." videos in type B on the reasoning that a title
+     naming a concept implies a concept being explained. Both broke under
+     sampling. He teaches on live price with real candles and drawn zones,
+     several sessions in Replay mode. There is no slide-based content anywhere.
+  2. The two sub-60-second clips. I called them D on length alone. Both are
+     type A with position tools on screen — they are short because the analysis
+     is short, not because they are offcuts.
+  3. The overall split. I reported 158 A / 15 B / 7 C / 2 D. The real answer is
+     182 A and nothing else. My "87% type A" understated a channel that is
+     100% type A.
+  The common error: I inferred FORMAT from SUBJECT. A title naming a mechanism
+  told me the video would explain the mechanism away from a chart. On this
+  channel it never does.
+
+WHAT THE WATERMARK ACTUALLY TELLS US
+  Confirmed present, but only between 2024-01-11 and 2024-06-09 on the public
+  channel, absent in all 24 frames outside that window. Identity is settled.
+  Two consequences worth holding on to:
+  - The overlay reads MEXC even when the chart is on BYBIT or BINANCE. It is a
+    TradingView chart-title setting, not the venue. Do not read the venue off it
+    in your own recordings either.
+  - Because it is a layout setting rather than a permanent brand, its presence in
+    your private session recordings does NOT date those recordings to the
+    Jan-Jun 2024 window. His paid layout and his public layout are simply
+    different. Date the recordings from the charts instead — see below.
+
+DATING YOUR OWN RECORDINGS FROM THE CHARTS (my inference, not observed fact)
+  Read off the date axes and price levels in the frames measured in passes 1
+  and 2:
+    S5, S6, S7, S8   axis labels "Thu 18 Jul '24", "Thu 01 Aug '24",
+                     "Mon 05 Aug '24", "Fri 09 Aug '24", "Wed 14 Aug '24";
+                     BTC ~66.5k, SOL ~172-183, ZEC ~23-31, ORDI ~35-40
+                     => late July to mid August 2024
+    TBOT1            BTC ~96.2k, HYPE ~22.7, OM ~5.18, RENDER ~4.20
+                     => later, roughly Dec 2024 to early 2025. Wider bracket,
+                        treat as approximate.
+  This is inference from chart content, not something anyone stated. But if it
+  holds, it hands you a cross-reference set.
+
+CONTEMPORANEOUS PUBLIC VIDEOS — the useful consequence
+  If S5-S8 are late Jul to mid Aug 2024, these public videos cover the same weeks
+  and the same instruments. Same market, same setups, possibly the same trades
+  discussed publicly that he worked through privately:
+    2024-07-22  24:30    07-22-2024 BITCOIN AND ALTCOIN RECAPS
+    2024-08-03  43:09    BTC OUTLOOK AND SMALL MARKET UPDATE
+    2024-08-06  53:23    Unity Academy Live Stream
+    2024-08-13  46:51    Unity Academy Live Stream
+    2024-08-20  1:05:51  Unity Academy Live Stream
+    2024-08-30  38:04    08-30-2024 BITCOIN AND ALTCOIN RECAPS
+    2024-09-03  1:04:05  Unity Academy Live Stream
+    2024-09-08  28:10    BITCOIN AND ALTCOIN RECAPS - RELIEF INCOMING?
+    2024-09-10  16:46    BITCOIN ANALYSIS (LOW-TIME FRAME)
+  And for TBOT1, the Dec 2024 - Mar 2025 run, starting with:
+    2024-12-04  20:38    100K BITCOIN. WHAT HAPPENS FROM HERE?
+  Why this matters: a rule you measure privately and then hear him state publicly
+  about the same chart in the same week is about as well-evidenced as this gets.
+
+REVISED TOP 10 FOR STUDYING HOW HE MARKS UP A CHART
+  The ranking changes for two reasons. Everything is type A, so length alone no
+  longer separates the field. And the AMA's runtime is misleading — it was still
+  on a "STARTING SOON" card at 40:00 and charting only from about 1:15:00, so its
+  effective content is ~70 minutes, not 2:25.
+  Reordered to put mechanism-naming titles first, because on this channel those
+  give you the verbal rule AND the chart demonstrating it in the same frame:
+
+   1. 1:08:59  Unity Academy Live Stream: Finding Entries, DCA, TP's and
+               Stop Losses                                        2023-12-07
+   2. 1:09:45  Unity Stream: How To Identify Ranges and Properly
+               Play Them                                          2023-12-12
+   3. 1:27:54  Supply and Demand Trading Method - Arsh way         2022-10-19
+               most-viewed on the channel at 2.5k, and the method piece
+   4.   59:06  Unity Academy: Confirmation and Confluence          2023-10-24
+   5. 1:02:22  Unity Academy Live Stream: Risk Management          2024-01-23
+   6. 1:00:10  Unity Academy Live Stream: Trendlines               2024-01-30
+   7. 1:40:48  Unity Academy Live Stream: Live Trading             2024-02-18
+               longest uninterrupted live session on the channel
+   8. 1:22:11  Unity Stream Live Trading/Full Breakdown Trading
+               Set ups                                            2024-01-03
+   9. 1:05:51  Unity Academy Live Stream                           2024-08-20
+               included for the date, not the title — same weeks as S5-S8
+  10. 2:25:29  AMA and Live charting with Arshmeister              2025-12-21
+               Q&A format, so rules get stated in answer to direct questions.
+               Skip to ~1:15:00; everything before that is a holding card.
+
+  Note items 1, 2, 4, 5, 6 all cluster in Oct 2023 - Jan 2024. That is when he
+  was running the structured teaching arc. If you only watch one stretch of this
+  channel, watch that one.
+
+STILL UNVERIFIED, CARRIED FORWARD
+  - 154 of 182 rows are family-inferred rather than individually observed. The
+    28 samples were unanimous across all five families and all four years, so
+    this is high-confidence, but it is inference.
+  - Views are YouTube's rounded strings (989, 1.2k), not exact counts.
+  - Nobody has bisected where the AMA actually starts. Somewhere between 40:00
+    and 1:15:00.

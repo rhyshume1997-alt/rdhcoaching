@@ -1,0 +1,92 @@
+Read-only work on a public YouTube channel. Do not subscribe, like, comment or
+change anything. Forcing playback quality to 1080p is fine and expected.
+
+CHANNEL: Arshmeister, @arshmeister21, channel ID UCxK0Sgqs3rZYrm0o6shk_HA
+Crypto TA educator, TradingView charts, supply/demand zones and order blocks.
+
+CONTEXT — established across four previous passes, do not re-derive
+  - Position tool decode: "Amount" is account BALANCE on a $1,000 nominal base.
+    risk = 1000 - Amount(stop leg). reward = Amount(target leg) - 1000.
+    Printed % is entry-relative. Printed R:R = target distance / stop distance.
+  - Entry sits on the proximal edge of the BODY band (the edge price reaches
+    first): long into demand -> top edge, short into supply -> bottom edge.
+  - Stop is parked at or just past the far edge of the nearest STRUCTURE beyond
+    the zone — a wick band, a separate deeper zone, or a plain drawn level.
+    An earlier "0.5x zone height" rule was withdrawn as an artefact.
+  - Method that works: calibrate price-per-pixel from the position tool's own
+    stop leg (a printed price span), read box edges with getImageData on the raw
+    video frame, and read geometry and prices FROM THE SAME FRAME. Combining a
+    measurement from one magnified view with a price from another has produced
+    an error every single time it has been tried on this project.
+
+=== TASK A (primary) — is the stop overshoot a fixed PIXEL gap? ===
+The stop sits just past a structural edge, but the overshoot does not normalise
+by price (0.72%, 0.13%, ~0%), by stop distance (14.1%, 1.8%, ~0%), or by zone
+height. One frame converts to 15.5 pixels:
+    2023-10-24 BNB 1D: body band 4.41 price units over 38.5 px = 0.1145/px
+                       overshoot 1.78 units = 15.5 px
+HYPOTHESIS: the overshoot is a fixed VISUAL gap — he drags the stop to sit just
+clear of a line at whatever zoom he is at. If true, no price-based
+normalisation can ever be constant, and the bot should snap the stop exactly to
+the structural level and model no overshoot at all.
+
+For each frame below, report IN PIXELS as well as price:
+    - the structural edge the stop clears (wick band top/bottom, deeper zone
+      edge, or drawn level)
+    - the stop line's own row
+    - the gap between them, in pixels and in price units
+    - the price-per-pixel used, and how it was calibrated
+Frames (identify by date and title from the channel's Videos tab):
+    2023-10-24  Unity Academy: Confirmation and Confluence   (59:06)  -- control,
+                should reproduce ~15.5 px
+    2024-06-09  06-09-2024 BITCOIN AND ALTCOIN RECAPS        (41:06)
+    2022-11-30  11-30-2022 BITCOIN ANALYSIS                  (0:51), frame ~0:17
+                -- stop sits ON a dashed level, expect ~0 px
+Then find TWO more position-tool frames from any other date and measure the same
+way, so there are five points.
+VERDICT to report: is the pixel gap consistent (within a few px), or does it
+vary as much as the price-normalised versions did? Either answer is useful.
+Say "inconsistent" plainly if that is what the data shows.
+
+=== TASK B (secondary) — can captions be harvested reliably? ===
+Captions have been intermittent across sessions: sometimes ~3 good cues per page
+load, sometimes frozen, sometimes fine. A previous attempt at seek-stepping was
+abandoned because it was re-reading a FROZEN element and returning the same
+string at every timestamp — which would have produced a fabricated transcript
+that looked correct. Do not repeat that.
+
+Test the seek-then-play-through-the-cue approach on ONE video first:
+    2023-10-24  Unity Academy: Confirmation and Confluence   (59:06)
+Acceptance bar, all four must pass before harvesting anything else:
+  1. Adjacent captured cues must DIFFER. Any repeat of an identical string at a
+     different timestamp fails the test outright.
+  2. Pick three captured cues at random, reload the page fresh, seek to each,
+     and confirm the same text renders. All three must match.
+  3. Measure capture rate against roughly one cue per three seconds of runtime.
+     Report the raw fraction.
+  4. Reject below about 80%.
+The 80% bar exists for a specific reason: one open question is whether he ever
+states a minimum breakout % for 2H/4H/8H/12H charts. That needs a NEGATIVE
+finding, and a sparse transcript cannot support one — a dropped cue would read
+as a missing rule. For questions where a positive statement is being hunted, a
+40% transcript would still be useful, so report the rate rather than just
+pass/fail.
+If it passes, harvest that video and report the full transcript with timestamps.
+If it fails, say so and stop — do not harvest partially.
+
+=== TASK C (optional, only if A and B finish) ===
+Private video on the operator's own channel, videoId 6u7mxH4xM-4, at 1:09:19.
+OMUSDT.P 1h, a long. Earlier measurement put the entry 0.157 into the zone
+rather than on its proximal edge — the only counterexample to the entry rule.
+That figure came from combining a zone edge read off an unmagnified screenshot
+with a price read off a label, which is the known-bad method. Re-measure with
+getImageData, reading the zone's top edge and the entry line from the same
+frame. Report the entry's fraction from the zone top. If it lands within a
+pixel or two of the top edge, the counterexample dissolves.
+
+OUTPUT
+Plain text. Task A as a five-row table plus a verdict sentence. Task B as the
+four acceptance results with the raw capture rate, then either the transcript or
+a refusal. Task C as a single measurement with its calibration shown.
+Mark anything you could not establish as unreadable rather than estimating it.
+These values go into software and a wrong number is worse than a gap.

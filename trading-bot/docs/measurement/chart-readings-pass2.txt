@@ -1,0 +1,215 @@
+!!! SUPERSEDED IN PLACES - see 09-CORRECTIONS-2026-09-06.md before using this file.
+!!! Corrected here: Section B's conclusion (stop at ~0.5x zone height) is WITHDRAWN, see 00-MASTER.txt Part 2. Its OM zone bounds 5.2267/4.9400 are the superseded reading; the getImageData re-read gives 5.23382/4.93664. Raw readings stand.
+!!! Nothing below is deleted. The corrections file says what changed and why.
+
+================================================================
+CHART FRAME READINGS - PASS 2
+Sessions 5, 6, 8 and TBOT1 (RDH TBOT vid 1 = 6u7mxH4xM-4)
+Source: private YouTube recordings, TradingView screen capture
+Read at 1080p playback (playback-only; nothing on the videos or
+channel was altered).
+Where a requested timestamp had no candlesticks, the timestamp
+actually used is shown as "-> mm:ss".
+================================================================
+
+A. ZONE BOX EDGES
+S6 53:46   | LINKUSDT.P 1D MEXC   | axis 18.181 / 17.282 (also 17.921, 16.533)
+           | top=BODY bottom=BODY | TWO stacked boxes (body box + separate wick band below)
+           | inner/body box 18.181-17.282 (h 0.899); outer band continues ~0.30-0.33x that height below
+           | outer band = ~0.33x inner box height
+           | lower wick outside the body box ~0.59 of box height
+           | PARTLY OBSCURED - the rectangle is mid-drag with handles showing and three
+             translucent fills overlap, so the band's lower edge is the weakest number here
+
+S6 54:22   | SOLUSDT.P 10m BINANCE | axis 179.000 / 178.000 (also 182.000, 174.000)
+           | top=BODY bottom=BODY | ONE box
+           | box ~179.06 - ~178.44 (h ~0.62-0.75), drawn on the single origin candle's body
+           | upper wick outside ~0.05-0.12 of box height (a neighbouring candle pokes ~0.12 above)
+           | neighbouring bodies and wicks run well below the bottom edge
+           | PARTLY OBSCURED - 10m candles are small and the pink fill sits over them
+
+S6 2:02:44 | MUMU The Bull/USDT 4h MEXC | axis 0.00003500 / 0.00003000
+           | UNREADABLE for section A - real candles, but NO zone box on screen.
+           | What was there instead: measure tool reading 0.00000705 (26.99%) 705.
+           | (Noted because it is a % figure on a 4H chart, which you were hunting last pass -
+             but it measures one large move, it is not a stated threshold.)
+
+S8 33:41 -> 33:56 | SOLUSDT.P 1h MEXC | axis 187.099 (crosshair) / 184.495
+           | 33:41 itself was a LINE chart with no boxes; candles + box appear at 33:56
+           | top=NEITHER bottom=NEITHER | ONE box
+           | box 187.099 - 184.495 (h 2.604)
+           | top sits between: deepest upper wick 0.14x box height ABOVE it, body tops 0.12x BELOW it
+           | bottom sits between: deepest lower wick 0.19x BELOW it, body lows 0.13x ABOVE it
+           | PARTLY OBSCURED - he is actively dragging the box (handles + "Add text"
+             placeholder); by 34:11 it has been resized again. This is a box in motion,
+             not a settled one, so do not treat the in-between placement as his rule.
+
+A. CONCLUSION: he does not use one convention throughout. S6 53:46 shows the two-box
+form - an inner box on the bodies with a separate lighter band beneath covering the wick
+(band ~0.33x the body box). S6 54:22 and S8 33:56 show a single box. The cleanest settled
+single box in this whole batch is actually the S8 1:28:33 frame under section B, where top
+and bottom both land exactly on BODY extremes with ~0.86x and ~0.96x of box height of wick
+left outside. Top and bottom follow the SAME rule (bodies) in every settled box measured;
+what changes is whether he adds a second band for the wick.
+
+B. STOP DISTANCE BELOW THE ZONE
+TBOT1 4:11 | BTCUSDT.P 1h BINANCE | axis 94,036.9 / 92,117.7 (also 100,118.5, 96,211.5)
+           | entry 94,036.9 | stop 92,117.7 | target 100,118.5
+           | tool labels: Target 6,081.6 (6.47%) 60,816, Amount 1792.2
+           |              Open P&L 2,174.6, Qty 0.13, Risk/Reward 3.17
+           |              Stop 1,919.2 (see % note), 19,192, Amount 750
+           | zone (cyan, sloped) at the entry column: top 94,036.9, bottom ~92,739, h ~1,298
+           | stop is 621 below the zone bottom = 0.48 x zone height = 0.66% of entry
+           | full stop distance from entry = 1,919.2 = 2.04%
+           | stop sits below the BODIES, above the deepest WICK
+           | CONFIDENT on the tool figures and the entry/stop/target prices.
+           | PARTLY OBSCURED on two things: the zone is a sloped parallelogram so its
+             "bottom" depends on which column you read; and the stop label's percentage
+             renders as "1.84%" but 1,919.2/94,036.9 = 2.04%, and the target label's 6.47%
+             uses the same entry. Use 2.04%. I could not get the glyph clean enough to
+             settle it visually - flagging rather than picking.
+
+TBOT1 22:57 -> 22:59 | HYPEUSDT.P 4h BYBIT | axis 21.287 / 20.508 (also 25.179, 22.726)
+           | entry 21.287 | stop 20.508 | target 25.179
+           | tool labels: Target 3.892 (18.28%) 3,892, Amount 2249.04
+           |              Open P&L 1.439, Qty 320.924, Risk/Reward 5
+           |              Stop 0.779 (3.66%) 779, Amount 750
+           | NO zone box at the entry - the only zone (yellow) is far below at ~19.58-18.11,
+             so a fraction-of-zone-height cannot be given for this one
+           | stop distance from entry = 0.779 = 3.66%
+           | stop sits below the BODY lows (~21.6) and below the normal wick lows,
+             but does NOT reach the capitulation wick
+           | THE TWO WICKS: normal wick lows in the cluster ~20.8-21.0 (~0.3-0.5 below entry,
+             ~1.4-2.3%); capitulation wick reaches ~19.63 (~1.96 below entry, ~9.2%)
+           | CONFIDENT on the tool figures. PARTLY OBSCURED on the two wick depths -
+             they are read off the candle geometry, not off labels.
+
+TBOT1 1:03:02 -> 1:03:05 | RENDERUSDT 4h BINANCE | axis 4.198 / 3.432 (also 3.000, 2.500)
+           | UNREADABLE as a stop-vs-zone measurement: no position tool and no zone box.
+           | What was there instead: two horizontal levels, 4.198 (current) and 3.432 (drawn).
+           | The 3.432 level sits BELOW the candle bodies (body low ~4.07) and ABOVE the
+             capitulation wick low (~3.28). Gap from level down to that wick low ~0.15 (~3.6%).
+           | Same shape as the other frames, but with no zone box there is no denominator.
+
+TBOT1 1:09:17 -> 1:09:19 | OMUSDT.P 1h BINANCE | axis 5.18166 / 4.80024 (also 6.31311, 5.00000)
+           | entry 5.18166 | stop 4.80024 | target 6.31311
+           | tool labels: Target 1.13167 (21.845%) 113,167, Amount 1741.7
+           |              Open P&L 0.60472, Qty 655.445, Risk/Reward 2.97
+           |              Stop 0.38142 (7.363%) 38,142, Amount 750
+           | zone (cyan): top ~5.2267, bottom ~4.9400, h ~0.2867
+           | stop is 0.1398 below the zone bottom = 0.49 x zone height = 2.70% of entry
+           | full stop distance from entry = 0.38142 = 7.36%
+           | stop sits below the ordinary body lows (~4.87) but ABOVE the capitulation
+             candle's body low (~4.57) and its wick low (~4.50)
+           | CONFIDENT
+
+S8 32:20   | SOLUSDT.P 2h MEXC | axis 174.339 / 171.628 (also 172.214)
+           | UNREADABLE for section B - real candles, but no zone box and no stop line.
+           | What was there instead: two horizontal levels only, 174.339 (red) and 171.628
+             (black). The black one runs THROUGH the candles rather than sitting below them,
+             so it is not a stop.
+
+BONUS (this is a section C frame but it carries the best section B data in the batch):
+S8 1:28:33 | SOLUSDT.P 4h MEXC | axis 172.000 / 166.000 (also 176.000, 154.000)
+           | entry 170.367 | stop 166.656 | target 178.257
+           | tool labels: Target 7.890 (4.63%) 7,890, Amount 1531.53
+           |              Open P&L 0.921, Qty 67.367, Risk/Reward 2.13
+           |              Stop 3.711 (2.18%) 3,711
+           | zone (cyan): top 170.39 (= the entry), bottom ~168.03, h ~2.36
+           | stop is 1.374 below the zone bottom = 0.58 x zone height = 0.81% of entry
+           | full stop distance from entry = 3.711 = 2.18%
+           | stop sits below the BODIES; deepest wick reaches ~165.8, so the stop does NOT
+             clear it
+           | CONFIDENT
+
+B. CONCLUSION: where a zone box exists, the stop sits roughly HALF a zone-height below the
+zone's bottom edge - 0.48x, 0.49x and 0.58x across the three measurable frames. As a price
+percentage the same three come out at 0.66%, 2.70% and 0.81% of entry, which is not a
+usable constant; the fraction-of-zone-height is the stable rule, the percentage is not.
+In every readable frame the stop is placed below the candle BODIES but deliberately NOT
+below the deepest/capitulation wick - that held on BTC 1h, HYPE 4h, OM 1h and SOL 4h, and
+the RENDER 4h level (no position tool) sits the same way.
+
+C. WHERE THE ENTRY AND DCA SIT INSIDE THE ZONE
+S8 1:02:28 | DOGEUSDT.P 2h MEXC | axis 0.12700 / 0.12500 (also 0.13000, 0.12400)
+           | zone box (pink): top ~0.12743, bottom ~0.12504
+           | line at 0.12700 (red)          -> fraction 0.16 from the top
+           | position-tool entry            -> fraction 1.00 (exactly the bottom edge)
+           | line at 0.12492/0.12495 (blue) -> fraction ~1.05 (just below the box)
+           | short setup: risk box above the entry, target box below
+           | PARTLY OBSCURED
+S8 1:03:38 | DOGEUSDT.P 2h MEXC | axis 0.13000 / 0.12400
+           | same chart, panned. zone box: top ~0.12738, bottom ~0.12500
+           | 0.12700 -> 0.16 | entry -> 1.00 | 0.12492 -> ~1.05
+           | CONFIDENT on the geometry
+S8 1:28:33 | SOLUSDT.P 4h MEXC | axis 172.000 / 166.000
+           | zone box: top 170.39, bottom 168.03
+           | single entry line at 170.367   -> fraction 0.01 (the very TOP edge)
+           | no second line inside the zone
+           | CONFIDENT
+
+WHICH LINE IS "FIRST ENTRY" AND WHICH IS "DCA": NOT DETERMINABLE from any of these three
+frames. None of the horizontal lines carries a text label, and the position tool shows only
+one entry level. He may well be saying it out loud, but it is not on screen, and I am not
+going to assign the names from position alone.
+
+C. CONCLUSION: entries sit at an EDGE of the zone, not in the middle - the bottom edge
+(1.00) on both DOGE frames and the top edge (0.00-0.01) on the SOL frame. The only
+horizontal level found inside a zone sits at 0.16 from the top, on both DOGE frames.
+
+D. HOW MANY CONFLUENCES ON A TRADE HE TAKES
+S8 8:04    | ONDOUSDT SPOT 1D | axis 1.00000 / 0.80000 (also 0.60000)
+           | COUNT = 5 objects converging at ~0.90-0.92 (where price is sitting):
+           |   1. cyan demand zone box (its top edge)
+           |   2. descending trendline - falling wedge upper boundary
+           |   3. second descending trendline - wedge lower boundary
+           |   4. rising long-term trendline
+           |   5. horizontal level drawn at that price
+           |   (+ the falling-wedge pattern formed by 2 and 3, if you count the pattern as
+           |      its own object, which would make it 4 objects + 1 pattern)
+           |   (hand-drawn blue swing arcs are also present but are annotation, not levels)
+           | CONFIDENT on the count.
+           | CAVEAT: no position tool on screen, so this is analysis - I cannot confirm from
+             the frame that he actually takes it.
+
+S8 24:46   | SOLUSDT.P 30m BYBIT | axis 194.14 / 174.24 (also 189.23, 184.36, 164.10)
+           | UNREADABLE as a confluence count. The large grey rectangle is the MEASURE TOOL
+             (reading 8.01 (4.59%) 801), not a zone box.
+           | What was there: 3 horizontal levels (194.14, 189.23, 174.24), 1 descending blue
+             trendline, and scattered drawing anchor points. Nothing overlaps at the current
+             price (171.52) and there is no position tool.
+
+S5 1:38:21 | BONKUSDT 12h BINANCE | axis 0.00003000 / 0.00002000 (axis labels heavily stacked)
+           | long position tool present (green target above, red risk below)
+           | COUNT = 2-3 exactly at the entry level:
+           |   1. blue horizontal level
+           |   2. top edge of the grey zone box he is drawing
+           |   3. the position-tool entry line itself
+           | Within one risk-box height above the entry, add:
+           |   4. red horizontal level
+           |   5. terminus of the ascending trendline
+           |   6. lower edge of the large pink supply zone
+           | so 2-3 strictly at price, 5-6 in the immediate vicinity
+           | PARTLY OBSCURED - the rectangle is mid-draw ("Add text" placeholder showing),
+             and the right-hand axis labels are stacked so tightly that individual level
+             prices cannot be read off reliably.
+
+D. CONCLUSION: the one clean read (ONDO 1D) has 5 overlapping objects - comfortably 3 or
+more. BONK 12h has 2-3 exactly at the entry and 5-6 within a risk-box height, so it depends
+where you draw the tolerance. The SOL 30m frame has no trade on it at all. Two data points
+is thin support for a rule; if you want this one firmed up, more frames where a position
+tool is actually on screen would settle it.
+
+E. OPPORTUNISTIC SWING READINGS
+None reported. No frame in this batch carried a swing high or low marked on real candles
+that was both clearly countable and clear of the chart edge. The closest things are the
+order-block origin clusters already measured in A and B, where the boxes sit on body
+extremes rather than on a marked pivot, and the small blue circles on the S8 24:46 chart,
+which are drawing anchor points rather than swing marks.
+
+FRAMES THAT COST NOTHING THIS TIME
+The usability pre-check paid off on one frame only: S8 33:41 was a line chart and the
+candles returned at 33:56 (+15s). Everything else in the list had real candlesticks at the
+requested timestamp. The losses this pass were a different kind - four frames had candles
+but simply did not contain the object being asked about (no zone box at S6 2:02:44, no stop
+or zone at S8 32:20 and TBOT1 1:03:02, no trade at S8 24:46).

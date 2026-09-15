@@ -1,0 +1,77 @@
+================================================================
+CORRECTION v2 — SUPERSEDES CORRECTION-risk-figure.txt ENTIRELY
+Delete v1. Its number was right and its reasoning was wrong, which
+is the more dangerous combination.
+================================================================
+
+THE POSITION TOOL'S "Amount" FIELD — DECODED
+  Amount is the ACCOUNT BALANCE at that leg, on a $1,000 nominal account.
+  It is not the money at risk and it is not a P&L.
+      risk   = 1000 - Amount(stop leg)
+      reward = Amount(target leg) - 1000
+  So "Amount: 750" on every stop leg means $250 risk, every time, and the
+  reason it never changes is that it is a template setting, not a live figure.
+
+  The $1,000 base is DERIVED, not assumed. Solving (amtT - B)/(B - amtS) = R:R
+  for B on three frames from three different years returns exactly 1000.00
+  each time. Nothing else reproduces the printed ratios.
+
+WHAT I GOT WRONG, PRECISELY
+  v1 said I misread the digits. I did not. I read them correctly and modelled
+  them wrong. Tested against my own three TBOT1 trades:
+      trade              qty*stop   1000-amtS   qty*target   amtT-1000
+      TBOT1 4:11  BTC      249.50      250.00       790.61      792.20
+      TBOT1 22:59 HYPE     250.00      250.00      1249.04     1249.04
+      TBOT1 1:09  OM       250.00      250.00       741.75      741.70
+  The target labels I dismissed as misreads — "1792.2", "2249.04", "1741.7" —
+  decode to rewards of 792.20, 1249.04 and 741.70, matching quantity x target
+  distance to within 0.2%, and the HYPE one to the penny.
+
+  So v1's advice to "treat the printed Amount as decoration" was exactly
+  backwards. The field is highly reliable. I just did not know what it meant.
+
+  One label WAS genuinely misread: the BTC stop percentage. The printed % is
+  entry-relative, confirmed on the other two trades (HYPE 0.779/21.287 = 3.660%
+  vs printed 3.66%; OM 0.38142/5.18166 = 7.361% vs printed 7.363%). So BTC
+  should read 2.04%, and my "1.84%" was a real misreading. The arithmetic
+  separates the true misreads from the mis-modelled ones.
+
+MY PROPOSED CROSS-CHECK WAS PARTLY CIRCULAR — CONCEDED
+  I suggested verifying that risk x R:R = quantity x target distance. Since
+  TradingView computes the printed R:R as target distance / stop distance:
+      risk x R:R = (qty x stop) x (target/stop) = qty x target
+  It is an algebraic identity and holds for any quantity, including a wrong one.
+  It is still worth running as a digit-reading check — a misread digit in any of
+  the four fields breaks it — but it cannot tell you what the Amount field
+  means, because it never touches that field. Calling it "two independent
+  routes" was wrong; it was one route plus a self-consistency test. The Amount
+  decode is the genuine second route, and it agrees.
+
+Q6 — WHERE IT NOW STANDS
+  Settled: the DRAWING convention. Risk is $250 on a $1,000 nominal account,
+  unchanged across eight trades spanning 2022-11 to 2025-06 (five public frames
+  plus three from the TBOT1 recordings). Codeable as R = 250, base = 1000, with
+  targets readable straight off the Amount fields.
+
+  Not settled, and probably not settleable from frames: what he actually risks.
+  $250 on $1,000 is 25% per trade, which is a teaching device, not a live sizing
+  rule. No frame anywhere shows a real account size or a real percentage. Treat
+  the $250 as a unit of illustration — useful for reading his intent off any
+  chart, useless as a bot parameter.
+
+  Consequence for the bot: derive position size from your own risk budget and
+  his stop distance. Do not import 250, and do not import 25%.
+
+Q3 — A CONFLICT WORTH RESOLVING BEFORE CODING
+  Transcript cue, 2023-10-24 @ ~19:48, unconfirmed:
+      "this is not a DCA point, this is just the 50% line so entry"
+  Measured entries from pass 2 do NOT sit at 50% of the zone box:
+      S8 1:28:33  SOL 4h    entry at fraction 0.01 of the box (top edge)
+      S8 1:02:28  DOGE 2h   entry at fraction 1.00 of the box (bottom edge)
+      S8 1:03:38  DOGE 2h   entry at fraction 1.00 of the box (bottom edge)
+  Most likely reconciliation: "the 50% line" is the equilibrium of the impulse
+  LEG, which is standard supply-and-demand language and a different object from
+  the midpoint of the order-block BOX. Both statements can be true at once if
+  the box happens to sit at the leg's midpoint.
+  This must be resolved before either rule goes into software. They imply
+  different entry prices on the same chart.

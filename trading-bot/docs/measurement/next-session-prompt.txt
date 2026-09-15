@@ -1,0 +1,106 @@
+Read-only inventory job on a public YouTube channel. Do not subscribe, like,
+comment, or change anything on the channel. Forcing the player's playback quality
+to 1080p is fine and expected (it is playback-only and touches nothing on the
+channel) — everything else stays untouched.
+
+THE CHANNEL — already identified, do not re-search
+  Arshmeister, handle @arshmeister21, channel ID UCxK0Sgqs3rZYrm0o6shk_HA
+  3.08k subscribers. 182 items = 181 on the Videos tab + 1 past stream on the
+  Live tab ("AMA and Live charting with Arshmeister", 2:25:29).
+  One playlist: "Education", 7 videos.
+  Crypto TA educator: supply and demand zones, order blocks, support/resistance.
+  Charts are TradingView on MEXC/BYBIT perpetuals. Channel description carries a
+  BloFin affiliate link.
+
+A previous pass already produced a full title/duration/views/relative-age list.
+This job is the four gaps it could not close, plus a verification pass.
+
+=== 1. CONFIRM THE CHART WATERMARK ===
+In a separate set of private recordings, this person's charts carry a text
+overlay reading "ARSHMEISTER | BloFin | MEXC" at the top-centre of the chart.
+Two frames were checked on this channel and neither showed it. Sample 4-6 frames
+across DIFFERENT eras and formats — one recent "BITCOIN AND MARKET UPDATE", one
+"Unity Academy Live Stream", the 2:25:29 AMA on the Live tab, and one 2022-era
+video — and report for each whether that overlay is present, and if so at which
+timestamp. If it never appears, say so plainly. Do not treat name + BloFin link +
+MEXC charts as a substitute; that circumstantial case is already established and
+I want to know specifically whether the literal overlay exists on this channel.
+
+=== 2. CLASSIFY THE 9 UNVERIFIED VIDEOS ===
+Open each, skip to roughly a third of the way in, and report whether there are
+REAL CANDLESTICKS with drawn levels on screen (type A), a concept being explained
+with drawings or slides (type B), mostly talking with minimal charting (type C),
+or something else (type D). Report the timestamp you actually looked at.
+  What if I told you...                                       27:10
+  CRYPTO SUMMIT - WHAT CAN WE EXPECT ON MARCH 7TH?            28:01
+  THESE ARE THE 5 COINS THAT IM MOST BULLISH ON...            18:46
+  I AM A SOLANA MAXI (FOR THE SHORT TERM)                     13:18
+  100K BITCOIN. WHAT HAPPENS FROM HERE?                       20:38
+  MY LONG TERM BAGS AND POTENTIAL LEVELS TO BUY CRYPTO        15:40
+  ETH ETF PLAN: DO WE PUMP OR DUMP?                           18:21
+  11-30-2022 BITCOIN ANALYSIS                                  0:51
+  BITCOIN ANALYSIS 11-22-2022                                  0:44
+
+=== 3. ONE TRUNCATED TITLE ===
+Get the full title of the 16:03 video, ~1k views, about 1 year old, which begins
+"ETHEREUM MACRO AND MICRO ANALYSIS - ETH".
+
+=== 4. EXACT UPLOAD DATES FOR ALL 182 ===
+The channel listing only exposes relative ages ("8 mo ago"). Get real calendar
+dates. Fastest route: for each videoId, POST to /youtubei/v1/player from the page
+context and read
+  microformat.playerMicroformatRenderer.publishDate
+Batch it, throttle a little between calls, and output DATE as YYYY-MM-DD.
+
+=== 5. VERIFY THE TITLE-BASED CLASSIFICATION BY SAMPLING ===
+The existing classification is title-based and unverified. Sample-check it:
+open 2 videos from each title family below at roughly a third in and confirm the
+type. If a family's samples disagree with the assumed type, say so and open more
+of that family.
+  "BITCOIN AND MARKET UPDATE" / "BMU"            assumed A  (~60 videos)
+  "BITCOIN AND ALTCOIN RECAPS" + dated recaps    assumed A  (~40 videos)
+  "Unity Academy Live Stream" generic            assumed A  (~40 videos)
+  "Unity Academy" with a named lesson topic      assumed B  (9 videos)
+  standalone "How To..." / method videos         assumed B  (6 videos)
+
+=== OUTPUT ===
+A plain text block I can copy, newest first:
+  DATE       | DURATION | TYPE | VIEWS | TITLE
+  2026-01-14 | 24:11    | A    | 1.2k  | Bitcoin Weekly Outlook - Key Levels
+Then: total videos, count per type, total hours of type A, and a short note on
+what the sampling in step 5 confirmed or contradicted.
+Mark anything you could not establish as unreadable or unverified rather than
+guessing — I am putting this into software and a wrong value is worse than a gap.
+
+=== OPERATIONAL NOTES — these cost the last session a lot of time ===
+- The channel Videos tab UNDER-RENDERS in the DOM: scrolling loads only ~3 tiles
+  and the grid never grows. Do not scrape the DOM. Read window.ytInitialData
+  instead, then follow continuations by POSTing to /youtubei/v1/browse with
+  ytcfg INNERTUBE_API_KEY + INNERTUBE_CONTEXT and the continuation token. Six
+  continuation pages returns all 181.
+- Video tiles are lockupViewModel, NOT videoRenderer. Title is at
+  metadata.lockupMetadataViewModel.title.content; views and age are in
+  metadata...contentMetadataViewModel.metadataRows; duration is only inside
+  contentImage overlays — easiest to regex the stringified contentImage for
+  "MM:SS" or "H:MM:SS".
+- JavaScript tool results are capped around 1000 characters. Chunk any long
+  output into slices of ~20 rows, or you will silently lose the tail.
+- Do NOT return continuation tokens or hrefs containing query strings from the JS
+  tool — the result gets blocked. Stash them on window and return only a boolean.
+- Seeking with the player PAUSED often does not repaint; you get a stale frame
+  from the previous seek and will happily measure the wrong video. Reliable
+  method: seekTo(target - 3), playVideo(), poll currentTime until it passes the
+  target, then pauseVideo(). Always verify currentTime in the result.
+- Playback quality silently collapses to 144p (256x144) and reports "hd720" while
+  doing it. Charts are unreadable there. Call
+  setPlaybackQualityRange('hd1080','hd1080') AND setPlaybackQuality('hd1080')
+  before and after each seek, and check video.videoWidth is 1920 before trusting
+  any frame.
+- To read a chart frame clearly, hide the YouTube chrome and blow the player up
+  to fill the viewport, then magnify with a CSS transform on the <video> element
+  (transformOrigin '0 0' plus translate+scale) rather than the screenshot zoom
+  action, which does not magnify past native resolution.
+- "Show transcript" is NOT in the "..." menu under a video — that menu only has
+  Download and Report. It lives in the expanded description: click "...more",
+  then "Show transcript" at the bottom. Captions on this channel are English
+  auto-generated (ASR), confirmed on the newest video.

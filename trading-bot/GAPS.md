@@ -25,7 +25,7 @@ scaffolding as a building.
 | shipped | status | what would make it real |
 |---|---|---|
 | `max_entry_distance_pct` (CHANGELOG_EVIDENCE.md, DISCORD CHECK 2026-09-15) | off by default; the threshold that would make it useful is **still unmeasured** | the 2026-09-12 resting-entry batch needs spot at post time from bybit to tighten `sweep_bracket`; then a sweep |
-| GAP 1 `backtest --split` | **operational, with a naming defect** — it splits correctly but `in_sample_fraction` measures over RAW bars, so a "2/3" split at 900 bars is really 25% in-sample by *analysable* bars (warm-up eats 500). First OOS run recorded under GAP 1. | decide whether the fraction should measure over the post-warm-up region, or report both counts |
+| GAP 1 `backtest --split` | **operational** — and the naming defect found by the first OOS run is fixed: `in_sample_fraction` now divides the **analysable** bars, not the raw series, so the delivered share matches the requested one. The header prints both analysable counts. | nothing |
 | GAP 2 correlated-exposure cap | **operational in the pipeline, not in the backtest** — A1 landed, and two follow-up defects are fixed: a 3-bar correlation could drive the cap (now floored at `min_correlation_overlap_bars`), and the veto reason stated the *requested* lookback rather than the bars actually measured. `tbot backtest` still injects no portfolio state, so it cannot fire there | a PortfolioState built from the engine's own live trades |
 | A1 context channel + `align_series` | **operational** — and it fixed a live defect (`rolling_correlation` correlated misaligned dates, sign-inverting on a periodic path) | nothing |
 

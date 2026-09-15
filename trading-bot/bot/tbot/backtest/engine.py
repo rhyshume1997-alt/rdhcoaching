@@ -1586,11 +1586,37 @@ class SplitResult:
 
     @property
     def in_sample_bars(self) -> int:
+        """Raw bars in the in-sample segment, warm-up included."""
         return self.split_index
 
     @property
     def out_of_sample_bars(self) -> int:
+        """Raw bars after the split — which for this segment is also its analysable count."""
         return self.out_of_sample.bars - self.split_index
+
+    # -- the counts that actually describe the experiment -------------------------------------
+    # `in_sample_fraction` divides THESE, not the raw series (corrected 2026-09-15).  Report
+    # them, not the percentage: a reader who sees only "66.7% in-sample" cannot tell how much
+    # was really sampled on either side.
+
+    @property
+    def warmup_bars(self) -> int:
+        """Bars the in-sample segment spends warming up before it analyses anything."""
+        return self.in_sample.warmup_bars
+
+    @property
+    def in_sample_analysable(self) -> int:
+        return self.in_sample.bars - self.in_sample.warmup_bars
+
+    @property
+    def out_of_sample_analysable(self) -> int:
+        return self.out_of_sample.bars - self.out_of_sample.warmup_bars
+
+    @property
+    def realised_in_sample_share(self) -> float:
+        """The in-sample share actually delivered, by analysable bars."""
+        total = self.in_sample_analysable + self.out_of_sample_analysable
+        return (self.in_sample_analysable / total) if total else 0.0
 
 
 def split_backtest(
@@ -1614,30 +1640,48 @@ def split_backtest(
     detector state a live run would have, while opening no trade before the split.  No bar
     ``> i`` is ever visible at bar ``i``, so the lookahead guarantee is unchanged.
 
-    :raises SplitError: if the fraction is out of range, or either segment would contain no
-        analysable bar once warm-up is accounted for.  Failing loudly beats silently reporting
-        a segment that never ran.
+    **``in_sample_fraction`` is a fraction of the ANALYSABLE bars, not of the raw series.**
+    Corrected 2026-09-15.  It used to divide the raw series, and warm-up bars are not samples:
+    with a 500-bar warm-up, a "2/3" split of 900 bars handed the in-sample segment 100
+    analysable bars and out-of-sample 300 — an actual in-sample share of **25%**, the inverse
+    of what was asked for, with the larger half being the one meant to be held back.  A number
+    that describes something other than what it measures is the same defect as a veto reason
+    quoting a bar count it never computed; both are fixed the same way, by making the name true.
+
+    :raises SplitError: if the fraction is out of range, if the series has no analysable bars at
+        all, or if either segment would end up with none.  Failing loudly beats silently
+        reporting a segment that never ran.
+
+        The guard is **structural, not a quality bar**: it requires at least one analysable bar
+        per side, which is the point below which a segment reports on nothing.  It deliberately
+        does not enforce some larger "enough bars to be worth running" floor — that number would
+        be invented, and the header prints both analysable counts so a thin split is visible
+        rather than silently accepted.
     """
     if not 0.0 < in_sample_fraction < 1.0:
         raise SplitError(
             f"in_sample_fraction must lie strictly between 0 and 1, got {in_sample_fraction}")
 
     n = len(series)
-    split = int(n * in_sample_fraction)
 
-    # The in-sample engine decides the warm-up; ask it rather than re-deriving §12.1 here.
-    in_engine = BacktestEngine(series.head(split) if split else series, config,
-                               plan_provider=plan_provider, starting_equity=starting_equity,
-                               warmup_bars=warmup_bars)
-    warm = in_engine.warmup_bars
+    # The engine decides the warm-up; ask it rather than re-deriving §12.1 here.  Built on the
+    # whole series because the split index is not known until the warm-up is.
+    probe = BacktestEngine(series, config, plan_provider=plan_provider,
+                           starting_equity=starting_equity, warmup_bars=warmup_bars)
+    warm = probe.warmup_bars
 
-    if split <= warm:
+    analysable = n - warm
+    if analysable < 2:
         raise SplitError(
-            f"in-sample segment is {split} bar(s) but warm-up alone needs {warm}: "
-            f"nothing would be analysed. Use a longer series or a larger --split fraction.")
-    if split >= n:
-        raise SplitError(
-            f"out-of-sample segment is empty (split index {split} of {n} bars)")
+            f"{n} bar(s) with a {warm}-bar warm-up leaves {max(0, analysable)} analysable "
+            f"bar(s): a split needs at least one on each side. Use a longer series.")
+
+    split = warm + int(round(analysable * in_sample_fraction))
+    # round() can land on either edge at extreme fractions; clamp so both sides keep a bar.
+    split = max(warm + 1, min(split, n - 1))
+
+    in_engine = BacktestEngine(series.head(split), config, plan_provider=plan_provider,
+                               starting_equity=starting_equity, warmup_bars=warmup_bars)
 
     out_engine = BacktestEngine(series, config, plan_provider=plan_provider,
                                 starting_equity=starting_equity, warmup_bars=split)

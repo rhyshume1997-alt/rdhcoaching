@@ -275,8 +275,13 @@ def test_split_segments_are_chronological_disjoint_and_cover_the_series(series, 
     from tbot.backtest.engine import split_backtest
 
     split = split_backtest(series, cfg, starting_equity=EQUITY, warmup_bars=WARMUP)
-    assert split.split_index == int(len(series) * (2.0 / 3.0))
+    # the fraction divides the ANALYSABLE bars, not the raw series (corrected 2026-09-15)
+    analysable = len(series) - WARMUP
+    assert split.split_index == WARMUP + round(analysable * (2.0 / 3.0))
     assert split.in_sample_bars + split.out_of_sample_bars == len(series)
+    assert split.in_sample_analysable + split.out_of_sample_analysable == analysable
+    assert split.realised_in_sample_share == pytest.approx(2.0 / 3.0, abs=0.02), (
+        "the delivered share must match the requested one, which is the whole point")
     # in-sample is strictly earlier: it never sees a bar at or beyond the split index
     assert split.in_sample.bars == split.split_index
     # out-of-sample is handed the whole series but analyses only from the split on
@@ -315,14 +320,27 @@ def test_split_rejects_an_impossible_fraction(series, cfg):
                            in_sample_fraction=bad)
 
 
-def test_split_refuses_when_the_in_sample_segment_could_not_be_analysed(series, cfg):
-    """Failing loudly beats silently reporting a segment that never ran."""
+def test_split_refuses_when_there_are_too_few_analysable_bars(series, cfg):
+    """Failing loudly beats silently reporting a segment that never ran.
+
+    The guard moved with the meaning of the fraction. It is no longer "the split index landed
+    on the warm-up" -- that can no longer happen, because the index is measured FROM the
+    warm-up. It is now "the series does not leave two analysable bars to divide".
+    """
     from tbot.backtest.engine import SplitError, split_backtest
 
-    with pytest.raises(SplitError, match="warm-up"):
-        # warm-up longer than the in-sample segment: nothing could ever be analysed
-        split_backtest(series, cfg, starting_equity=EQUITY, warmup_bars=90,
+    with pytest.raises(SplitError, match="analysable"):
+        split_backtest(series, cfg, starting_equity=EQUITY, warmup_bars=len(series) - 1,
                        in_sample_fraction=0.5)
+
+
+def test_a_half_split_now_works_where_it_used_to_be_refused(series, cfg):
+    """Evidence the fix is real: 0.5 on this fixture was refused before, and is even now."""
+    from tbot.backtest.engine import split_backtest
+
+    split = split_backtest(series, cfg, starting_equity=EQUITY, warmup_bars=WARMUP,
+                           in_sample_fraction=0.5)
+    assert split.in_sample_analysable == split.out_of_sample_analysable == 20
 
 
 def test_split_result_has_no_combined_metric(series, cfg):
@@ -364,9 +382,11 @@ def test_cli_split_prints_two_labelled_reports(csv_path, capsys):
     assert cli.main(_backtest_argv(csv_path, "--split")) == 0
     out = capsys.readouterr().out
     assert out.count("BACKTEST REPORT") == 2, "expected exactly one report per segment"
-    assert "== IN-SAMPLE: bars 0-65" in out
-    assert "== OUT-OF-SAMPLE: bars 66-99" in out
-    assert "chronological split at bar 66 of 100" in out
+    assert "== IN-SAMPLE: bars 0-86" in out
+    assert "== OUT-OF-SAMPLE: bars 87-99" in out
+    assert "chronological split at bar 87 of 100" in out
+    assert "of ANALYSABLE bars in-sample" in out, "the header must not imply raw bars"
+    assert "27 analysable in-sample / 13 out-of-sample" in out
     assert "[OUR CHOICE" in out, "the 2/3 convention must be marked as ours"
     assert "NOT merged into a headline" in out
 
@@ -374,13 +394,16 @@ def test_cli_split_prints_two_labelled_reports(csv_path, capsys):
 def test_cli_split_accepts_an_explicit_fraction(csv_path, capsys):
     assert cli.main(_backtest_argv(csv_path, "--split", "0.7")) == 0
     out = capsys.readouterr().out
-    assert "chronological split at bar 70 of 100" in out
-    assert "70.0% in-sample" in out
+    assert "chronological split at bar 88 of 100" in out          # 60 warm-up + 70% of 40
+    assert "70.0% of ANALYSABLE bars in-sample" in out
+    assert "28 analysable in-sample / 12 out-of-sample" in out
 
 
 def test_cli_split_reports_a_usage_error_rather_than_crashing(csv_path, capsys):
-    """A 0.5 split puts the in-sample segment below the 60-bar warm-up."""
-    assert cli.main(_backtest_argv(csv_path, "--split", "0.5")) == 2
+    """A warm-up that leaves fewer than two analysable bars cannot be split."""
+    argv = ["backtest", "--csv", str(csv_path), "--tf", "4H", "--symbol", "SYNTHUSDT",
+            "--warmup", "99", "--split", "0.5"]
+    assert cli.main(argv) == 2
     out = capsys.readouterr().out
     assert "cannot split this series" in out
     assert "BACKTEST REPORT" not in out
@@ -403,4 +426,4 @@ def test_cli_split_writes_one_artifact_pair_per_segment(csv_path, tmp_path, caps
         assert "metrics" in payload and "events" in payload
     # the out-of-sample run records its warm-up as the split index: that is the audit trail
     oos = json.loads((tmp_path / "run.out_of_sample.json").read_text())
-    assert oos["meta"]["warmup_bars"] == 66
+    assert oos["meta"]["warmup_bars"] == 87

@@ -237,7 +237,12 @@ def _cmd_backtest_split(args: argparse.Namespace, cfg: Any, series: Any) -> int:
     )
 
     print(f"chronological split at bar {split.split_index} of {split.out_of_sample.bars} "
-          f"({fraction:.1%} in-sample) [OUR CHOICE - a harness convention, not his rule]")
+          f"({fraction:.1%} of ANALYSABLE bars in-sample) "
+          f"[OUR CHOICE - a harness convention, not his rule]")
+    print(f"  warm-up {split.warmup_bars} bars, then "
+          f"{split.in_sample_analysable} analysable in-sample / "
+          f"{split.out_of_sample_analysable} out-of-sample "
+          f"({split.realised_in_sample_share:.1%} in-sample as delivered)")
     print("the two segments below are independent runs from the same starting equity; "
           "they are NOT merged into a headline, by design.")
     print("NOTE: the out-of-sample block's own header repeats the FULL series bar count and")

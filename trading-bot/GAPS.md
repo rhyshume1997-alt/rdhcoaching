@@ -26,7 +26,7 @@ scaffolding as a building.
 |---|---|---|
 | `max_entry_distance_pct` (CHANGELOG_EVIDENCE.md, DISCORD CHECK 2026-09-15) | off by default; the threshold that would make it useful is **still unmeasured** | the 2026-09-12 resting-entry batch needs spot at post time from bybit to tighten `sweep_bracket`; then a sweep |
 | GAP 1 `backtest --split` | **operational** — this one genuinely works today | nothing; it is ready for the sweep it exists to protect |
-| GAP 2 correlated-exposure cap | **operational in the pipeline, not in the backtest** — A1 landed, so it assesses real slots and fires; but `tbot backtest` injects no portfolio state, so it cannot fire there | a PortfolioState built from the engine's own live trades |
+| GAP 2 correlated-exposure cap | **operational in the pipeline, not in the backtest** — A1 landed, and two follow-up defects are fixed: a 3-bar correlation could drive the cap (now floored at `min_correlation_overlap_bars`), and the veto reason stated the *requested* lookback rather than the bars actually measured. `tbot backtest` still injects no portfolio state, so it cannot fire there | a PortfolioState built from the engine's own live trades |
 | A1 context channel + `align_series` | **operational** — and it fixed a live defect (`rolling_correlation` correlated misaligned dates, sign-inverting on a periodic path) | nothing |
 
 ### The sequencing risk, recorded because it is the thing most likely to be forgotten

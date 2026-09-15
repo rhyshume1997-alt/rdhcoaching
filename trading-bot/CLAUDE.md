@@ -218,6 +218,29 @@ distance from price to entry, and does a trigger plan (a) get vetoed before armi
 risk profiles. Picking one at the end of a long day is how a good diagnosis becomes a bad
 patch.
 
+**Note added 2026-09-15 — a distance key now exists, and it does NOT close the above.**
+The section above is left exactly as written: it is the record of what was true at diagnosis.
+Two of its statements have since been overtaken, and one has not.
+
+- *"No maximum-distance check exists anywhere in `tbot/`"* and *"no config key among the 245"*
+  — overtaken. `max_entry_distance_pct` (default 15.0, `sweep_bracket` 5.0–27.5) and
+  `max_entry_distance_enabled` (default **False**) were added, wired at `G0:entry_too_far`
+  beside `anchor_beyond_price`. The key count is now 252.
+- **What has NOT changed: the trigger exemption.** The new gate sits *inside the same*
+  `if setup.entry_family is not EntryFamily.TRIGGER:` block quoted above. **It would not have
+  caught any of the 12 drifted trades** — every one of them is trigger family. It addresses
+  defect 2 (side vs distance) for **retests only**. Defect 1, the exemption itself, is
+  untouched and is still the open question.
+- The threshold is also **still unmeasured against this run**. 15.0 is bounded by ten written
+  entry/DCA ladders from the Discord record (CHANGELOG_EVIDENCE.md, DISCORD CHECK 2026-09-15),
+  not by the 27–56% drift measured here. Those are different quantities: his ladders describe
+  how far *below market* he is willing to bid, not how far a trigger plan may drift from the
+  fill. Do not read the 15.0 as an answer to the open design question.
+
+So the open design question at the end of the section above stands unchanged, both halves of
+it: the maximum acceptable distance, and whether a trigger plan is vetoed before arming or
+re-derives its geometry against the realised fill.
+
 ## Traps that have already caught someone
 
 - **Margin vs notional.** "10%" is the margin he commits, not position face value. At 10×

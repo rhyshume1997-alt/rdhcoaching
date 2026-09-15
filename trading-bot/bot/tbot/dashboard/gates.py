@@ -3,7 +3,7 @@
 The point of that panel is not debugging.  It is the one place where a trader can see *which of
 his own rules is doing the vetoing* and decide whether it is too strict — so every entry here
 answers three questions: what the gate checks, which config keys move it, and what loosening it
-would cost.  ``config_keys`` are real key names from the 251 (INTERFACES.md §4), so the Settings
+would cost.  ``config_keys`` are real key names from the 252 (INTERFACES.md §4), so the Settings
 panel can offer exactly the knobs that would change a given rejection group.
 
 Nothing here is a rule.  It is wording over ``tbot.qualify``'s own gate ids and reason strings.

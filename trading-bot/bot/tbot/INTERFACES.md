@@ -159,7 +159,7 @@ Field-by-field definitions are the SPEC.md §2 tables; the dataclasses match the
 ```python
 from tbot.config import Config, ConfigError, KEY_SPECS, KEY_SPEC_BY_NAME
 
-cfg = Config.load()                     # all 251 SPEC.md §11 defaults
+cfg = Config.load()                     # all 252 SPEC.md §11 defaults
 cfg = Config.load("configs/default.yaml")   # defaults deep-merged with a YAML file
 cfg = cfg.with_overrides(swing_k=5, min_rr=2.5)   # validated copy — the sweep entry point
 ```
@@ -175,7 +175,7 @@ cfg = cfg.with_overrides(swing_k=5, min_rr=2.5)   # validated copy — the sweep
 | `Config.validate` | `() -> Config` | raises `ConfigError` with **every** problem |
 | `write_default_yaml` | `(path) -> Path` | regenerates `configs/default.yaml`, one commented key per line |
 
-`Config` is a **frozen, slotted dataclass with all 251 keys as flat attributes** — `cfg.swing_k`,
+`Config` is a **frozen, slotted dataclass with all 252 keys as flat attributes** — `cfg.swing_k`,
 `cfg.zone_fill_invalidation_pct`, `cfg.sufficient_gap_pct_by_tf["4H"]`. There is no nesting and
 no dict access: `cfg["swing_k"]` does not work, by design, so a typo is an `AttributeError` at
 first touch rather than a silent `None`.
@@ -192,7 +192,7 @@ invariants (`min_zone_depth_atr < max_zone_depth_atr`, `rsi_oversold < rsi_overb
 maximum, source_id, group, note)`. Use `KEY_SPEC_BY_NAME[k].source_id` whenever you need to print
 or log why a number is what it is.
 
-**Do not add keys** without transcript evidence. The 251 are the complete tunable surface (§11.13 + the 8 evidence-derived additions of CHANGELOG_EVIDENCE.md + the 3 frame-derived additions of FRAME_FINDINGS.md: F1 `zone_wick_band_enabled` / `zone_wick_band_max_ratio` from pass 1, F6 `stop_buffer_zone_fraction` from pass 2 + the 2 Discord-derived additions of CHANGELOG_EVIDENCE.md: `max_entry_distance_enabled` / `max_entry_distance_pct` + the 4 GAPS.md GAP 2 additions: `max_correlated_concurrent_enabled`, `max_correlated_concurrent`, `correlation_threshold`, `correlation_lookback_bars`). If a rule needs a number
+**Do not add keys** without transcript evidence. The 252 are the complete tunable surface (§11.13 + the 8 evidence-derived additions of CHANGELOG_EVIDENCE.md + the 3 frame-derived additions of FRAME_FINDINGS.md: F1 `zone_wick_band_enabled` / `zone_wick_band_max_ratio` from pass 1, F6 `stop_buffer_zone_fraction` from pass 2 + the 2 Discord-derived additions of CHANGELOG_EVIDENCE.md: `max_entry_distance_enabled` / `max_entry_distance_pct` + the 4 GAPS.md GAP 2 additions: `max_correlated_concurrent_enabled`, `max_correlated_concurrent`, `correlation_threshold`, `correlation_lookback_bars`, `min_correlation_overlap_bars`). If a rule needs a number
 that is not in the table, that is a spec gap: raise it, do not invent a local constant. If you
 must hard-code an unavoidable engineering constant, mark it `[OUR CHOICE]` in the docstring and
 flag it for the sweep list.
@@ -421,7 +421,7 @@ ordering; a detector must never call another detector.
 
 ## 7 Config key ownership by module
 
-Every one of the 251 keys is owned by exactly one module below — **the owner is the only module
+Every one of the 252 keys is owned by exactly one module below — **the owner is the only module
 that reads it directly**; everyone else receives the derived value as an argument. Before adding
 any parameter, search this table: it probably exists already.
 
@@ -705,6 +705,7 @@ Owns no configuration keys of its own; it reads `level_tolerance_atr`, `touch_re
 |---|---|---|
 | `account_scoped_cut_rules` | `True` | CF-43; S2-C6, S2 `[00:53:58]` |
 | `alloc_cash_min_pct` | `20.0` | S2-R17, S2-C5 |
+| `min_correlation_overlap_bars` | `30` | [OUR CHOICE] - GAPS.md GAP 2; the package's existing 30-observation floor |
 | `correlation_lookback_bars` | `90` | [OUR CHOICE] - GAPS.md GAP 2; matches regime.rolling_correlation (CF-35) |
 | `correlation_threshold` | `0.7` | [OUR CHOICE] - GAPS.md GAP 2; he never quantifies "correlated" |
 | `max_correlated_concurrent` | `2` | [OUR CHOICE] - a different rationale from his margin-based "never more than 2" |

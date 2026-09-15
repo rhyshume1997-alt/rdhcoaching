@@ -5,7 +5,7 @@ Five commands, one job each:
 * ``backtest`` — run the SPEC.md §12 harness over a CSV and print the §12.4 metrics report.
 * ``scan``     — run the analysis pipeline over the latest bars of a CSV and print any trade plans
                  as human-readable **trade tickets**.
-* ``config``   — print every one of the 251 keys with its value, its default and its source ID, so
+* ``config``   — print every one of the 252 keys with its value, its default and its source ID, so
                  provenance is inspectable (INTERFACES.md §4, ``Config.describe``).
 * ``explain``  — given a trade id from a backtest run, print its full source-rule chain: every
                  detection, rejection, plan, fill, transition and exit behind it.
@@ -382,7 +382,7 @@ def cmd_config(args: argparse.Namespace) -> int:
     print("-" * 140)
     print(f"{len(rows)} key(s) shown, {changed} non-default (marked *).  "
           f"{len(KEY_SPECS)} keys exist in total (SPEC.md §11.13 = 234, plus 8 evidence-derived, "
-          "plus 3 frame-derived, plus 2 Discord-derived, plus 4 GAP-2).")
+          "plus 3 frame-derived, plus 2 Discord-derived, plus 5 GAP-2).")
     print("Every value marked [OUR CHOICE] or 'OUR number' in the source column is ours, not the "
           "trader's, and is a sweep target (INTERFACES.md §1.7).")
     return _EXIT_OK

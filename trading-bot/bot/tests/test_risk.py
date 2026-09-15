@@ -930,7 +930,7 @@ def test_correlation_cap_reports_slots_it_could_not_assess():
     pf = portfolio(open_slots=(slot(0), slot(1)))
     gate = R.correlation_cap_gate(_corr_cfg(), pf, symbol="S", series_by_symbol=series)
     assert gate.allowed, "an unassessable slot must not be counted as correlated"
-    assert gate.reasons and "2 live slot(s) had no usable series" in gate.reasons[0]
+    assert gate.reasons and "2 live slot(s) could not be assessed" in gate.reasons[0]
 
 
 def test_correlation_cap_passes_when_the_candidate_has_no_series():
@@ -1015,7 +1015,9 @@ def test_correlation_cap_assesses_symbols_with_different_histories():
     subject = _corr_series(_RISING, "S")
     # both rise, both overlap S, but each starts at a different date
     late_a = _corr_series_at([50.0 + 0.5 * i for i in range(40)], "C0", 10)
-    late_b = _corr_series_at([20.0 + 0.25 * i for i in range(40)], "C1", 25)
+    # offsets stay inside min_correlation_overlap_bars: this test is about different listing
+    # dates, not about short overlaps (that is test_a_short_overlap_does_not_drive_the_cap)
+    late_b = _corr_series_at([20.0 + 0.25 * i for i in range(40)], "C1", 8)
     series = {"S": subject, "C0": late_a, "C1": late_b}
     pf = portfolio(open_slots=(slot(0), slot(1)))
 
@@ -1034,4 +1036,77 @@ def test_correlation_cap_still_reports_a_pair_with_no_overlap_at_all():
     gate = R.correlation_cap_gate(_corr_cfg(max_correlated_concurrent=1), pf,
                                   symbol="S", series_by_symbol={"S": subject, "C0": disjoint})
     assert gate.allowed
-    assert gate.reasons and "1 live slot(s) had no usable series" in gate.reasons[0]
+    assert gate.reasons and "1 live slot(s) could not be assessed" in gate.reasons[0]
+
+
+# ----------------------------------- GAP 2 defect 1: minimum aligned overlap (2026-09-15)
+
+
+def test_min_correlation_overlap_default_is_ours_and_anchored():
+    from tbot.config import KEY_SPEC_BY_NAME
+
+    spec = KEY_SPEC_BY_NAME["min_correlation_overlap_bars"]
+    assert Config().min_correlation_overlap_bars == 30
+    assert "[OUR CHOICE]" in spec.source_id
+    assert spec.sweep_bracket == (10.0, 90.0)
+    # the 30 is the package's existing "too few observations to conclude" floor, not a new number
+    from tbot.backtest.metrics import MIN_SAMPLE_FOR_CONCLUSION
+    assert Config().min_correlation_overlap_bars == MIN_SAMPLE_FOR_CONCLUSION
+
+
+def test_a_short_overlap_does_not_drive_the_cap():
+    """A 3-bar correlation is +/-1 by construction; it must not refuse a trade.
+
+    Both legs rise monotonically, so over their 4 shared bars the correlation is exactly +1
+    and would sail past the 0.7 threshold. With the floor at 30 the pair is unassessed.
+    """
+    subject = _corr_series(_RISING, "S")                       # bars 0..39
+    barely = _corr_series_at([50.0 + 0.5 * i for i in range(40)], "C0", 36)   # bars 36..75
+    pf = portfolio(open_slots=(slot(0),))
+    series = {"S": subject, "C0": barely}
+
+    gate = R.correlation_cap_gate(_corr_cfg(max_correlated_concurrent=1), pf,
+                                  symbol="S", series_by_symbol=series)
+    assert gate.allowed, "a 4-bar overlap refused a trade"
+    assert gate.reasons and "could not be assessed" in gate.reasons[0]
+
+
+def test_overlap_exactly_one_bar_under_the_floor_is_not_counted():
+    subject = _corr_series(_RISING, "S")                       # 40 bars, 0..39
+    # offset 11 -> shared bars 11..39 = 29, one under a floor of 30
+    other = _corr_series_at([50.0 + 0.5 * i for i in range(40)], "C0", 11)
+    pf = portfolio(open_slots=(slot(0),))
+    cfg_at_30 = _corr_cfg(max_correlated_concurrent=1, min_correlation_overlap_bars=30)
+    assert R.correlation_cap_gate(cfg_at_30, pf, symbol="S",
+                                  series_by_symbol={"S": subject, "C0": other}).allowed
+
+    # and one bar more of overlap tips it over
+    other29 = _corr_series_at([50.0 + 0.5 * i for i in range(40)], "C0", 10)   # 30 shared
+    assert not R.correlation_cap_gate(cfg_at_30, pf, symbol="S",
+                                      series_by_symbol={"S": subject, "C0": other29}).allowed
+
+
+def test_unassessed_note_does_not_blame_a_single_cause():
+    """Four causes reach that counter; the note must not name one of them as the reason."""
+    subject = _corr_series(_RISING, "S")
+    missing_slot = slot(0)                                     # no series at all
+    short_pair = _corr_series_at([50.0 + 0.5 * i for i in range(40)], "C1", 36)
+    pf = portfolio(open_slots=(missing_slot, slot(1)))
+    gate = R.correlation_cap_gate(_corr_cfg(), pf, symbol="S",
+                                  series_by_symbol={"S": subject, "C1": short_pair})
+    assert gate.allowed
+    note = gate.reasons[0]
+    assert "2 live slot(s) could not be assessed" in note
+    assert "no usable series" not in note, "the old wording blamed one cause for all four"
+    assert "no series" in note and "fewer than 30 aligned bars" in note
+
+
+def test_a_floor_above_the_lookback_fails_closed():
+    """Misconfiguration must make everything unassessable, never everything correlated."""
+    subject = _corr_series(_RISING, "S")
+    other = _corr_series(_ALSO_RISING, "C0")
+    pf = portfolio(open_slots=(slot(0),))
+    cfg = _corr_cfg(max_correlated_concurrent=1, correlation_lookback_bars=10,
+                    min_correlation_overlap_bars=50)
+    assert R.correlation_cap_gate(cfg, pf, symbol="S",
+                                  series_by_symbol={"S": subject, "C0": other}).allowed

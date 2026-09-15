@@ -565,6 +565,7 @@ def correlation_cap_gate(
     cap = int(config.max_correlated_concurrent)
     threshold = dec(config.correlation_threshold)
     lookback = int(config.correlation_lookback_bars)
+    floor = int(config.min_correlation_overlap_bars)
 
     correlated: list[str] = []
     unassessed = 0
@@ -582,6 +583,14 @@ def correlation_cap_gate(
         if pair is None:
             unassessed += 1
             continue
+        # How many bars the two symbols ACTUALLY share, after the lookback cap.  Aligning moved
+        # the short-overlap problem here; it did not solve it.  A 3-bar correlation is +/-1
+        # almost by construction and would clear any threshold, so a pair that cannot meet
+        # `min_correlation_overlap_bars` is unassessed, never correlated.
+        used = len(pair[0])
+        if used < floor:
+            unassessed += 1
+            continue
         corr = rolling_correlation(pair[0], pair[1], lookback_bars=lookback)
         if corr is None:
             unassessed += 1
@@ -591,7 +600,11 @@ def correlation_cap_gate(
 
     notes: tuple[str, ...] = ()
     if unassessed:
-        notes = (f"{unassessed} live slot(s) had no usable series and were not assessed",)
+        # Four distinct causes reach this counter -- no series for that symbol, no shared
+        # timestamps at all, an overlap under the floor, and a correlation the primitive would
+        # not compute (flat leg, or misaligned).  The note must not name one of them.
+        notes = (f"{unassessed} live slot(s) could not be assessed (no series, no shared "
+                 f"history, or fewer than {floor} aligned bars) and were not counted",)
 
     if len(correlated) >= cap:
         return Gate(

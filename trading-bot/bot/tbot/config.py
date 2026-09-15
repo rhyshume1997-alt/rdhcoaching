@@ -366,6 +366,27 @@ KEY_SPECS: tuple[KeySpec, ...] = (
         sweep_bracket=(0.5, 0.9),
     ),
     KeySpec(
+        key='min_correlation_overlap_bars',
+        default=30,
+        spec_type='bars',
+        py_type='int',
+        members=None,
+        minimum=3.0,
+        maximum=None,
+        source_id='[OUR CHOICE] — GAPS.md GAP 2; no sample-size rule exists in the corpus',
+        group='11.1',
+        note='Fewest ALIGNED bars two symbols must share before their correlation is allowed '
+             'to drive the cap. Below it the pair is reported unassessed, never correlated. '
+             'Without this the floor was the n >= 3 inside rolling_correlation, and a 3-bar '
+             'correlation is +/-1 almost by construction: it would clear a 0.7 threshold and '
+             'refuse a trade on nothing. 30 is not a new invention - it is the sample floor '
+             'this package already uses for "too few observations to conclude" '
+             '(backtest/metrics.py MIN_SAMPLE_FOR_CONCLUSION, itself [OUR CHOICE] because the '
+             'corpus gives no sample size anywhere). Set above correlation_lookback_bars and '
+             'nothing is ever assessable, which fails closed rather than open.',
+        sweep_bracket=(10.0, 90.0),
+    ),
+    KeySpec(
         key='correlation_lookback_bars',
         default=90,
         spec_type='bars',
@@ -3310,6 +3331,7 @@ class Config:
     max_correlated_concurrent: int = 2
     correlation_threshold: float = 0.7
     correlation_lookback_bars: int = 90
+    min_correlation_overlap_bars: int = 30
     spot_exit_mode: str = 'close_below_level_then_flip'
     spot_synthetic_stop_for_sizing: bool = True
     spot_invalidation_timeframe: str = '1D'

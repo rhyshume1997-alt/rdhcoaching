@@ -983,6 +983,21 @@ def _stage_setup_qualification_and_plans(ctx: _Ctx) -> None:
                         direction=direction, source_ids=("CF-16",))
                 continue
 
+            # Right side of the close, but is it within reach?  He never states a ceiling, so this
+            # is off unless a sweep turns it on (DISCORD CHECK 2026-09-15 bounds the range, not the
+            # value).  Distance is measured off the close, the same reference the dashboard's
+            # `distance_pct` column reports.
+            if cfg.max_entry_distance_enabled and close > 0:
+                distance_pct = abs(close - entry_price) / close * dec(100)
+                if distance_pct > dec(cfg.max_entry_distance_pct):
+                    setup.vetoes.append(
+                        f"{_PRE_GATE}:entry_too_far (a {direction.value} retest at {entry_price} "
+                        f"sits {distance_pct:.2f}% off the close {close}, past the "
+                        f"{cfg.max_entry_distance_pct}% ceiling [OUR CHOICE])"
+                    )
+                    _reject(ctx, setup.id, _PRE_GATE, "entry_too_far", direction=direction)
+                    continue
+
         # --- §7.1 pass 1: everything knowable before the plan exists.
         verdict = _qualify_once(ctx, setup, cluster, anchor, entry_level)
         if not verdict.qualified:

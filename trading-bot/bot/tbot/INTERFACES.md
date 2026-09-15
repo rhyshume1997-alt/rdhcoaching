@@ -159,7 +159,7 @@ Field-by-field definitions are the SPEC.md §2 tables; the dataclasses match the
 ```python
 from tbot.config import Config, ConfigError, KEY_SPECS, KEY_SPEC_BY_NAME
 
-cfg = Config.load()                     # all 245 SPEC.md §11 defaults
+cfg = Config.load()                     # all 247 SPEC.md §11 defaults
 cfg = Config.load("configs/default.yaml")   # defaults deep-merged with a YAML file
 cfg = cfg.with_overrides(swing_k=5, min_rr=2.5)   # validated copy — the sweep entry point
 ```
@@ -175,7 +175,7 @@ cfg = cfg.with_overrides(swing_k=5, min_rr=2.5)   # validated copy — the sweep
 | `Config.validate` | `() -> Config` | raises `ConfigError` with **every** problem |
 | `write_default_yaml` | `(path) -> Path` | regenerates `configs/default.yaml`, one commented key per line |
 
-`Config` is a **frozen, slotted dataclass with all 245 keys as flat attributes** — `cfg.swing_k`,
+`Config` is a **frozen, slotted dataclass with all 247 keys as flat attributes** — `cfg.swing_k`,
 `cfg.zone_fill_invalidation_pct`, `cfg.sufficient_gap_pct_by_tf["4H"]`. There is no nesting and
 no dict access: `cfg["swing_k"]` does not work, by design, so a typo is an `AttributeError` at
 first touch rather than a silent `None`.
@@ -192,7 +192,7 @@ invariants (`min_zone_depth_atr < max_zone_depth_atr`, `rsi_oversold < rsi_overb
 maximum, source_id, group, note)`. Use `KEY_SPEC_BY_NAME[k].source_id` whenever you need to print
 or log why a number is what it is.
 
-**Do not add keys** without transcript evidence. The 245 are the complete tunable surface (§11.13 + the 8 evidence-derived additions of CHANGELOG_EVIDENCE.md + the 3 frame-derived additions of FRAME_FINDINGS.md: F1 `zone_wick_band_enabled` / `zone_wick_band_max_ratio` from pass 1, F6 `stop_buffer_zone_fraction` from pass 2). If a rule needs a number
+**Do not add keys** without transcript evidence. The 247 are the complete tunable surface (§11.13 + the 8 evidence-derived additions of CHANGELOG_EVIDENCE.md + the 3 frame-derived additions of FRAME_FINDINGS.md: F1 `zone_wick_band_enabled` / `zone_wick_band_max_ratio` from pass 1, F6 `stop_buffer_zone_fraction` from pass 2 + the 2 Discord-derived additions of CHANGELOG_EVIDENCE.md: `max_entry_distance_enabled` / `max_entry_distance_pct`). If a rule needs a number
 that is not in the table, that is a spec gap: raise it, do not invent a local constant. If you
 must hard-code an unavoidable engineering constant, mark it `[OUR CHOICE]` in the docstring and
 flag it for the sweep list.
@@ -421,7 +421,7 @@ ordering; a detector must never call another detector.
 
 ## 7 Config key ownership by module
 
-Every one of the 245 keys is owned by exactly one module below — **the owner is the only module
+Every one of the 247 keys is owned by exactly one module below — **the owner is the only module
 that reads it directly**; everyone else receives the derived value as an argument. Before adding
 any parameter, search this table: it probably exists already.
 
@@ -588,6 +588,8 @@ Owns no configuration keys of its own; it reads `level_tolerance_atr`, `touch_re
 | Key | Default | Source |
 |---|---|---|
 | `disowned_modules_still_score_confluence` | `True` | CF-37; Q14 stated, S4 `[01:48:29]`, S6 `[01:56:54]` |
+| `max_entry_distance_enabled` | `False` | [OUR CHOICE] — DISCORD CHECK 2026-09-15; off until a sweep says otherwise |
+| `max_entry_distance_pct` | `15.0` | [OUR CHOICE] — range bounded by DISCORD CHECK 2026-09-15, value never stated |
 | `module_chart_patterns_enabled` | `False` | CF-37; Q14 stated, S4-R38 / S4 `[01:48:29]` — "never on a pattern alone", not a disavowal |
 | `module_scalp_enabled` | `True` | CF-37; Q14 inferred (REVERSES CF-37), S5 `[01:41:45]` `[01:42:50]`, S8 `[00:44:49]` |
 | `module_trendline_break_enabled` | `False` | CF-37; Q14 stated, S8 `[00:28:52]` `[00:30:37]` — the objection is operational (no hard stop) |

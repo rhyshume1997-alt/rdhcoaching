@@ -388,6 +388,138 @@ point"* (S6 `[01:57:29]`).
 
 ---
 
+## DISCORD CHECK 2026-09-15 — the written trade record
+
+A fourth source opened up: his own Discord. Not the class transcripts, not the videos — the posts
+where he calls trades in real time and then says what happened. 44 posts read across
+`#arshmeister-updates` (30, 2025-11-06 → 2026-09-14), `#arsh-active-calls` (4 — the channel was
+created 2026-09-12, so that is its complete history) and `#inside-the-mind-of-arsh` (10), plus
+server-wide `from:arshmeister` searches on *loss* (95 hits) and *port* (83 hits).
+
+Every figure below is **post text read as characters from the DOM**. Nothing was transcribed off a
+screenshot, and numbers that exist only inside his posted chart images are deliberately absent.
+
+### Q16 (new) — how far behind price does he actually bid? — `absent`, range bounded
+
+He states no max-distance gate anywhere. What the record does give is ten entry/DCA ladders:
+
+| date | sym | entry | ladder below entry |
+|---|---|---|---|
+| 2025-11-06 | ICP | 6.08 (CMP) | -17.76% |
+| 2025-11-07 | LINK | 16.07 (CMP) | -5.60% |
+| 2025-11-07 | TAO | 409.7 (CMP) | -10.28% |
+| 2025-11-13 | BTC | 100.1k (CMP) | -2.70% / -7.09% |
+| 2026-09-12 | SUI | 0.79 | -12.06% / -17.24% |
+| 2026-09-12 | PUMP | 0.003855 (CMP) | -14.89% / -23.74% |
+| 2026-09-12 | ETH | 2370 | -9.28% / -17.51% |
+| 2026-09-12 | ZEC | 1045 | -14.83% / -27.18% |
+| 2026-09-12 | HYPE | 77 | -6.49% / -14.29% |
+| 2026-09-14 | SOL | 104.5 (CMP) | -6.22% |
+
+First rung below entry: median 9.78%, p90 14.89%, max 17.76%.
+Deepest rung: median 15.76%, p90 23.74%, max 27.18%.
+
+Six of the ten entries are explicitly at market (*"at CMP"*, *"here at"*, *"bought back into BTC
+here at 100.1k"*), so for those entry == close at post time and the ladder percentages **are**
+distances below spot. That is the mapping that makes this usable for a close→entry gate.
+
+`G0` in `pipeline.py` rejected only a retest on the *wrong* side of the close
+(`anchor_beyond_price`, 12.7% of candidates in SAMPLE_RUN). Nothing bounded a right-side entry
+that was absurdly far away; `distance_pct` existed only as a dashboard display column.
+
+| Key | Before | After | Confidence |
+|---|---|---|---|
+| `max_entry_distance_enabled` | *(did not exist)* | **False** | `absent` — [OUR CHOICE] |
+| `max_entry_distance_pct` | *(did not exist)* | **15.0**, `sweep_bracket=(5.0, 27.5)` | `absent` — range from the ladders |
+
+Off by default on purpose: this file's own convention is that an `absent` finding invents no value
+and changes no behaviour. 15.0 sits on the median deepest rung and just above the p90 first rung;
+27.5 is his observed maximum (ZEC 1045 → 761) and the never-seen-wider bound.
+
+**Regression test:** `tests/test_pipeline.py` — four tests. Default-off proven over the whole
+synthetic series, a 0.05% ceiling proven to fire `G0:entry_too_far`, a 100% ceiling proven to leave
+the run bit-for-bit identical, and the TRIGGER family proven exempt (CF-16: a trigger is a stop
+order, not a resting bid, so distance is meaningless for it).
+
+**UNRESOLVED:** the 2026-09-12 batch (SUI/PUMP/ETH/ZEC/HYPE) is his one set of genuine resting
+entries below price — *"Levels are in black also. If they don't fill, then so be it."* Their true
+close→entry distance needs spot at 2026-09-12T19:40Z per symbol and is not computable from text.
+Pull it from bybit to tighten the bracket. By 2026-09-14 he reports ZEC/SUI/HYPE filled
+(*"bottom ticked some entries"*), so that batch filled inside ~2 days.
+
+### Position sizing — corroborates Q8, and it is `% of port`, per rung
+
+He sizes in **percent of portfolio per rung**, not per position:
+
+| date | evidence |
+|---|---|
+| 2025-11-04 | BTC *"here at 101.2k - 2% of port. Will buy at 93 and 88k if we get it with 2% each"* → 6% max across 3 rungs |
+| 2025-11-06 | ICP *"Buying 2% here at CMP (6.08)... Will dca at $5 with 2%"* → 4% |
+| 2025-11-07 | LINK *"Bought LINK at CMP (16.07) - 2%... DCA: 15.17 - 2%"* → 4% |
+| 2025-11-08 | TAO/LINK *"I am holding my positions both are 4% of my port"* |
+| 2025-11-13 | BTC *"No more than 8% of my port will be allocated"* |
+| 2025-10-15 | SOL *"back to 10% allocation of total port"* |
+| 2025-12-15 | PENGU *"only 3% of my port"* |
+| 2025-08-23 | ETH *"Risking max 2%"* (entry 4654, DCA 4567, SL = manual daily close below 4400) |
+
+Portfolio-level restraint is explicit and repeated: *"Only 10% of my port is in the market right
+now"* (2025-10-30), *"Bear market you don't full port"* (2025-11-04). Nothing here contradicts the
+Q8 correction; it corroborates the risk-first model at a coarser grain — 2% per rung is the unit,
+8-10% is the per-idea ceiling.
+
+### Outcomes — what he counts as good and bad
+
+Losses, stated as a percentage **of the play, not the port**, unless he says otherwise:
+
+| date | outcome |
+|---|---|
+| 2025-08-29 | Fartcoin *"4% net loss on the play (not the port)"*; LTC *"8% loss on the play after we took TP and recompounded"* |
+| 2025-09-01 | Cutting all: SOL -3.8%, SUI -7%, AVAX -7% |
+| 2025-10-01 | BTC short stopped, avg 15930.9, *"Loss of 1%"* |
+| 2025-11-22 | TAO closed *"for a 33% loss on the position. For me it was 11k"*; month total *"Down total of 30k which equates to 12% of my portfolio"* |
+| 2026-09-14 | NUDES *"Ive accepted this will go to zero... No more shitcoin calls from me"* (bought $15.5M mcap, -41%) |
+
+Wins:
+
+| date | outcome |
+|---|---|
+| 2025-11-04 | ZEN 18.11 → 23.62, *"up a massive 32% unleveraged"*, fully closed |
+| 2025-11-07 | ICP *"almost a 20% move overnight. Currently up 9%. This will go higher but I'm closing this and adding at same entry if we get it"* |
+| 2025-11-11 | LINK *"Closed 40% of LINK at 16.74 for an 8% move"* |
+| 2025-10-15 | SOL added 40% back at 203.54 after TP1, average 211.44 |
+| 2026-09-14 | ZEC +15%, HYPE +6%, SUI breakeven on the DCA |
+
+The shape is consistent: he scales out in fractions (40%), re-adds at the same level, and treats
+closing and re-entering at the same entry as normal rather than as a missed trade.
+
+### Stated logic worth encoding
+
+- **Hard invalidation, never soft.** *"an invalidation level should be hard, I dont like when
+  people use soft stop losses. If it loses a level... it should be stopped and you look to
+  re-enter later"* (2025-09-07). Reinforced after the October 2025 crash: *"this is why I stress
+  the important of not using soft stoplosses... keep a hard stop just incase"* (2025-10-13).
+- **Invalidation is a close, not a wick.** ETH SL = *"manual daily close below 4400"*; Fartcoin
+  *"lose this and close below on daily I am cutting"*.
+- **Leverage is not the risk knob.** *"leverage is 100% irrelevant... Its always position size and
+  calculating your stop loss based on position size or quantity size thats how you determine
+  risk"* (2025-08-26). And *"Spot > leverage. Enough said"* (2025-10-13).
+- **Expectancy over hit rate.** *"in this market, the best traders will have more losses than wins
+  probably but will remain profitable with high RR"* (2025-10-30).
+- **No setup, no trade.** *"You should only trade if there is a set up there, you have a plan and
+  able to execute without any emotions"* (2025-10-30).
+
+None of these are new rules — they corroborate CF-16, the hard-stop reading and the risk-first
+sizing model from independent, dated, written evidence rather than from the transcripts.
+
+### Bug found and fixed on the way
+
+`config.write_default_yaml()` called `Path.write_text()` with no `encoding=`. On Windows that is
+cp1252, so regenerating `configs/default.yaml` silently rewrote every em-dash and `§` in the file
+as mojibake — 222 lines changed for a 2-key addition. Now pinned to `encoding="utf-8"`; the
+regenerated file is byte-clean and the diff is 7 insertions.
+
+---
+
 ## What is still genuinely unresolved
 
 | # | What | Why it cannot be closed from the corpus |
@@ -421,3 +553,18 @@ a distance, so the question may be the wrong shape).
 | `CONFLICTS.md` | Reversal notes inside CF-02/03/07/08/11/16/18/20/22/26/28/31/33/37, the status table, and the struck questions |
 | `SPEC.md` | §5.5 30m row, §8.3 ladder, §10.7 ceilings, §11 tables, §13 disowned modules, §14 status |
 | `bot/SAMPLE_RUN.md` | Re-run on the new defaults |
+
+---
+
+## Files changed (DISCORD CHECK 2026-09-15)
+
+| File | Why |
+|---|---|
+| `bot/tbot/config.py` | 2 new keys (`max_entry_distance_enabled`, `max_entry_distance_pct` with `sweep_bracket`); `write_default_yaml` pinned to UTF-8; key-count strings 245 -> 247 |
+| `bot/configs/default.yaml` | Regenerated - 247 keys, byte-clean UTF-8 |
+| `bot/tbot/pipeline.py` | `G0:entry_too_far` wired beside `anchor_beyond_price`, gated on the new switch |
+| `bot/tbot/INTERFACES.md` | 2 rows in the §7 `pipeline.py` ownership table; counts 245 -> 247 |
+| `bot/tbot/cli.py`, `bot/tbot/dashboard/{gates,server,settings}.py` | Count prose 245 -> 247 |
+| `bot/tests/test_pipeline.py` | 4 regression tests; `_ALLOWED_KEYS` gains the 2 keys |
+| `bot/tests/{test_primitives,test_integration,test_dashboard}.py` | Count invariants 245 -> 247 |
+| `SPEC.md` | §11 total line and the 11.3 row record the 2 Discord-derived additions |

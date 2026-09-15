@@ -30,7 +30,7 @@ from tbot.backtest.engine import (
 )
 from tbot.config import KEY_SPEC_BY_NAME, Config
 from tbot.data import synthetic
-from tbot.models import Direction, Setup, Timeframe, TradePlan
+from tbot.models import Direction, EntryFamily, Setup, Timeframe, TradePlan
 from tbot.qualify import CalendarEvent
 from tbot.risk import PortfolioState
 
@@ -462,6 +462,9 @@ def _full_book():
 
 _ALLOWED_KEYS = {
     "pipeline_order",
+    # G0 entry-distance ceiling (DISCORD CHECK 2026-09-15); off by default
+    "max_entry_distance_enabled",
+    "max_entry_distance_pct",
     "sfp_evaluated_last",
     "disowned_modules_still_score_confluence",
     "module_chart_patterns_enabled",
@@ -552,3 +555,52 @@ def test_turning_scoring_off_skips_the_disowned_detectors(series, cfg):
     record = pipeline.analyse_bar(series.head(90), off)
     assert not record.patterns and not record.trendlines
     assert any("CF-37" in note for note in record.notes)
+
+
+# ------------------------------------------------- G0 entry distance (DISCORD CHECK 2026-09-15)
+
+
+def test_entry_distance_gate_is_off_by_default(series, cfg):
+    """The Discord record bounded the RANGE, not the value, so the gate ships disabled.
+
+    Ten written entry/DCA ladders put his deepest rung a median 15.76% below entry and never
+    wider than 27.18%; that is what `sweep_bracket=(5.0, 27.5)` encodes.  None of it makes the
+    ceiling his rule, so enabling it is a sweep decision, not a default.
+    """
+    assert cfg.max_entry_distance_enabled is False
+    assert cfg.max_entry_distance_pct == 15.0
+    for i in range(60, len(series), 7):
+        record = pipeline.analyse_bar(series.head(i + 1), cfg)
+        assert not [r for r in record.rejections if r.reason == "entry_too_far"]
+
+
+def test_entry_distance_gate_rejects_far_retests_when_enabled(series, cfg):
+    tight = cfg.with_overrides(max_entry_distance_enabled=True, max_entry_distance_pct=0.05)
+    seen = False
+    for i in range(60, len(series), 7):
+        for rejection in pipeline.analyse_bar(series.head(i + 1), tight).rejections:
+            if rejection.reason == "entry_too_far":
+                assert rejection.gate == "G0"
+                seen = True
+    assert seen, "a 0.05% ceiling rejected nothing — the gate is not wired"
+
+
+def test_entry_distance_gate_spares_everything_inside_the_ceiling(series, cfg):
+    """A ceiling nothing can breach must leave the run bit-for-bit identical."""
+    wide = cfg.with_overrides(max_entry_distance_enabled=True, max_entry_distance_pct=100.0)
+    for i in range(60, len(series), 7):
+        base = pipeline.analyse_bar(series.head(i + 1), cfg)
+        got = pipeline.analyse_bar(series.head(i + 1), wide)
+        assert [(r.gate, r.reason) for r in got.rejections] == \
+               [(r.gate, r.reason) for r in base.rejections]
+
+
+def test_entry_distance_gate_never_touches_the_trigger_family(series, cfg):
+    """CF-16 makes a TRIGGER a stop order, not a resting bid — distance is meaningless for it."""
+    tight = cfg.with_overrides(max_entry_distance_enabled=True, max_entry_distance_pct=0.01)
+    for i in range(60, len(series), 7):
+        record = pipeline.analyse_bar(series.head(i + 1), tight)
+        far = {r.setup_id for r in record.rejections if r.reason == "entry_too_far"}
+        for setup in record.setups:
+            if setup.id in far:
+                assert setup.entry_family is not EntryFamily.TRIGGER

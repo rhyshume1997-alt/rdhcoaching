@@ -33,7 +33,7 @@ trading_bot/
 ├── answers/                the evidence-mining pass that answered 13 of 15 questions
 └── bot/                    the Python package
     ├── tbot/
-    │   ├── config.py       245 keys, each with default, type, range, source ID and
+    │   ├── config.py       247 keys, each with default, type, range, source ID and
     │   │                   (where known) a sweep bracket. THE most important file.
     │   ├── INTERFACES.md   binding contracts between modules. Read before editing any
     │   │                   detector — six agents built these in parallel against it.
@@ -46,7 +46,7 @@ trading_bot/
     │   ├── risk.py         portfolio caps, concurrency, sizing solver
     │   ├── backtest/       bar-by-bar simulator, no lookahead by construction
     │   └── dashboard/      FastAPI + Lightweight Charts local web UI
-    └── tests/              1,071 tests
+    └── tests/              1,075 tests
 ```
 
 ## Conventions that matter
@@ -76,8 +76,8 @@ was wrong, change the default and say so explicitly.
 
 ## Current state
 
-- 1,071 tests passing (`cd bot && python -m pytest -q`)
-- 245 config keys
+- 1,075 tests passing (`cd bot && python -m pytest -q`)
+- 247 config keys
 - Runs end to end on synthetic data; four CLI commands work
 - **Never run on real market data.** Not once. This is the single biggest gap.
 
@@ -85,7 +85,7 @@ was wrong, change the default and say so explicitly.
 
 ```bash
 cd bot
-python -m pytest -q                              # 1,071 tests
+python -m pytest -q                              # 1,075 tests
 python -m tbot config                            # every key with its source rule
 python -m tbot config --grep stop                # filter
 python -m tbot backtest --csv data/synthetic_4h.csv

@@ -1754,7 +1754,7 @@ transcripts and exist only because the bot cannot run without them. Sweep these 
 |---|---|
 | 11.1 Risk and position sizing | 29 |
 | 11.2 Level and zone lifecycle | 30 (+3 frame-derived: `zone_wick_band_enabled`, `zone_wick_band_max_ratio` (F1), `stop_buffer_zone_fraction` (F6)) |
-| 11.3 Flip confirmation and entry mechanics | 32 |
+| 11.3 Flip confirmation and entry mechanics | 32 (+2 Discord-derived: `max_entry_distance_enabled`, `max_entry_distance_pct` (DISCORD CHECK 2026-09-15)) |
 | 11.4 Structure and trend | 28 |
 | 11.5 Range and mid-range | 10 |
 | 11.6 Take profit and trade management | 17 |
@@ -1775,8 +1775,9 @@ S2/S4 rule ID. 177 + 5 + 26 + 26 = **234**.
 
 The implemented surface is larger: **234 + 8 evidence-derived** keys (`CHANGELOG_EVIDENCE.md`,
 Q1–Q15) **+ 3 frame-derived** keys (`FRAME_FINDINGS.md` F1: `zone_wick_band_enabled`,
-`zone_wick_band_max_ratio`; F6: `stop_buffer_zone_fraction`) = **245**, which is what
-`tbot.config.KEY_SPECS` holds.
+`zone_wick_band_max_ratio`; F6: `stop_buffer_zone_fraction`) **+ 2 Discord-derived** keys
+(`CHANGELOG_EVIDENCE.md`, DISCORD CHECK 2026-09-15: `max_entry_distance_enabled`,
+`max_entry_distance_pct`) = **247**, which is what `tbot.config.KEY_SPECS` holds.
 
 **`sweep_bracket`.** A `KeySpec` may carry a machine-readable `(low, high)` bracket wherever
 evidence has bounded a key without deciding it, so a parameter sweep reads its search range off the

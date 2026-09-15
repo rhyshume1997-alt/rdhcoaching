@@ -1,4 +1,4 @@
-"""Live-editable dashboard settings: what to watch, and which of the 245 keys to tune.
+"""Live-editable dashboard settings: what to watch, and which of the 247 keys to tune.
 
 A settings change is the *other* thing (besides a new closed bar) that may invalidate a cached
 pipeline result, so every settings object carries a monotonic :attr:`DashboardSettings.revision`

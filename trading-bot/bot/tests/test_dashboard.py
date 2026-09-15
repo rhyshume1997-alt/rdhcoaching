@@ -895,7 +895,7 @@ class TestApi:
 
     def test_config_search_returns_value_default_and_source_id(self, client) -> None:
         data = client.get("/api/config?grep=zone").json()
-        assert data["total"] == 245
+        assert data["total"] == 247
         assert data["keys"]
         for row in data["keys"]:
             assert "source_id" in row and row["source_id"]

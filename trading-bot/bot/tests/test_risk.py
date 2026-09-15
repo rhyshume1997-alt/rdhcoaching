@@ -1042,16 +1042,23 @@ def test_correlation_cap_still_reports_a_pair_with_no_overlap_at_all():
 # ----------------------------------- GAP 2 defect 1: minimum aligned overlap (2026-09-15)
 
 
-def test_min_correlation_overlap_default_is_ours_and_anchored():
+def test_min_correlation_overlap_default_is_ours_and_unmeasured():
+    """The floor is ours, it is anchored to nothing, and the sweep settles it.
+
+    An earlier version asserted the value equalled ``metrics.MIN_SAMPLE_FOR_CONCLUSION``. That
+    was wrong twice over. A trade-count floor for win-rate confidence and a bar-count floor for
+    a Pearson correlation are **different statistics**: both happen to be 30 and nothing makes
+    them the same question. And a drift test is meant to *catch* unintended coupling -- that
+    one *mandated* it, so retuning the trade floor for good win-rate reasons would have dragged
+    the correlation floor along and this test would have forced the move.
+    """
     from tbot.config import KEY_SPEC_BY_NAME
 
     spec = KEY_SPEC_BY_NAME["min_correlation_overlap_bars"]
     assert Config().min_correlation_overlap_bars == 30
     assert "[OUR CHOICE]" in spec.source_id
     assert spec.sweep_bracket == (10.0, 90.0)
-    # the 30 is the package's existing "too few observations to conclude" floor, not a new number
-    from tbot.backtest.metrics import MIN_SAMPLE_FOR_CONCLUSION
-    assert Config().min_correlation_overlap_bars == MIN_SAMPLE_FOR_CONCLUSION
+    assert "unmeasured" in spec.note.lower(), "the note must not present the value as derived"
 
 
 def test_a_short_overlap_does_not_drive_the_cap():

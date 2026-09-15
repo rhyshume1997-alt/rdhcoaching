@@ -379,11 +379,15 @@ KEY_SPECS: tuple[KeySpec, ...] = (
              'to drive the cap. Below it the pair is reported unassessed, never correlated. '
              'Without this the floor was the n >= 3 inside rolling_correlation, and a 3-bar '
              'correlation is +/-1 almost by construction: it would clear a 0.7 threshold and '
-             'refuse a trade on nothing. 30 is not a new invention - it is the sample floor '
-             'this package already uses for "too few observations to conclude" '
-             '(backtest/metrics.py MIN_SAMPLE_FOR_CONCLUSION, itself [OUR CHOICE] because the '
-             'corpus gives no sample size anywhere). Set above correlation_lookback_bars and '
-             'nothing is ever assessable, which fails closed rather than open.',
+             'refuse a trade on nothing. THE 30 IS OURS AND UNMEASURED - the corpus proposes no '
+             'correlation test at all (CF-35), so there is nothing to source it from and the '
+             'sweep settles it. An earlier note here claimed it was "not a new invention" '
+             'because backtest/metrics.py MIN_SAMPLE_FOR_CONCLUSION is also 30; that was a '
+             'coincidence dressed as a derivation. A trade-count floor for win-rate confidence '
+             'and a bar-count floor for a Pearson correlation are different statistics, and '
+             'coupling them would have made a win-rate retune silently move this. Set above '
+             'correlation_lookback_bars and nothing is ever assessable, which fails closed '
+             'rather than open.',
         sweep_bracket=(10.0, 90.0),
     ),
     KeySpec(

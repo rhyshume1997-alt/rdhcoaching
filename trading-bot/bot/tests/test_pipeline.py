@@ -14,6 +14,7 @@ series is no longer empty by construction — but ``4H`` remains what these test
 from __future__ import annotations
 
 import re
+from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 
@@ -30,7 +31,17 @@ from tbot.backtest.engine import (
 )
 from tbot.config import KEY_SPEC_BY_NAME, Config
 from tbot.data import synthetic
-from tbot.models import Direction, EntryFamily, Setup, Timeframe, TradePlan
+from tbot.models import (
+    Direction,
+    EntryFamily,
+    Series,
+    Setup,
+    Timeframe,
+    TradeClass,
+    TradePlan,
+    Vehicle,
+    dec,
+)
 from tbot.qualify import CalendarEvent
 from tbot.risk import PortfolioState
 
@@ -620,3 +631,121 @@ def test_correlation_cap_wiring_is_inert_while_disabled(series, cfg):
         assert [(r.gate, r.reason) for r in got.rejections] == \
                [(r.gate, r.reason) for r in base.rejections]
         assert [p.id for p in got.output.plans] == [p.id for p in base.output.plans]
+
+
+# ---------------- A1 steps 5-6: prove the portfolio gates actually execute (GAPS.md GAP 3 A1)
+#
+# Both of these had never fired. CF-04 concurrency has never executed in ANY backtest because
+# `default_plan_provider` calls `entry(window.series, config)` and injects no portfolio state
+# (SAMPLE_RUN.md:236). GAP 2's correlation cap has never fired because the context map was
+# always empty. These tests drive `analyse_bar` directly with both injected.
+#
+# SCOPE NOTE, so this is not read as more than it is: this proves the PIPELINE path executes
+# the gates. Building a PortfolioState out of the backtest engine's own live trades is a
+# separate piece and is NOT done -- `tbot backtest` still injects no portfolio.
+
+
+def _live_slot(symbol: str, n: int, *, scalp: bool = False):
+    from tbot.models import Account, PositionState
+    from tbot.risk import OpenSlot
+
+    return OpenSlot(
+        position_id=f"P{n}",
+        account=Account.LEVERAGE_SCALP if scalp else Account.LEVERAGE_SWING,
+        vehicle=Vehicle.LEVERAGE,
+        trade_class=TradeClass.SCALP if scalp else TradeClass.SWING,
+        state=PositionState.OPEN, notional_usd=dec(500), symbol=symbol,
+    )
+
+
+def _portfolio_with(*slots):
+    from tbot.risk import PortfolioState
+
+    return PortfolioState(equity_usd=dec(10_000),
+                          now=datetime(2024, 3, 14, 12, 0, tzinfo=timezone.utc),
+                          open_slots=tuple(slots))
+
+
+def _g17(record):
+    return [r for r in record.rejections if r.gate == "G17" and r.reason == "capacity"]
+
+
+def test_cf04_concurrency_executes_at_least_once(series, cfg, first_plan_bar):
+    """CF-04 has never been evaluated in a backtest. Prove the gate runs and can refuse.
+
+    Anchored on the bar that already publishes a plan: a setup that reached the plan builder
+    passed every gate including G17, so the same bar with a full book isolates the capacity
+    gate as the only thing that changed.
+    """
+    index, baseline = first_plan_bar
+    assert index is not None, "no bar publishes a plan; the anchor for this test is gone"
+    assert not _g17(baseline), "the unconstrained bar should not be capacity-refused"
+
+    full = _portfolio_with(*[_live_slot(f"C{i}", i)
+                             for i in range(cfg.max_concurrent_leverage_global)])
+    record = pipeline.analyse_bar(series.head(index + 1), cfg, portfolio_state=full)
+    assert _g17(record), "G17 capacity did not fire with the global leverage cap already full"
+    assert not record.plans, "a plan was still published with the book full"
+
+
+def test_cf04_concurrency_does_not_refuse_an_empty_book(series, cfg, first_plan_bar):
+    """The other half: with room in the book the same bar is not refused on capacity."""
+    index, _ = first_plan_bar
+    record = pipeline.analyse_bar(series.head(index + 1), cfg,
+                                  portfolio_state=_portfolio_with())
+    assert not _g17(record)
+    assert record.plans, "an empty book must not change the outcome of this bar"
+
+
+def _ctx_like(window, names, *, invert: bool = False):
+    """Context series built from the subject's own closes: correlation +1, or -1 inverted."""
+    closes = [(-float(c) if invert else float(c)) for c in window.close]
+    return {
+        name: Series.from_arrays(window.index, closes, [c + 1 for c in closes],
+                                 [c - 1 for c in closes], closes,
+                                 volume=list(window.volume), tf=window.tf, symbol=name)
+        for name in names
+    }
+
+
+def test_correlation_cap_fires_through_the_pipeline(series, cfg, first_plan_bar):
+    """GAP 2 end to end: two correlated positions open, a third correlated entry is refused.
+
+    First time the cap has been able to assess anything: it needs both a portfolio (never
+    injected) and a per-symbol series map (always empty) to do its work.
+    """
+    index, _ = first_plan_bar
+    on = cfg.with_overrides(max_correlated_concurrent_enabled=True,
+                            max_correlated_concurrent=2,
+                            correlation_threshold=0.7)
+    window = series.head(index + 1)
+    # one swing + one scalp: CF-04 has room in both buckets (caps are 2 and 2, global 4), so
+    # anything G17 says here is the correlation cap talking and nothing else.
+    book = _portfolio_with(_live_slot("C0", 0), _live_slot("C1", 1, scalp=True))
+
+    assert not _g17(pipeline.analyse_bar(window, cfg, portfolio_state=book)), (
+        "CF-04 already refuses this book: the test would prove nothing about correlation")
+
+    record = pipeline.analyse_bar(window, on, portfolio_state=book,
+                                  context=_ctx_like(window, ("C0", "C1")))
+    assert _g17(record), "the correlation cap never refused a third correlated entry"
+    assert not record.plans
+
+
+def test_correlation_cap_does_not_fire_on_uncorrelated_positions(series, cfg, first_plan_bar):
+    """Same book, same bar, anti-correlated context: the cap must stay out of the way.
+
+    Without this the test above proves only that *something* refused, not that correlation is
+    what did it.
+    """
+    index, _ = first_plan_bar
+    on = cfg.with_overrides(max_correlated_concurrent_enabled=True,
+                            max_correlated_concurrent=2,
+                            correlation_threshold=0.7)
+    window = series.head(index + 1)
+    book = _portfolio_with(_live_slot("C0", 0), _live_slot("C1", 1, scalp=True))
+
+    record = pipeline.analyse_bar(window, on, portfolio_state=book,
+                                  context=_ctx_like(window, ("C0", "C1"), invert=True))
+    assert not _g17(record), "anti-correlated positions were treated as concentration"
+    assert record.plans, "the anti-correlated book must leave the bar's plan standing"

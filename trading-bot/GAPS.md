@@ -26,7 +26,8 @@ scaffolding as a building.
 |---|---|---|
 | `max_entry_distance_pct` (CHANGELOG_EVIDENCE.md, DISCORD CHECK 2026-09-15) | off by default; the threshold that would make it useful is **still unmeasured** | the 2026-09-12 resting-entry batch needs spot at post time from bybit to tighten `sweep_bracket`; then a sweep |
 | GAP 1 `backtest --split` | **operational** — this one genuinely works today | nothing; it is ready for the sweep it exists to protect |
-| GAP 2 correlated-exposure cap | **implemented, not operational** — it cannot assess a single slot | GAP 3 section A1, the universe feed |
+| GAP 2 correlated-exposure cap | **operational in the pipeline, not in the backtest** — A1 landed, so it assesses real slots and fires; but `tbot backtest` injects no portfolio state, so it cannot fire there | a PortfolioState built from the engine's own live trades |
+| A1 context channel + `align_series` | **operational** — and it fixed a live defect (`rolling_correlation` correlated misaligned dates, sign-inverting on a periodic path) | nothing |
 
 ### The sequencing risk, recorded because it is the thing most likely to be forgotten
 
@@ -106,7 +107,7 @@ bar; below that the command refuses with a usage error rather than reporting an 
 
 ## GAP 2 — No correlation control on concurrent positions
 
-**Status:** IMPLEMENTED, **NOT OPERATIONAL** (2026-09-15). Correct, tested code that cannot currently assess a single slot: it is blocked on GAP 3's section A1. Scaffolding waiting on a dependency, not a closed gap.
+**Status:** OPERATIONAL in the pipeline path (2026-09-15). A1 landed: the gate now assesses real slots and a test drives it end to end through `analyse_bar` — two correlated positions open, a third correlated entry refused at G17, and an anti-correlated book left alone. **Still not reachable from `tbot backtest`**, which injects no portfolio state; see the table at the top of this file.
 
 **What is missing.** `max_concurrent_leverage_global = 4` (`config.py:306`) counts *tickets*, not
 *exposures*. Four alt longs in a correlated market is one position with four tickets and four

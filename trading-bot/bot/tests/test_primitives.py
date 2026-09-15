@@ -1368,3 +1368,109 @@ class TestInterfacesWorkedExamples:
         listed = re.findall(r"^\| `([a-z0-9_]+)` \|", section, re.M)
         assert len(listed) == len(set(listed)) == 251
         assert set(listed) == {spec.key for spec in KEY_SPECS}
+
+
+# ------------------------------- A1: align_series, the common bar grid (GAPS.md GAP 3 A1)
+#
+# Cross-symbol maths needs a shared timestamp index and the package had none. Symbols list on
+# different dates and exchanges go down for different hours, so two series of equal LENGTH are
+# not two series of equal DATES.
+
+
+class TestAlignSeries:
+    """``tbot.data.align_series`` — a data-layer operation with no config and no thresholds."""
+
+    @staticmethod
+    def _closes(n: int, *, symbol: str, offset_bars: int = 0, base: float = 100.0) -> Series:
+        step = timedelta(minutes=Timeframe.parse("1H").minutes)
+        idx = [T0 + (i + offset_bars) * step for i in range(n)]
+        closes = [base + i for i in range(n)]
+        return Series.from_arrays(
+            idx, closes, [c + 1 for c in closes], [c - 1 for c in closes], closes,
+            volume=[1.0] * n, tf="1H", symbol=symbol,
+        )
+
+    def test_identical_indices_are_returned_unchanged(self):
+        from tbot.data import align_series
+        a = self._closes(20, symbol="A")
+        b = self._closes(20, symbol="B", base=500.0)
+        out = align_series(a, b)
+        assert out is not None
+        assert len(out[0]) == len(out[1]) == 20
+        assert out[0].index.equals(out[1].index)
+
+    def test_partial_overlap_is_cut_to_the_shared_dates(self):
+        from tbot.data import align_series
+        a = self._closes(20, symbol="A")                       # bars 0..19
+        b = self._closes(20, symbol="B", offset_bars=12)       # bars 12..31
+        out = align_series(a, b)
+        assert out is not None
+        assert len(out[0]) == len(out[1]) == 8                 # bars 12..19
+        assert out[0].index.equals(out[1].index)
+        assert out[0].timestamp(0) == b.timestamp(0)
+        assert out[0].timestamp(-1) == a.timestamp(-1)
+
+    def test_disjoint_series_return_none(self):
+        from tbot.data import align_series
+        a = self._closes(10, symbol="A")
+        b = self._closes(10, symbol="B", offset_bars=50)
+        assert align_series(a, b) is None
+
+    def test_a_hole_in_one_series_removes_that_bar_from_both(self):
+        """The case that made the old positional tail wrong: a gap, not a different start."""
+        from tbot.data import align_series
+        a = self._closes(10, symbol="A")
+        gappy = Series(a.frame.drop(a.index[4]), tf=a.tf, symbol="B",
+                       venue_kind=a.venue_kind, validate=False)
+        out = align_series(a, gappy)
+        assert out is not None
+        assert len(out[0]) == len(out[1]) == 9
+        assert a.index[4] not in out[0].index
+
+    def test_lookback_keeps_the_last_n_common_bars(self):
+        from tbot.data import align_series
+        a = self._closes(40, symbol="A")
+        b = self._closes(40, symbol="B")
+        out = align_series(a, b, lookback_bars=10)
+        assert out is not None and len(out[0]) == 10
+        assert out[0].timestamp(-1) == a.timestamp(-1)
+
+    def test_three_way_alignment_uses_the_common_intersection(self):
+        from tbot.data import align_series
+        a = self._closes(30, symbol="A")
+        b = self._closes(30, symbol="B", offset_bars=5)
+        c = self._closes(30, symbol="C", offset_bars=10)
+        out = align_series(a, b, c)
+        assert out is not None
+        assert len({tuple(x.index) for x in out}) == 1
+        assert len(out[0]) == 20                                # bars 10..29
+
+    def test_no_arguments_returns_none(self):
+        from tbot.data import align_series
+        assert align_series() is None
+
+    def test_alignment_makes_a_previously_unanswerable_correlation_answerable(self):
+        """The whole point: aligned legs let rolling_correlation speak, with the right sign."""
+        import math
+
+        from tbot.data import align_series
+        from tbot.regime import rolling_correlation
+
+        step = timedelta(minutes=Timeframe.parse("1H").minutes)
+        vals = [100.0 + 5.0 * math.cos(2 * math.pi * i / 8) for i in range(40)]
+
+        def build(symbol, offset):
+            idx = [T0 + (i + offset) * step for i in range(40)]
+            return Series.from_arrays(idx, vals, [v + 0.1 for v in vals],
+                                      [v - 0.1 for v in vals], vals,
+                                      volume=[1.0] * 40, tf="1H", symbol=symbol)
+
+        a, b = build("A", 0), build("B", 20)
+        assert rolling_correlation(a, b) is None, "unaligned must still fail closed"
+
+        pair = align_series(a, b)
+        assert pair is not None
+        corr = rolling_correlation(pair[0], pair[1])
+        assert corr is not None
+        # 20 bars of offset on a period-8 cosine is half a period: the truth is -1, not +1
+        assert float(corr) == pytest.approx(-1.0, abs=1e-9)

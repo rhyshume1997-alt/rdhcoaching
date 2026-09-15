@@ -986,3 +986,52 @@ def test_correlation_cap_reuses_the_regime_primitive():
     for smell in ("corrcoef", "np.cov", "pearson"):
         assert smell not in src, (
             f"risk.py computes its own correlation ({smell}) - reuse regime.rolling_correlation")
+
+
+def _corr_series_at(closes, symbol: str, offset_bars: int):
+    """Like ``_corr_series`` but starting ``offset_bars`` later -- a different listing date."""
+    from datetime import timedelta as _td
+
+    from tbot.models import Series as _Series
+    from tbot.models import Timeframe as _Timeframe
+
+    step = _td(minutes=_Timeframe.parse("4H").minutes)
+    idx = [NOW + (i + offset_bars) * step for i in range(len(closes))]
+    return _Series.from_arrays(
+        idx,
+        [float(c) for c in closes], [float(c) + 0.5 for c in closes],
+        [float(c) - 0.5 for c in closes], [float(c) for c in closes],
+        volume=[1_000.0] * len(closes), tf="4H", symbol=symbol,
+    )
+
+
+def test_correlation_cap_assesses_symbols_with_different_histories():
+    """GAPS.md GAP 3 A1: the gate aligns before correlating, so real pairs are assessable.
+
+    ``rolling_correlation`` fails closed on a timestamp mismatch. Without alignment, two
+    positions with different listing dates -- which is most real pairs -- would both come back
+    unassessed and the cap could never fire on them.
+    """
+    subject = _corr_series(_RISING, "S")
+    # both rise, both overlap S, but each starts at a different date
+    late_a = _corr_series_at([50.0 + 0.5 * i for i in range(40)], "C0", 10)
+    late_b = _corr_series_at([20.0 + 0.25 * i for i in range(40)], "C1", 25)
+    series = {"S": subject, "C0": late_a, "C1": late_b}
+    pf = portfolio(open_slots=(slot(0), slot(1)))
+
+    gate = R.correlation_cap_gate(_corr_cfg(), pf, symbol="S", series_by_symbol=series)
+    assert not gate.allowed, "both legs overlap S and both rise: the cap must fire"
+    assert "max_correlated_concurrent_reached (2/2" in gate.reasons[0]
+    assert not any("not assessed" in r for r in gate.reasons), (
+        "alignment should have removed the unassessed path for these pairs")
+
+
+def test_correlation_cap_still_reports_a_pair_with_no_overlap_at_all():
+    """Alignment is not magic: disjoint histories remain unassessable, and say so."""
+    subject = _corr_series(_RISING, "S")
+    disjoint = _corr_series_at([50.0 + 0.5 * i for i in range(40)], "C0", 500)
+    pf = portfolio(open_slots=(slot(0),))
+    gate = R.correlation_cap_gate(_corr_cfg(max_correlated_concurrent=1), pf,
+                                  symbol="S", series_by_symbol={"S": subject, "C0": disjoint})
+    assert gate.allowed
+    assert gate.reasons and "1 live slot(s) had no usable series" in gate.reasons[0]

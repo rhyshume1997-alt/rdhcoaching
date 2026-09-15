@@ -552,7 +552,9 @@ def correlation_cap_gate(
     if not config.max_correlated_concurrent_enabled:
         return Gate("correlation_cap", True, source_ids=ids)
 
-    from .regime import rolling_correlation  # local: risk.py must not import regime at module load
+    # local imports: risk.py must not import regime/data at module load time
+    from .data import align_series
+    from .regime import rolling_correlation
 
     series_by_symbol = series_by_symbol or {}
     subject = series_by_symbol.get(symbol)
@@ -573,7 +575,14 @@ def correlation_cap_gate(
         if other is None:
             unassessed += 1
             continue
-        corr = rolling_correlation(subject, other, lookback_bars=lookback)
+        # Align on shared timestamps first.  Two positions rarely have identical histories --
+        # different listing dates, different exchange outages -- and `rolling_correlation`
+        # fails closed on a mismatch, so without this most real pairs would go unassessed.
+        pair = align_series(subject, other, lookback_bars=lookback)
+        if pair is None:
+            unassessed += 1
+            continue
+        corr = rolling_correlation(pair[0], pair[1], lookback_bars=lookback)
         if corr is None:
             unassessed += 1
             continue

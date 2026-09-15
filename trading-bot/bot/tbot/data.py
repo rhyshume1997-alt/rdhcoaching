@@ -31,6 +31,7 @@ __all__ = [
     "load_csv",
     "frame_from_records",
     "resample",
+    "align_series",
     "SyntheticFeatures",
     "SyntheticSeries",
     "synthetic",
@@ -105,6 +106,44 @@ def frame_from_records(
 
 
 # --------------------------------------------------------------------------- resampling
+
+def align_series(*series: Series, lookback_bars: int | None = None) -> tuple[Series, ...] | None:
+    """Restrict every input to the timestamps **all** of them share.
+
+    Cross-symbol maths needs a common bar grid and the package had none: symbols list on
+    different dates, exchanges go down for different hours, and two series of equal length are
+    not therefore two series of equal dates.  Before this, the only cross-symbol consumer
+    (:func:`tbot.regime.rolling_correlation`) took a *positional* tail of each leg and compared
+    bar-against-bar at whatever date offset happened to exist.
+
+    Returns one restricted :class:`Series` per input, in argument order, sharing an identical
+    index; or ``None`` when the intersection is empty.  ``lookback_bars`` keeps only the last
+    *n* common bars.
+
+    **Why this is a separate unit and not folded into ``rolling_correlation``.**  Auto-aligning
+    inside the correlation would trade one silent wrongness for another: a caller asking for 90
+    bars would get a number computed over whatever overlap existed — possibly three bars —
+    with nothing in the return value to say so.  Aligning is the *caller's* decision because
+    only the caller knows whether a short overlap is acceptable.  ``rolling_correlation`` keeps
+    its fail-closed timestamp check as the backstop for callers that forget (GAPS.md GAP 3 A1).
+
+    No configuration and no thresholds: this is a data-layer operation, not a rule.
+    """
+    if not series:
+        return None
+    index = series[0].index
+    for other in series[1:]:
+        index = index.intersection(other.index)
+    if len(index) == 0:
+        return None
+    if lookback_bars is not None and lookback_bars > 0:
+        index = index[-int(lookback_bars):]
+    return tuple(
+        Series(s.frame.loc[index], tf=s.tf, symbol=s.symbol, venue_kind=s.venue_kind,
+               validate=False, copy=False)
+        for s in series
+    )
+
 
 def resample(series: Series, tf: Timeframe | str, config: Config | None = None) -> Series:
     """Aggregate ``series`` up to timeframe ``tf`` (CF-24 ladder).

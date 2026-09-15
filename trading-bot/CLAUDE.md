@@ -46,7 +46,7 @@ trading_bot/
     │   ├── risk.py         portfolio caps, concurrency, sizing solver
     │   ├── backtest/       bar-by-bar simulator, no lookahead by construction
     │   └── dashboard/      FastAPI + Lightweight Charts local web UI
-    └── tests/              1,075 tests
+    └── tests/              1,087 tests
 ```
 
 ## Conventions that matter
@@ -76,7 +76,7 @@ was wrong, change the default and say so explicitly.
 
 ## Current state
 
-- 1,075 tests passing (`cd bot && python -m pytest -q`)
+- 1,087 tests passing (`cd bot && python -m pytest -q`)
 - 247 config keys
 - Runs end to end on synthetic data; four CLI commands work
 - **Never run on real market data.** Not once. This is the single biggest gap.
@@ -85,10 +85,11 @@ was wrong, change the default and say so explicitly.
 
 ```bash
 cd bot
-python -m pytest -q                              # 1,075 tests
+python -m pytest -q                              # 1,087 tests
 python -m tbot config                            # every key with its source rule
 python -m tbot config --grep stop                # filter
 python -m tbot backtest --csv data/synthetic_4h.csv
+python -m tbot backtest --csv data/synthetic_4h.csv --split   # in-sample + out-of-sample
 python -m tbot scan --csv data/synthetic_4h.csv  # trade tickets
 python -m tbot explain --run <run.json>          # trace a trade to its rules
 python -m tbot dashboard --source replay         # local UI, works offline
@@ -103,7 +104,9 @@ python scripts/fetch_klines.py --help            # pull real OHLCV (needs intern
    A written-record pass (CONFLICTS.md, 2026-09-14) established that he defines structure
    *relationally* (HH/HL/LH/LL and which breaks which) and never by a candle count, and
    that he never uses "pivot" as a TA term at all. `swing_k` is our scaffolding for
-   finding candidates in code. The sweep decides it.
+   finding candidates in code. The sweep decides it. **Run it under `backtest --split`**
+   (GAPS.md GAP 1) — an unsplit sweep over two open parameters on one symbol is a
+   curve-fitting machine.
 3. **Sweep `sufficient_gap_pct_by_tf` — every row, not just 2H/4H/8H/12H.** The five
    "stated" rows are video-only too; no percentage-by-timeframe table exists in writing
    anywhere. He states the gap criterion three times and gives a number zero times.

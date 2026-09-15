@@ -26,7 +26,11 @@ from .engine import (
     OpenTrade,
     PipelineOutput,
     RejectionRecord,
+    SplitError,
+    SplitResult,
+    DEFAULT_IN_SAMPLE_FRACTION,
     run_backtest,
+    split_backtest,
 )
 from .metrics import MetricsReport, compute_metrics
 
@@ -44,6 +48,10 @@ __all__ = [
     "PipelineOutput",
     "RejectionRecord",
     "run_backtest",
+    "split_backtest",
+    "SplitResult",
+    "SplitError",
+    "DEFAULT_IN_SAMPLE_FRACTION",
     "MetricsReport",
     "compute_metrics",
 ]

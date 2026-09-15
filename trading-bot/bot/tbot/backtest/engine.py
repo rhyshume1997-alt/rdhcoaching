@@ -120,7 +120,11 @@ __all__ = [
     "BacktestResult",
     "BacktestEngine",
     "run_backtest",
+    "split_backtest",
+    "SplitResult",
+    "SplitError",
     "default_plan_provider",
+    "DEFAULT_IN_SAMPLE_FRACTION",
     "assert_no_future_reference",
     "DEFAULT_STARTING_EQUITY",
 ]
@@ -130,6 +134,10 @@ ZERO = Decimal(0)
 #: Starting equity is not one of the 245 keys (§11.13), so it is an engine argument.
 #: **[OUR CHOICE]** — flagged for the sweep list.
 DEFAULT_STARTING_EQUITY = dec(10_000.0)
+#: Default in-sample share for :func:`split_backtest`.  **[OUR CHOICE]** — a harness
+#: convention (2/3 train, 1/3 test), not a SPEC.md §11 key and not one of his rules.
+#: He has never been recorded discussing out-of-sample testing at all.
+DEFAULT_IN_SAMPLE_FRACTION = 2.0 / 3.0
 #: Quantity below which a position is treated as flat (float/Decimal dust).  **[OUR CHOICE]**
 _QTY_DUST = Decimal("1e-12")
 
@@ -1327,3 +1335,96 @@ def run_backtest(series: Series, config: Config, *, plan_provider: PlanProvider 
     """Convenience wrapper: build a :class:`BacktestEngine` and run it once."""
     return BacktestEngine(series, config, plan_provider=plan_provider,
                           starting_equity=starting_equity, warmup_bars=warmup_bars).run()
+
+
+# --------------------------------------------------------------------------- §12 out-of-sample
+
+
+class SplitError(ValueError):
+    """Raised when a requested in-sample/out-of-sample split cannot be honoured."""
+
+
+@dataclass(frozen=True, slots=True)
+class SplitResult:
+    """One series partitioned chronologically and run as **two independent backtests**.
+
+    The two :class:`BacktestResult` objects are never merged and there is deliberately no
+    combined metric on this class.  A single headline number across both segments is exactly
+    the thing an out-of-sample split exists to prevent: it lets a fitted in-sample result
+    carry an unfitted out-of-sample one, which is the error the split is meant to expose.
+    Report them side by side or not at all.
+
+    Both segments start from the same ``starting_equity``.  The out-of-sample run is *not*
+    compounded onto the in-sample equity curve — they are two independent evaluations of the
+    same parameter set, not one continuous account.
+    """
+
+    in_sample: BacktestResult
+    out_of_sample: BacktestResult
+    #: First bar index belonging to the out-of-sample segment.
+    split_index: int
+    in_sample_fraction: float
+
+    @property
+    def in_sample_bars(self) -> int:
+        return self.split_index
+
+    @property
+    def out_of_sample_bars(self) -> int:
+        return self.out_of_sample.bars - self.split_index
+
+
+def split_backtest(
+    series: Series,
+    config: Config,
+    *,
+    plan_provider: PlanProvider | None = None,
+    starting_equity: Decimal | float = DEFAULT_STARTING_EQUITY,
+    warmup_bars: int | None = None,
+    in_sample_fraction: float = DEFAULT_IN_SAMPLE_FRACTION,
+) -> SplitResult:
+    """Run ``series`` twice: once on the first ``in_sample_fraction``, once on the remainder.
+
+    The split is **chronological** — the out-of-sample segment is strictly later than the
+    in-sample one, which is the only split that means anything for a time series.
+
+    How the out-of-sample run avoids both contamination and a cold start: it is handed the
+    **whole** series with ``warmup_bars`` set to the split index.  The §12.1 loop already
+    treats warm-up bars as history that detectors may look back over but on which no analysis
+    runs (``engine.run``: ``if i >= warm``), so the out-of-sample segment gets the same warmed
+    detector state a live run would have, while opening no trade before the split.  No bar
+    ``> i`` is ever visible at bar ``i``, so the lookahead guarantee is unchanged.
+
+    :raises SplitError: if the fraction is out of range, or either segment would contain no
+        analysable bar once warm-up is accounted for.  Failing loudly beats silently reporting
+        a segment that never ran.
+    """
+    if not 0.0 < in_sample_fraction < 1.0:
+        raise SplitError(
+            f"in_sample_fraction must lie strictly between 0 and 1, got {in_sample_fraction}")
+
+    n = len(series)
+    split = int(n * in_sample_fraction)
+
+    # The in-sample engine decides the warm-up; ask it rather than re-deriving §12.1 here.
+    in_engine = BacktestEngine(series.head(split) if split else series, config,
+                               plan_provider=plan_provider, starting_equity=starting_equity,
+                               warmup_bars=warmup_bars)
+    warm = in_engine.warmup_bars
+
+    if split <= warm:
+        raise SplitError(
+            f"in-sample segment is {split} bar(s) but warm-up alone needs {warm}: "
+            f"nothing would be analysed. Use a longer series or a larger --split fraction.")
+    if split >= n:
+        raise SplitError(
+            f"out-of-sample segment is empty (split index {split} of {n} bars)")
+
+    out_engine = BacktestEngine(series, config, plan_provider=plan_provider,
+                                starting_equity=starting_equity, warmup_bars=split)
+    return SplitResult(
+        in_sample=in_engine.run(),
+        out_of_sample=out_engine.run(),
+        split_index=split,
+        in_sample_fraction=in_sample_fraction,
+    )

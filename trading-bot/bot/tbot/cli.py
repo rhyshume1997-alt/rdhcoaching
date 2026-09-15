@@ -5,7 +5,7 @@ Five commands, one job each:
 * ``backtest`` — run the SPEC.md §12 harness over a CSV and print the §12.4 metrics report.
 * ``scan``     — run the analysis pipeline over the latest bars of a CSV and print any trade plans
                  as human-readable **trade tickets**.
-* ``config``   — print every one of the 245 keys with its value, its default and its source ID, so
+* ``config``   — print every one of the 247 keys with its value, its default and its source ID, so
                  provenance is inspectable (INTERFACES.md §4, ``Config.describe``).
 * ``explain``  — given a trade id from a backtest run, print its full source-rule chain: every
                  detection, rejection, plan, fill, transition and exit behind it.
@@ -36,6 +36,10 @@ __all__ = ["main", "build_parser", "render_ticket", "cmd_dashboard"]
 
 _EXIT_OK = 0
 _EXIT_USAGE = 2
+#: `--split` given with no value: resolve to backtest.engine.DEFAULT_IN_SAMPLE_FRACTION
+#: at call time, so the CLI does not import the backtest package just to build its
+#: parser.  A fraction of 0 is never legal, which makes it a safe sentinel.
+_SPLIT_USE_DEFAULT = 0.0
 _EXIT_FAILED = 1
 
 
@@ -151,6 +155,119 @@ _NO_PIPELINE = (
 # --------------------------------------------------------------------------- commands
 
 
+def _run_payload(args: argparse.Namespace, result: Any, report: Any,
+                 changed: Sequence[str]) -> dict:
+    """The `--save-run` JSON body for one :class:`BacktestResult`."""
+    return {
+        "meta": {
+            "symbol": result.symbol, "tf": result.tf.value, "bars": result.bars,
+            "warmup_bars": result.warmup_bars,
+            "start": result.start.isoformat() if result.start else None,
+            "end": result.end.isoformat() if result.end else None,
+            "csv": str(args.csv),
+            "non_default_config": list(changed),
+        },
+        "metrics": report.to_dict(),
+        "trades": [
+            {
+                "ref": t.ref, "id": t.id, "plan_id": t.plan_id, "setup_id": t.setup_id,
+                "direction": t.direction.value, "primary_class": t.primary_class,
+                "confluence_classes": list(t.confluence_classes),
+                "source_ids": list(t.source_ids),
+                "net_pnl_usd": str(t.net_pnl_usd), "r_multiple": str(t.r_multiple),
+                "close_reason": t.close_reason.value,
+            }
+            for t in result.trades
+        ],
+        "events": [
+            {
+                "seq": e.seq, "bar_index": e.bar_index, "timestamp": e.timestamp.isoformat(),
+                "kind": e.kind.value, "message": e.message, "trade_id": e.trade_id,
+                "trade_ref": e.trade_ref, "plan_id": e.plan_id, "setup_id": e.setup_id,
+                "source_ids": list(e.source_ids),
+            }
+            for e in result.events
+        ],
+    }
+
+
+def _emit_artifacts(args: argparse.Namespace, result: Any, report: Any, changed: Sequence[str],
+                    *, events_path: str | None, save_path: str | None) -> None:
+    """Write `--events` / `--save-run` for one segment."""
+    if events_path:
+        Path(events_path).write_text(result.events.render() + "\n", encoding="utf-8")
+        print(f"event log written to {events_path} ({len(result.events)} events)")
+    if save_path:
+        Path(save_path).write_text(
+            json.dumps(_run_payload(args, result, report, changed), indent=2), encoding="utf-8")
+        print(f"run written to {save_path} — `tbot explain --run {save_path} "
+              f"--trade <ref>` to unpack any trade")
+
+
+def _suffixed(path: str, tag: str) -> str:
+    """``run.json`` + ``in_sample`` -> ``run.in_sample.json``."""
+    p = Path(path)
+    return str(p.with_name(f"{p.stem}.{tag}{p.suffix}"))
+
+
+def _cmd_backtest_split(args: argparse.Namespace, cfg: Any, series: Any) -> int:
+    """`backtest --split` — two chronological segments, reported separately.
+
+    There is deliberately **no combined headline**.  A single number spanning both segments is
+    the specific failure an out-of-sample split exists to catch, so this command will not print
+    one; the reader compares the two blocks.
+    """
+    from .backtest.engine import DEFAULT_IN_SAMPLE_FRACTION, SplitError, split_backtest
+    from .backtest.metrics import compute_metrics
+
+    fraction = DEFAULT_IN_SAMPLE_FRACTION if args.split == _SPLIT_USE_DEFAULT else args.split
+    try:
+        split = split_backtest(series, cfg, plan_provider=_provider(args),
+                               starting_equity=dec(args.equity), warmup_bars=args.warmup,
+                               in_sample_fraction=fraction)
+    except SplitError as err:
+        print(f"cannot split this series: {err}")
+        return _EXIT_USAGE
+
+    changed = cfg.non_default_keys()
+    segments = (
+        ("IN-SAMPLE", "in_sample", split.in_sample, split.in_sample_bars, 0),
+        ("OUT-OF-SAMPLE", "out_of_sample", split.out_of_sample, split.out_of_sample_bars,
+         split.split_index),
+    )
+
+    print(f"chronological split at bar {split.split_index} of {split.out_of_sample.bars} "
+          f"({fraction:.1%} in-sample) [OUR CHOICE - a harness convention, not his rule]")
+    print("the two segments below are independent runs from the same starting equity; "
+          "they are NOT merged into a headline, by design.")
+    print("NOTE: the out-of-sample block's own header repeats the FULL series bar count and")
+    print("      date range, because the engine is handed every earlier bar as warm-up")
+    print("      history. The segment actually analysed is the one named just above it.\n")
+
+    for title, _tag, result, bars, first_bar in segments:
+        last_bar = result.bars - 1
+        span = (f"{series.timestamp(first_bar):%Y-%m-%d %H:%M}"
+                f" -> {series.timestamp(last_bar):%Y-%m-%d %H:%M}")
+        print("=" * 78)
+        print(f"== {title}: bars {first_bar}-{last_bar} ({bars} bar(s))   {span}")
+        print("=" * 78)
+        print(compute_metrics(result).render())
+        if not result.trades:
+            print(_NO_PIPELINE)
+        print()
+
+    if changed:
+        print(f"non-default config keys this run: {', '.join(changed)}")
+
+    for _title, tag, result, _bars, _first in segments:
+        _emit_artifacts(
+            args, result, compute_metrics(result), changed,
+            events_path=_suffixed(args.events, tag) if args.events else None,
+            save_path=_suffixed(args.save_run, tag) if args.save_run else None,
+        )
+    return _EXIT_OK
+
+
 def cmd_backtest(args: argparse.Namespace) -> int:
     """Run the §12 harness over a CSV and print the §12.4 report."""
     from .backtest.engine import BacktestEngine
@@ -158,6 +275,8 @@ def cmd_backtest(args: argparse.Namespace) -> int:
 
     cfg = _load_config(args)
     series = _load_series(args)
+    if getattr(args, "split", None) is not None:
+        return _cmd_backtest_split(args, cfg, series)
     engine = BacktestEngine(series, cfg, plan_provider=_provider(args),
                             starting_equity=dec(args.equity),
                             warmup_bars=args.warmup)
@@ -175,37 +294,7 @@ def cmd_backtest(args: argparse.Namespace) -> int:
         Path(args.events).write_text(result.events.render() + "\n", encoding="utf-8")
         print(f"event log written to {args.events} ({len(result.events)} events)")
     if args.save_run:
-        payload = {
-            "meta": {
-                "symbol": result.symbol, "tf": result.tf.value, "bars": result.bars,
-                "warmup_bars": result.warmup_bars,
-                "start": result.start.isoformat() if result.start else None,
-                "end": result.end.isoformat() if result.end else None,
-                "csv": str(args.csv),
-                "non_default_config": changed,
-            },
-            "metrics": report.to_dict(),
-            "trades": [
-                {
-                    "ref": t.ref, "id": t.id, "plan_id": t.plan_id, "setup_id": t.setup_id,
-                    "direction": t.direction.value, "primary_class": t.primary_class,
-                    "confluence_classes": list(t.confluence_classes),
-                    "source_ids": list(t.source_ids),
-                    "net_pnl_usd": str(t.net_pnl_usd), "r_multiple": str(t.r_multiple),
-                    "close_reason": t.close_reason.value,
-                }
-                for t in result.trades
-            ],
-            "events": [
-                {
-                    "seq": e.seq, "bar_index": e.bar_index, "timestamp": e.timestamp.isoformat(),
-                    "kind": e.kind.value, "message": e.message, "trade_id": e.trade_id,
-                    "trade_ref": e.trade_ref, "plan_id": e.plan_id, "setup_id": e.setup_id,
-                    "source_ids": list(e.source_ids),
-                }
-                for e in result.events
-            ],
-        }
+        payload = _run_payload(args, result, report, changed)
         Path(args.save_run).write_text(json.dumps(payload, indent=2), encoding="utf-8")
         print(f"run written to {args.save_run} — `tbot explain --run {args.save_run} "
               f"--trade <ref>` to unpack any trade")
@@ -293,7 +382,7 @@ def cmd_config(args: argparse.Namespace) -> int:
     print("-" * 140)
     print(f"{len(rows)} key(s) shown, {changed} non-default (marked *).  "
           f"{len(KEY_SPECS)} keys exist in total (SPEC.md §11.13 = 234, plus 8 evidence-derived, "
-          "plus 3 frame-derived).")
+          "plus 3 frame-derived, plus 2 Discord-derived).")
     print("Every value marked [OUR CHOICE] or 'OUR number' in the source column is ours, not the "
           "trader's, and is a sweep target (INTERFACES.md §1.7).")
     return _EXIT_OK
@@ -504,6 +593,11 @@ def build_parser() -> argparse.ArgumentParser:
                       help="starting equity in USD (default 10000) [OUR CHOICE — not a §11 key]")
     p_bt.add_argument("--warmup", type=int, default=None,
                       help="override the §12.1 warm-up bar count")
+    p_bt.add_argument("--split", nargs="?", type=float, const=_SPLIT_USE_DEFAULT, default=None,
+                      metavar="FRACTION",
+                      help="split the series chronologically and report in-sample and "
+                           "out-of-sample separately (bare flag = 2/3 in-sample). "
+                           "[OUR CHOICE — a harness convention, not a §11 key]")
     p_bt.add_argument("--events", metavar="FILE", help="write the full event log here")
     p_bt.add_argument("--save-run", metavar="FILE",
                       help="write a JSON run file that `explain --run` can read back")

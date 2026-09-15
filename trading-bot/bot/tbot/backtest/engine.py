@@ -75,11 +75,12 @@ second-guesses those numbers.
 
 from __future__ import annotations
 
+import inspect
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Iterator, Protocol, Sequence, runtime_checkable
+from typing import Any, Iterator, Mapping, Protocol, Sequence, runtime_checkable
 
 from ..config import Config
 from ..models import (
@@ -234,6 +235,28 @@ def assert_no_future_reference(obj: Any, now: int, *, path: str = "", _depth: in
                                        _seen=_seen)
 
 
+def _truncate_context(context: "Mapping[str, Series] | None",
+                      as_of: datetime) -> "Mapping[str, Series]":
+    """Cut every context series to the bars at or before ``as_of``.
+
+    By **timestamp**, never by position: a second symbol has its own bar numbering, its own
+    listing date and its own gaps, so ``other.head(now + 1)`` would hand over whatever bars
+    happened to sit at those offsets.  A series with no bar at or before ``as_of`` is dropped
+    rather than handed over empty.
+    """
+    if not context:
+        return {}
+    out: dict[str, Series] = {}
+    for name, other in context.items():
+        if other is None or len(other) == 0:
+            continue
+        keep = int(other.index.searchsorted(as_of, side="right"))
+        if keep <= 0:
+            continue
+        out[name] = other.head(keep)
+    return out
+
+
 @dataclass(frozen=True, slots=True)
 class BarWindow:
     """The pipeline's whole view of the world on bar ``now`` — nothing later exists in it.
@@ -249,10 +272,22 @@ class BarWindow:
     total_bars: int
     symbol: str
     tf: Timeframe
+    #: Other symbols as of the same instant, each already truncated to ``series``' last
+    #: timestamp — the cross-market context (USDT.D / BTC.D / BVOL) and, once a universe feed
+    #: exists, the other tradeable symbols.  Empty when the caller injected nothing.
+    #: **Every entry is subject to the same no-lookahead rule as ``series``** (GAPS.md GAP 3 A1).
+    context: Mapping[str, Series] = field(default_factory=dict)
 
     @classmethod
-    def at(cls, series: Series, index: int) -> "BarWindow":
-        """Build the ``as of bar index`` view of ``series`` and verify the truncation."""
+    def at(cls, series: Series, index: int,
+           context: Mapping[str, Series] | None = None) -> "BarWindow":
+        """Build the ``as of bar index`` view of ``series`` and verify the truncation.
+
+        ``context`` is truncated **by timestamp**, not by position: a second symbol does not
+        share this one's bar numbering, so slicing it to ``index + 1`` would hand over whatever
+        bars happened to sit at those offsets.  Each context series is cut to the bars at or
+        before ``series``' current timestamp instead.
+        """
         if index < 0 or index >= len(series):
             raise ValueError(f"bar index {index} out of range for a {len(series)}-bar series")
         view = series.head(index + 1)
@@ -263,7 +298,7 @@ class BarWindow:
         if view.timestamp(-1) != series.timestamp(index):
             raise LookaheadError("window truncation failed: last bar is not the current bar")
         return cls(series=view, now=index, total_bars=len(series), symbol=series.symbol,
-                   tf=series.tf)
+                   tf=series.tf, context=_truncate_context(context, view.timestamp(-1)))
 
     def __len__(self) -> int:
         return self.now + 1
@@ -433,6 +468,11 @@ class PlanProvider(Protocol):
     Implementations receive a :class:`BarWindow` (bars ``0..now`` only) and return the plans that
     are *newly publishable at the close of that bar*.  Returning the same plan id twice is
     harmless — the harness arms a plan id once.
+
+    ``window.context`` carries other symbols as of the same instant, each truncated by
+    timestamp.  It is **optional to consume**: a provider that ignores it behaves exactly as
+    before, and :func:`default_plan_provider` only forwards it to entry points that declare a
+    ``context`` parameter (GAPS.md GAP 3 A1).
     """
 
     def __call__(self, window: BarWindow, config: Config) -> PipelineOutput: ...
@@ -447,6 +487,31 @@ _PIPELINE_CANDIDATES: tuple[tuple[str, str], ...] = (
     ("tbot.pipeline", "run_pipeline"),
     ("tbot.pipeline", "analyse"),
 )
+
+
+def _supported_injections(entry: Any, window: BarWindow) -> dict[str, Any]:
+    """The optional keyword arguments ``entry`` actually declares, filled from ``window``.
+
+    Decided by **signature inspection**, not by ``try/except TypeError`` around the call: that
+    would also swallow a ``TypeError`` raised *inside* the pipeline and silently downgrade a real
+    bug to "this provider does not accept context".
+
+    When there is nothing to inject this returns ``{}`` and the call is byte-for-byte the two
+    argument call it has always been — which is every run that injects no context (GAPS.md
+    GAP 3 A1).
+    """
+    available: dict[str, Any] = {}
+    if window.context:
+        available["context"] = window.context
+    if not available:
+        return {}
+    try:
+        params = inspect.signature(entry).parameters
+    except (TypeError, ValueError):  # builtins and C callables have no introspectable signature
+        return {}
+    if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()):
+        return available
+    return {k: v for k, v in available.items() if k in params}
 
 
 def default_plan_provider(window: BarWindow, config: Config) -> PipelineOutput:
@@ -470,7 +535,7 @@ def default_plan_provider(window: BarWindow, config: Config) -> PipelineOutput:
         entry = getattr(module, attr, None)
         if entry is None:
             continue
-        result = entry(window.series, config)
+        result = entry(window.series, config, **_supported_injections(entry, window))
         return _coerce_pipeline_output(result)
     return PipelineOutput()
 
@@ -695,11 +760,15 @@ class BacktestEngine:
         starting_equity: Decimal | float = DEFAULT_STARTING_EQUITY,
         warmup_bars: int | None = None,
         audit_outputs: bool = True,
+        context: Mapping[str, Series] | None = None,
     ) -> None:
         if len(series) == 0:
             raise ValueError("cannot backtest an empty series")
         self.series = series
         self.config = config
+        #: Full-length other-symbol series.  Truncated per bar by :meth:`BarWindow.at`; the
+        #: engine never hands an untruncated one to the pipeline (GAPS.md GAP 3 A1).
+        self.context: Mapping[str, Series] = dict(context or {})
         self.provider: PlanProvider = plan_provider or default_plan_provider
         self.starting_equity = dec(starting_equity)
         self.audit_outputs = audit_outputs
@@ -754,7 +823,7 @@ class BacktestEngine:
 
             # 2. Then the pipeline sees bars 0..i and may publish new plans.
             if i >= warm:
-                window = BarWindow.at(series, i)
+                window = BarWindow.at(series, i, self.context)
                 output = _coerce_pipeline_output(self.provider(window, cfg))
                 if self.audit_outputs:
                     assert_no_future_reference(output.plans, i, path="pipeline.plans")

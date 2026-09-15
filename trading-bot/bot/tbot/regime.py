@@ -428,10 +428,22 @@ def rolling_correlation(a: Series, b: Series, *, lookback_bars: int = 90) -> Dec
     """Pearson correlation of the two series' closes over the overlapping tail.
 
     **OUR construct** (CF-35): the corpus never proposes a correlation test, it just says the DXY
-    relationship broke.  ``None`` when there is not enough overlap or either leg is flat.
+    relationship broke.  ``None`` when there is not enough overlap, when the two tails do not
+    describe the same instants, or when either leg is flat.
+
+    **The tails must line up in time.**  Taking ``a.close[-n:]`` against ``b.close[-n:]`` is a
+    *positional* read: a symbol that listed later, or one with a data gap, used to be correlated
+    bar-against-bar at a date offset.  That is not an approximation — on a periodic path a half
+    period of offset inverts the sign, so a gate acting on the number does the opposite of what
+    it was asked to (``tests/test_regime.py::test_rolling_correlation_refuses_misaligned_windows``
+    demonstrates +1.0 where the truth is -1.0).  This function therefore **fails closed**: if the
+    two windows cannot be shown to cover the same timestamps it returns ``None`` rather than a
+    number no caller can sanity-check.  ``None`` is already its documented "cannot say" signal.
     """
     n = min(len(a), len(b), lookback_bars)
     if n < 3:
+        return None
+    if not a.index[-n:].equals(b.index[-n:]):
         return None
     x = a.close[-n:]
     y = b.close[-n:]

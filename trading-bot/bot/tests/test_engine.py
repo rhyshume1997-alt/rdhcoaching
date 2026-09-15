@@ -570,3 +570,109 @@ def test_engine_runs_on_the_synthetic_series_with_no_pipeline(cfg):
 def test_empty_series_is_refused(cfg):
     with pytest.raises(ValueError):
         BacktestEngine(flat_series(4).slice(0, 0), cfg)
+
+
+# ------------------------------- A1: cross-symbol context injection (GAPS.md GAP 3 A1)
+#
+# Before this, `default_plan_provider` called `entry(window.series, config)` and dropped every
+# optional injection on the floor -- so `context` was always empty, GAP 2's correlation cap
+# could never assess a slot, and CF-04 concurrency had never executed in any backtest.
+
+
+def _shifted_series(n: int, *, symbol: str, start_offset_bars: int = 0,
+                    tf: Timeframe = Timeframe.H1) -> Series:
+    stamps = [START + timedelta(minutes=tf.minutes * (k + start_offset_bars)) for k in range(n)]
+    closes = [100.0 + k for k in range(n)]
+    return Series.from_arrays(
+        stamps, closes, [c + 1 for c in closes], [c - 1 for c in closes], closes,
+        volume=[1_000.0] * n, tf=tf, symbol=symbol,
+    )
+
+
+def test_bar_window_carries_no_context_by_default():
+    """ACCEPTANCE: a window built the old way is unchanged."""
+    window = BarWindow.at(flat_series(10), 5)
+    assert window.context == {}
+
+
+def test_bar_window_truncates_context_by_timestamp_not_position():
+    """A second symbol has its own bar numbering; slicing it to `now + 1` would be wrong."""
+    subject = _shifted_series(20, symbol="SUBJ")
+    # BUDDY starts 5 bars later, so its bar 7 is the subject's bar 12
+    buddy = _shifted_series(20, symbol="BUDDY", start_offset_bars=5)
+    window = BarWindow.at(subject, 12, {"BUDDY": buddy})
+
+    got = window.context["BUDDY"]
+    assert got.timestamp(-1) <= subject.timestamp(12)
+    assert got.timestamp(-1) == subject.timestamp(12), "the aligned bar should be included"
+    assert len(got) == 8, "positional truncation would have given 13 bars"
+
+
+def test_bar_window_context_never_reaches_past_the_current_bar():
+    subject = _shifted_series(30, symbol="SUBJ")
+    buddy = _shifted_series(30, symbol="BUDDY")
+    for i in (0, 1, 7, 29):
+        window = BarWindow.at(subject, i, {"BUDDY": buddy})
+        for name, other in window.context.items():
+            assert other.timestamp(-1) <= subject.timestamp(i), name
+
+
+def test_bar_window_drops_a_context_series_with_no_bar_yet():
+    """A symbol that lists later must be absent, never handed over empty."""
+    subject = _shifted_series(20, symbol="SUBJ")
+    latecomer = _shifted_series(20, symbol="LATE", start_offset_bars=10)
+    assert BarWindow.at(subject, 3, {"LATE": latecomer}).context == {}
+    assert "LATE" in BarWindow.at(subject, 15, {"LATE": latecomer}).context
+
+
+def test_engine_hands_context_to_a_provider_that_wants_it():
+    subject = _shifted_series(12, symbol="SUBJ")
+    buddy = _shifted_series(12, symbol="BUDDY")
+    seen: list[dict] = []
+
+    def provider(window: BarWindow, config: Config) -> PipelineOutput:
+        seen.append(dict(window.context))
+        return PipelineOutput()
+
+    BacktestEngine(subject, Config(), plan_provider=provider, warmup_bars=2,
+                   context={"BUDDY": buddy}).run()
+    assert seen and all("BUDDY" in c for c in seen)
+    assert all(len(c["BUDDY"]) > 0 for c in seen)
+
+
+def test_engine_without_context_is_unchanged():
+    """ACCEPTANCE: no context injected means the empty map, and the old two-arg call."""
+    subject = _shifted_series(12, symbol="SUBJ")
+    seen: list[dict] = []
+
+    def provider(window: BarWindow, config: Config) -> PipelineOutput:
+        seen.append(dict(window.context))
+        return PipelineOutput()
+
+    BacktestEngine(subject, Config(), plan_provider=provider, warmup_bars=2).run()
+    assert seen and all(c == {} for c in seen)
+
+
+def test_default_provider_only_forwards_context_to_entries_that_declare_it():
+    """A provider with the old two-argument signature must not be called with context."""
+    from tbot.backtest.engine import _supported_injections
+
+    subject = _shifted_series(12, symbol="SUBJ")
+    buddy = _shifted_series(12, symbol="BUDDY")
+    window = BarWindow.at(subject, 5, {"BUDDY": buddy})
+
+    def old_style(series, config):  # noqa: ANN001 - mirrors the historic contract
+        return PipelineOutput()
+
+    def new_style(series, config, *, context=None):  # noqa: ANN001
+        return PipelineOutput()
+
+    def kwargs_style(series, config, **kw):  # noqa: ANN001
+        return PipelineOutput()
+
+    assert _supported_injections(old_style, window) == {}
+    assert set(_supported_injections(new_style, window)) == {"context"}
+    assert set(_supported_injections(kwargs_style, window)) == {"context"}
+    # and with nothing to inject, nobody gets anything
+    bare = BarWindow.at(subject, 5)
+    assert _supported_injections(new_style, bare) == {}

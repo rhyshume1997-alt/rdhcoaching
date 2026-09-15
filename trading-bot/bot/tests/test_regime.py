@@ -351,3 +351,73 @@ class TestVetoes:
         second = evaluate_regime(context, cfg, levels=levels)
         assert first.state == second.state and first.notes == second.notes
         assert first.size_multiplier == second.size_multiplier
+
+
+# ------------------------------- A1: rolling_correlation date alignment (GAPS.md GAP 3 A1)
+
+
+def _cosine_closes(n: int, period: int = 8, base: float = 100.0, amp: float = 5.0):
+    import math
+    return [base + amp * math.cos(2 * math.pi * i / period) for i in range(n)]
+
+
+def _from_closes(closes, *, symbol: str, start: datetime, tf: str = "1H") -> Series:
+    return make_series([(c, c + 0.1, c - 0.1, c) for c in closes],
+                       tf=tf, symbol=symbol, start=start)
+
+
+def test_rolling_correlation_refuses_misaligned_windows():
+    """Two series whose positional tails cover different DATES must not be correlated.
+
+    ``rolling_correlation`` took ``a.close[-n:]`` against ``b.close[-n:]`` with no check that
+    the two windows describe the same instants. A symbol that listed later, or one with a data
+    gap, therefore correlated bar-against-bar at a date offset.
+
+    This is not an approximation error. Here ``b`` carries *exactly* ``a``'s closes stamped 20
+    bars later; the price path is a cosine of period 8, so a 20-bar offset is half a period.
+    The positional read is +1.0 and the truth over the real overlap is -1.0 -- the sign
+    inverts. A gate fed that number does the opposite of what it was asked to do, and
+    ``max_correlated_concurrent`` (GAPS.md GAP 2) is built directly on it.
+
+    **Chosen behaviour: return None when the windows cannot be shown to cover the same
+    timestamps.** Fail closed. A correlation is a number a gate acts on, and there is no
+    conservative direction to round a wrong one towards -- so refusing to answer is the only
+    safe answer. Returning None is already this function's documented "not enough overlap"
+    signal (CF-35) and every caller handles it. Teaching it to *align* rather than refuse is a
+    capability increase, and it lands next, as its own tested unit.
+    """
+    closes = _cosine_closes(40)
+    step = timedelta(minutes=Timeframe.parse("1H").minutes)
+    a = _from_closes(closes, symbol="A", start=T0)
+    b = _from_closes(closes, symbol="B", start=T0 + 20 * step)   # same path, 20 bars later
+
+    assert a.timestamp(-1) != b.timestamp(-1), "the fixture must actually be misaligned"
+    assert P is not None  # keep the import used
+
+    from tbot.regime import rolling_correlation
+    assert rolling_correlation(a, b, lookback_bars=90) is None, (
+        "misaligned windows were correlated as if they lined up")
+
+
+def test_rolling_correlation_still_answers_for_aligned_series():
+    """The fix must not silence the aligned case it already handled correctly."""
+    from tbot.regime import rolling_correlation
+
+    rising = _from_closes([100.0 + i for i in range(40)], symbol="A", start=T0)
+    also = _from_closes([50.0 + 0.5 * i for i in range(40)], symbol="B", start=T0)
+    corr = rolling_correlation(rising, also, lookback_bars=90)
+    assert corr is not None and float(corr) == pytest.approx(1.0, abs=1e-9)
+
+
+def test_rolling_correlation_uses_the_common_tail_when_lengths_differ():
+    """Different lengths but a shared, aligned tail is legitimate and must still answer."""
+    from tbot.regime import rolling_correlation
+
+    long_ = _from_closes([100.0 + i for i in range(60)], symbol="A", start=T0)
+    step = timedelta(minutes=Timeframe.parse("1H").minutes)
+    # starts later, but every bar it does have lines up with long_'s, and both end together
+    short = _from_closes([50.0 + 0.5 * (i + 20) for i in range(40)], symbol="B",
+                         start=T0 + 20 * step)
+    assert long_.timestamp(-1) == short.timestamp(-1)
+    corr = rolling_correlation(long_, short, lookback_bars=90)
+    assert corr is not None and float(corr) == pytest.approx(1.0, abs=1e-9)

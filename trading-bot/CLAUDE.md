@@ -46,7 +46,7 @@ trading_bot/
     │   ├── risk.py         portfolio caps, concurrency, sizing solver
     │   ├── backtest/       bar-by-bar simulator, no lookahead by construction
     │   └── dashboard/      FastAPI + Lightweight Charts local web UI
-    └── tests/              1,134 tests
+    └── tests/              1,138 tests
 ```
 
 ## Conventions that matter
@@ -76,7 +76,7 @@ was wrong, change the default and say so explicitly.
 
 ## Current state
 
-- 1,134 tests passing (`cd bot && python -m pytest -q`)
+- 1,138 tests passing (`cd bot && python -m pytest -q`)
 - 252 config keys
 - Runs end to end on synthetic data; four CLI commands work
 - **Never run on real market data.** Not once. This is the single biggest gap.
@@ -85,7 +85,7 @@ was wrong, change the default and say so explicitly.
 
 ```bash
 cd bot
-python -m pytest -q                              # 1,134 tests
+python -m pytest -q                              # 1,138 tests
 python -m tbot config                            # every key with its source rule
 python -m tbot config --grep stop                # filter
 python -m tbot backtest --csv data/synthetic_4h.csv

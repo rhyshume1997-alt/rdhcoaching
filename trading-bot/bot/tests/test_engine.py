@@ -722,3 +722,79 @@ def test_index_based_audit_cannot_catch_a_cross_symbol_leak():
     assert_no_future_reference({"BUDDY": future}, 10, path="ctx")   # passes: nothing to see
     with pytest.raises(LookaheadError):
         assert_context_not_ahead({"BUDDY": future}, as_of)          # the real check
+
+
+# ---------------- 972 / trigger drift: geometry must be re-checked against the REALISED fill
+#
+# A trigger plan is built at bar N and fills at bar N+k at whatever the market opens at (A5).
+# The stop and take-profits are structural and do not move, so a large drift can leave them on
+# the WRONG SIDE of the price actually paid. The real-data run booked 7 of 9 take-profit fills
+# that way: a long entered at 103.4317 with TP0 at 75.0782, and `high >= tp.price` fires on the
+# entry bar, booking a 27% loss as a take-profit.
+#
+# rr_final uses abs() (plan.py:1311), so an inverted stop or TP still yields a healthy-looking
+# ratio. Side is its own assertion and must be checked before any ratio.
+
+
+def _long_trigger_with_tp_behind_the_fill():
+    """Valid at build (stop 60 < entry 70 < TP 75); inverted once it fills at ~103."""
+    bars = [(100.0, 101.0, 99.0, 100.0),
+            (103.0, 104.0, 102.0, 103.0),      # A5 fill bar: opens at 103
+            (103.0, 104.0, 102.0, 103.0)]
+    plan = make_plan(entries=((70.0, 1.0),), stop=60.0, tps=((75.0, 1.0),), qty=1.0)
+    return bars, plan, make_setup(plan, family=EntryFamily.TRIGGER)
+
+
+def _long_trigger_with_stop_above_the_fill():
+    """Valid at build (stop 190 < entry 200 < TP 250); the stop sits above a ~103 fill."""
+    bars = [(100.0, 101.0, 99.0, 100.0),
+            (103.0, 104.0, 102.0, 103.0),
+            (103.0, 104.0, 102.0, 103.0)]
+    plan = make_plan(entries=((200.0, 1.0),), stop=190.0, tps=((250.0, 1.0),), qty=1.0)
+    return bars, plan, make_setup(plan, family=EntryFamily.TRIGGER)
+
+
+def test_a_take_profit_is_never_booked_behind_its_own_entry(cfg):
+    """The 97.3% bug, stated as an invariant: a long may not 'take profit' below its entry."""
+    bars, plan, setup = _long_trigger_with_tp_behind_the_fill()
+    result = run(make_series(bars), cfg, OneShotProvider(plan, at_index=0, setup=setup))
+
+    for trade in result.trades:
+        if trade.average_entry <= 0:
+            continue
+        if trade.close_reason in (CloseReason.TP_FINAL, CloseReason.TRAIL_OUT):
+            if trade.direction is Direction.LONG:
+                assert trade.exit_price > trade.average_entry, (
+                    f"{trade.ref} booked a take-profit at {trade.exit_price}, "
+                    f"BELOW its entry {trade.average_entry}")
+            else:
+                assert trade.exit_price < trade.average_entry, (
+                    f"{trade.ref} booked a take-profit at {trade.exit_price}, "
+                    f"ABOVE its entry {trade.average_entry}")
+
+
+def test_a_trigger_entry_is_not_booked_when_its_tp_sits_behind_the_fill(cfg):
+    """The fix: refuse the fill rather than open a trade whose ladder is inverted."""
+    bars, plan, setup = _long_trigger_with_tp_behind_the_fill()
+    result = run(make_series(bars), cfg, OneShotProvider(plan, at_index=0, setup=setup))
+    assert not [t for t in result.trades if t.average_entry > 0], (
+        "a trigger entry was booked with its take-profit behind the fill price")
+
+
+def test_a_trigger_entry_is_not_booked_when_its_stop_sits_beyond_the_fill(cfg):
+    bars, plan, setup = _long_trigger_with_stop_above_the_fill()
+    result = run(make_series(bars), cfg, OneShotProvider(plan, at_index=0, setup=setup))
+    assert not [t for t in result.trades if t.average_entry > 0], (
+        "a trigger entry was booked with its stop on the wrong side of the fill price")
+
+
+def test_a_clean_trigger_fill_is_still_booked(cfg):
+    """Control: geometry that survives the drift must be unaffected by the new check."""
+    bars = [(100.0, 101.0, 99.0, 100.0),
+            (103.0, 104.0, 102.0, 103.0),
+            (103.0, 200.0, 102.0, 150.0)]
+    plan = make_plan(entries=((95.0, 1.0),), stop=80.0, tps=((150.0, 1.0),), qty=1.0)
+    setup = make_setup(plan, family=EntryFamily.TRIGGER)
+    result = run(make_series(bars), cfg, OneShotProvider(plan, at_index=0, setup=setup))
+    assert [t for t in result.trades if t.average_entry > 0], (
+        "a valid trigger fill was refused")

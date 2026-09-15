@@ -68,9 +68,23 @@ Config ownership (INTERFACES.md §7): this module reads only the eight ``§11.12
 ``backtest_execution_tf``, ``intrabar_fill_model``, ``fee_maker_bps``, ``fee_taker_bps``,
 ``slippage_limit_bps``, ``slippage_market_bps``, ``funding_bps_per_8h``,
 ``limit_fill_requires_trade_through`` — plus the foundation keys that the primitives read on its
-behalf.  Concurrency caps, position sizing, gates and management overlays belong to ``risk.py``,
-``qualification.py`` and ``manager.py``; the harness executes what the pipeline hands it and never
+behalf.  Concurrency caps, position sizing and the §7 gate stack belong to ``risk.py``,
+``qualification.py`` and ``plan.py``; the harness executes what the pipeline hands it and never
 second-guesses those numbers.
+
+*Corrected 2026-09-15:* this paragraph used to name ``manager.py`` as the owner of management
+overlays.  **No such module exists.**  The state machine is ``manage.py``, and it is imported by
+its own tests and by nothing else in the package — the harness reimplements fills, stops and
+trailing itself, so ``manage._reverify_budget`` has never executed in a backtest.  The boundary
+this paragraph describes was partly fiction; what follows is what it actually is.
+
+**What the harness may compute for itself.**  One narrow exception to "never second-guesses",
+added deliberately: a trigger-family plan is priced at bar N and fills at bar N+k (A5), so its
+structural stop and take-profits can end up on the wrong side of the price actually paid.  The
+harness checks that *side* at fill and refuses to open an inverted position.  That is not the
+harness deciding a rule — the geometry and every threshold still come from the pipeline and from
+config; it is the harness declining to execute a plan that no longer describes the market it is
+about to trade in.
 """
 
 from __future__ import annotations
@@ -997,12 +1011,55 @@ class BacktestEngine:
             if trade.position.qty_open > _QTY_DUST:
                 self._check_liquidation(trade, i, ts, close)
 
+    def _trigger_geometry_problems(self, trade: _LiveTrade, fill: Decimal) -> tuple[str, ...]:
+        """Which parts of the plan sit on the wrong side of the price actually paid.
+
+        A trigger plan is built at bar N and fills at bar N+k at whatever the market opens at
+        (A5).  Its stop and take-profits are **structural** — anchored to levels that do not move
+        while price travels — so a large drift can leave them behind the fill.  The first
+        real-data run booked 7 of 9 take-profit fills that way: a long entered at 103.4317 with
+        TP0 at 75.0782, and ``high >= tp.price`` fires on the entry bar, booking a 27% loss as a
+        take-profit.
+
+        **Side is checked before any ratio, and is its own assertion.**  ``rr_final`` is
+        ``abs(final_tp - ref_price) / stop_dist`` (``plan.py:1311``); the ``abs()`` means an
+        inverted stop *or* an inverted target still yields a healthy-looking number, so a re-gate
+        on the ratio alone would have passed every one of those trades.
+        """
+        plan = trade.plan
+        long = plan.direction is Direction.LONG
+        problems: list[str] = []
+
+        stop = dec(plan.stop_price)
+        if (stop >= fill) if long else (stop <= fill):
+            problems.append(
+                f"stop {stop} is on the wrong side of the {plan.direction.value} fill {fill}")
+        for tp in plan.take_profits:
+            target = dec(tp.price)
+            if (target <= fill) if long else (target >= fill):
+                problems.append(
+                    f"TP{tp.index} {target} is behind the {plan.direction.value} fill {fill}")
+        return tuple(problems)
+
     def _fill_trigger_entries(self, trade: _LiveTrade, i: int, ts: datetime,
                               open_: Decimal) -> None:
         """A5 — every rung of a trigger-family plan enters at this bar's open, taker, adverse."""
         trade.pending_trigger = False
         side = "buy" if trade.plan.direction is Direction.LONG else "sell"
         price = _slip(open_, dec(self.config.slippage_market_bps), side)
+
+        # The plan was priced against a bar that is now in the past.  Refuse to open a position
+        # whose ladder is inverted against the price actually paid, rather than booking the loss
+        # as a take-profit.  No new state: PositionState.CANCELLED already exists, and the reason
+        # string carries the detail the way a gate veto does.
+        problems = self._trigger_geometry_problems(trade, price)
+        if problems:
+            self._close_unfilled(
+                trade, i, ts, PositionState.CANCELLED,
+                "trigger fill refused: " + "; ".join(problems),
+                ("SPEC-12.2-A5", "CF-16"),
+            )
+            return
         for rung in trade.plan.entries:
             if rung.filled:
                 continue

@@ -1110,3 +1110,64 @@ def test_a_floor_above_the_lookback_fails_closed():
                     min_correlation_overlap_bars=50)
     assert R.correlation_cap_gate(cfg, pf, symbol="S",
                                   series_by_symbol={"S": subject, "C0": other}).allowed
+
+
+# -------------------------- GAP 2 defect 2: the reason must report what was measured
+
+
+def _bar_counts_in(reason: str) -> list[int]:
+    """Every 'NNb' bar count the veto reason claims."""
+    import re
+    return [int(m) for m in re.findall(r"/(\d+)b\b", reason)]
+
+
+def test_veto_reason_reports_the_achieved_overlap_not_the_requested_lookback():
+    """The record must not state a bar count the code never computed.
+
+    `correlation_lookback_bars` is what was ASKED for. After alignment a pair answers over
+    whatever it actually shares, which can be far fewer bars. The old string interpolated the
+    request -- so a correlation measured over 31 bars was recorded as 'over 90 bars'.
+    """
+    subject = _corr_series(_RISING, "S")                       # 40 bars, 0..39
+    near = _corr_series_at([50.0 + 0.5 * i for i in range(40)], "C0", 0)    # 40 shared
+    far = _corr_series_at([20.0 + 0.25 * i for i in range(40)], "C1", 8)    # 32 shared
+    pf = portfolio(open_slots=(slot(0), slot(1)))
+    gate = R.correlation_cap_gate(
+        _corr_cfg(), pf, symbol="S", series_by_symbol={"S": subject, "C0": near, "C1": far})
+
+    assert not gate.allowed
+    reason = gate.reasons[0]
+    assert "over 90 bars" not in reason, "the requested lookback is still being reported"
+    assert sorted(_bar_counts_in(reason)) == [32, 40], reason
+
+
+def test_veto_reason_never_claims_more_bars_than_were_used():
+    """Property: no count in the reason may exceed the true shared history of that pair."""
+    subject = _corr_series(_RISING, "S")
+    pf = portfolio(open_slots=(slot(0), slot(1)))
+    for off_a, off_b in ((0, 0), (3, 7), (9, 10), (0, 9)):
+        a = _corr_series_at([50.0 + 0.5 * i for i in range(40)], "C0", off_a)
+        b = _corr_series_at([20.0 + 0.25 * i for i in range(40)], "C1", off_b)
+        gate = R.correlation_cap_gate(
+            _corr_cfg(), pf, symbol="S", series_by_symbol={"S": subject, "C0": a, "C1": b})
+        if gate.allowed:
+            continue
+        true_overlap = {40 - off_a, 40 - off_b}
+        for claimed in _bar_counts_in(gate.reasons[0]):
+            assert claimed in true_overlap, (
+                f"reason claims {claimed} bars; the real overlaps were {sorted(true_overlap)}")
+            assert claimed <= len(subject)
+
+
+def test_veto_reason_states_one_count_per_pair_not_one_for_the_set():
+    """Two pairs with different overlaps must not be described by a single figure."""
+    subject = _corr_series(_RISING, "S")
+    same = _corr_series_at([50.0 + 0.5 * i for i in range(40)], "C0", 0)
+    later = _corr_series_at([20.0 + 0.25 * i for i in range(40)], "C1", 6)
+    pf = portfolio(open_slots=(slot(0), slot(1)))
+    reason = R.correlation_cap_gate(
+        _corr_cfg(), pf, symbol="S",
+        series_by_symbol={"S": subject, "C0": same, "C1": later}).reasons[0]
+    counts = _bar_counts_in(reason)
+    assert len(counts) == 2 and len(set(counts)) == 2, (
+        f"expected a distinct count per pair, got {counts} in {reason!r}")

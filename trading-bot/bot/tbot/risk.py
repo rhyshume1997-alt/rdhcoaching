@@ -596,7 +596,11 @@ def correlation_cap_gate(
             unassessed += 1
             continue
         if corr >= threshold:
-            correlated.append(f"{slot.symbol} {corr:.2f}")
+            # Each pair reports the bar count IT was measured over.  Never one figure for the
+            # whole set: `correlation_lookback_bars` is what was ASKED for, and after alignment
+            # different pairs answer over different numbers of bars.  Putting the requested
+            # figure in the record would state a measurement that was never taken.
+            correlated.append(f"{slot.symbol} {corr:.2f}/{used}b")
 
     notes: tuple[str, ...] = ()
     if unassessed:
@@ -610,7 +614,8 @@ def correlation_cap_gate(
         return Gate(
             "correlation_cap", False,
             (f"max_correlated_concurrent_reached ({len(correlated)}/{cap} at or above "
-             f"{threshold} over {lookback} bars: {', '.join(correlated)})", *notes),
+             f"{threshold}, each shown as corr/bars-measured: {', '.join(correlated)})",
+             *notes),
             ids)
     return Gate("correlation_cap", True, notes, ids)
 

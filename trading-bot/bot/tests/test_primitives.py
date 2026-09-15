@@ -13,6 +13,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
+import dataclasses
 import numpy as np
 import pandas as pd
 import pytest
@@ -1051,6 +1052,35 @@ class TestConfig:
         assert cfg.swing_k == 3 and cfg.min_confluence_count == 3.0
         assert cfg.zone_fill_invalidation_pct == 50.0
         assert cfg.touch_size_decay == [1.0, 1.0, 1.0, 0.66, 0.5]   # Q2
+
+    def test_config_has_exactly_one_set_of_defaults(self):
+        """``Config()`` and ``Config.load(None)`` must be the same object in every field.
+
+        There are two declarations of every default: the dataclass field on :class:`Config`, and
+        ``default=`` on its :data:`KEY_SPECS` entry, which ``Config.load`` reads through
+        ``defaults_dict()``.  Nothing forced them to agree, and they drifted: two keys corrected
+        against the corpus (``dca_size_split_3`` to the stated 15/32.5/52.5 split, and
+        ``tp_count_swing`` to 3) had the spec updated and the field left on the superseded value.
+
+        The damage was silent and one-sided.  ``tbot backtest`` builds its config through
+        ``Config.load`` and got the corrected values; **every test and every in-process script
+        that wrote ``Config()`` got the stale ones**, so the corrections went unverified at their
+        real settings while two callers measured different bots from the same CSV — 4 closed
+        trades against 6 on one 700-bar window, which is what sent a whole session hunting a
+        determinism bug that did not exist.
+
+        ``non_default_keys()`` had been reporting it all along: a freshly defaulted config
+        listing two non-default keys.  This asserts the invariant that diagnostic implies.
+        """
+        fresh, loaded = Config(), Config.load(None)
+        drifted = [f.name for f in dataclasses.fields(Config)
+                   if getattr(fresh, f.name) != getattr(loaded, f.name)]
+        assert not drifted, (
+            f"dataclass field default disagrees with its KEY_SPEC default: {drifted}. "
+            f"KEY_SPEC is authoritative - it carries the source id; fix the field.")
+        assert fresh.non_default_keys() == [], (
+            "a freshly constructed Config reports non-default keys, so its own fields disagree "
+            "with the spec it is checked against")
 
     def test_frame_derived_keys_are_present_and_default_off(self):
         """F1 — FRAME_FINDINGS.md: the nested-zone geometry ships behind a flag, defaulted off."""

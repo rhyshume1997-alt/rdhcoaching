@@ -3399,7 +3399,7 @@ class Config:
     dca_count_breakdown: int = 0
     dca2_min_zone_depth_atr: float = 1.5
     dca_size_split_2: list[float] = field(default_factory=lambda: [0.39, 0.61])
-    dca_size_split_3: list[float] = field(default_factory=lambda: [0.2, 0.3, 0.5])
+    dca_size_split_3: list[float] = field(default_factory=lambda: [0.15, 0.325, 0.525])
     dca_size_split_wick_heavy_2: list[float] = field(default_factory=lambda: [0.25, 0.75])
     size_and_stop_computed_from: str = 'average_entry'
     average_up_enabled: bool = False
@@ -3458,7 +3458,7 @@ class Config:
     range_min_bars: int = 20
     range_stale_bars: int = 60
     monday_range_source_tf: str = '1D'
-    tp_count_swing: int = 2
+    tp_count_swing: int = 3
     tp_count_scalp: int = 3
     tp_count_price_discovery_max: int = 5
     tp_min_count: int = 2

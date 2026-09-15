@@ -798,3 +798,60 @@ def test_a_clean_trigger_fill_is_still_booked(cfg):
     result = run(make_series(bars), cfg, OneShotProvider(plan, at_index=0, setup=setup))
     assert [t for t in result.trades if t.average_entry > 0], (
         "a valid trigger fill was refused")
+
+
+def test_a_trigger_fill_below_min_rr_is_refused(cfg):
+    """G14 re-run against the realised fill: same structure, different entry, different R:R.
+
+    Built at 95 the plan is 3.67:1 to its 150 target over an 80 stop. Filled at ~103 the same
+    structure is 2.04:1 -- still above min_rr. Move the target in so the fill lands under the
+    floor and the trade must be refused, even though every side check passes.
+    """
+    bars = [(100.0, 101.0, 99.0, 100.0),
+            (103.0, 104.0, 102.0, 103.0),
+            (103.0, 200.0, 102.0, 150.0)]
+    plan = make_plan(entries=((95.0, 1.0),), stop=80.0, tps=((120.0, 1.0),), qty=1.0)
+    setup = make_setup(plan, family=EntryFamily.TRIGGER)
+    result = run(make_series(bars), cfg, OneShotProvider(plan, at_index=0, setup=setup))
+
+    # planned: |120-95|/|95-80| = 1.67 -- already under 2.0, so it would never have been armed;
+    # use the check directly to isolate the re-gate from the pipeline's own G14.
+    assert not [t for t in result.trades if t.average_entry > 0]
+
+
+def test_the_published_plan_is_never_overwritten_by_the_re_derivation(cfg):
+    """The audit must keep what the pipeline published as well as what the fill measured."""
+    bars = [(100.0, 101.0, 99.0, 100.0),
+            (103.0, 104.0, 102.0, 103.0),
+            (103.0, 200.0, 102.0, 150.0)]
+    plan = make_plan(entries=((95.0, 1.0),), stop=80.0, tps=((150.0, 1.0),), qty=1.0)
+    published_rr = plan.rr_to_tp1
+    published_planned_entry = plan.planned_average_entry
+    setup = make_setup(plan, family=EntryFamily.TRIGGER)
+    run(make_series(bars), cfg, OneShotProvider(plan, at_index=0, setup=setup))
+
+    assert plan.rr_to_tp1 == published_rr, "the re-derivation wrote back onto the published plan"
+    assert plan.planned_average_entry == published_planned_entry
+    assert plan.planned_average_entry == Decimal("95")
+
+
+def test_the_engine_uses_the_one_rr_formula_and_does_not_reimplement_it():
+    """Two copies of the ratio could drift apart and corrupt every backtest number."""
+    from pathlib import Path
+
+    import ast
+
+    from tbot.backtest import engine as eng
+
+    src = Path(eng.__file__).read_text(encoding="utf-8")
+    assert "rr_ratio" in src, "the harness must import the shared formula"
+
+    # Checked on the PARSED tree, not on the text: a first attempt at this test matched its own
+    # docstring, which quotes the formula while explaining why the harness must not contain it.
+    for node in ast.walk(ast.parse(src)):
+        if (isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div)
+                and isinstance(node.left, ast.Call)
+                and isinstance(node.left.func, ast.Name) and node.left.func.id == "abs"):
+            raise AssertionError(
+                f"engine.py line {node.lineno} divides an abs() -- that is a second R:R "
+                f"formula; import tbot.plan.rr_ratio instead")

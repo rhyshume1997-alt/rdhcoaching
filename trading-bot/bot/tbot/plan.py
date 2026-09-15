@@ -91,6 +91,7 @@ __all__ = [
     "tp_count_for",
     "tp_split",
     "select_take_profits",
+    "rr_ratio",
     "rr_for_gate",
     "solve_size",
     "derive_leverage",
@@ -855,6 +856,26 @@ def select_take_profits(
     return tps, tuple(notes)
 
 
+def rr_ratio(reference: Decimal, stop: Decimal, target: Decimal) -> Decimal:
+    """Reward-to-risk from one entry reference: ``|target - ref| / |ref - stop|``.
+
+    Extracted so there is exactly **one** R:R formula in the package.  :func:`build_plan`
+    computes the plan's stored ratios with it, and the §12 harness re-computes the ratio against
+    a *realised* trigger fill with it (``backtest/engine.py``).  Two copies of this expression
+    could drift apart silently and corrupt every number a backtest produces, which is why the
+    harness imports this rather than reimplementing it.
+
+    ``ZERO`` when the stop distance is zero.  **Note the absolute values**: this answers "how big
+    is the reward against the risk", not "is the trade the right way round".  A target or a stop
+    on the wrong side of ``reference`` still returns a healthy-looking number here, so callers
+    must check side separately and first.
+    """
+    stop_dist = abs(reference - stop)
+    if stop_dist <= ZERO:
+        return ZERO
+    return abs(target - reference) / stop_dist
+
+
 def rr_for_gate(config: Config, plan: "TradePlan") -> Decimal:
     """**CF-42 / F9** — the R:R figure the G14 gate compares against ``min_rr``.
 
@@ -1303,12 +1324,11 @@ def build_plan(inputs: PlanInputs, config: Config) -> PlanBuild:
         max_leverage=vd.max_leverage if vd.downgraded else ZERO,
     )
     tp1 = dec(tps[0].price)
-    stop_dist = abs(ref_price - stop.price)
-    rr = abs(tp1 - ref_price) / stop_dist if stop_dist > ZERO else ZERO
+    rr = rr_ratio(ref_price, stop.price, tp1)
     final_tp = dec(tps[-1].price)
     # F9 — the same ratio measured to the **final** TP.  Both are carried on the plan; CF-42's
     # ``rr_measured_to`` decides which one the G14 gate reads (see :func:`rr_for_gate`).
-    rr_final = abs(final_tp - ref_price) / stop_dist if stop_dist > ZERO else ZERO
+    rr_final = rr_ratio(ref_price, stop.price, final_tp)
     expected_move = abs(final_tp - planned_avg) / planned_avg * HUNDRED
 
     plan = TradePlan(

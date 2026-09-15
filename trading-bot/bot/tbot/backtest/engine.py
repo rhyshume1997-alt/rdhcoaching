@@ -89,6 +89,7 @@ about to trade in.
 
 from __future__ import annotations
 
+import copy
 import inspect
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -743,6 +744,10 @@ class _LiveTrade:
     initial_stop: Decimal
     fills: list[Fill] = field(default_factory=list)
     pending_trigger: bool = False
+    #: The plan re-priced against the realised trigger fill.  ``None`` until a trigger fills.
+    #: Kept BESIDE :attr:`plan`, never over it: the audit record must keep what the pipeline
+    #: published as well as what the harness measured at fill.
+    rederived_plan: "TradePlan | None" = None
     fees_usd: Decimal = ZERO
     funding_usd: Decimal = ZERO
     excess_risk_usd: Decimal = ZERO
@@ -1041,6 +1046,60 @@ class BacktestEngine:
                     f"TP{tp.index} {target} is behind the {plan.direction.value} fill {fill}")
         return tuple(problems)
 
+    def _trigger_ratio_problems(self, trade: _LiveTrade, fill: Decimal) -> tuple[str, ...]:
+        """Re-run the G14 floor, and §8's own consistency check, against the realised fill.
+
+        The plan's stored ``rr_to_*`` were measured from its **planned** reference.  A trigger
+        that fills far from there is a different trade: same structural stop and targets, a
+        different entry, therefore a different reward-to-risk.  ``min_rr`` (CF-42, corroborated
+        as a floor by F9) is the binding test, and it is already re-runnable here —
+        :func:`~tbot.plan.rr_for_gate` takes only config and a plan.
+
+        The ratio itself comes from :func:`~tbot.plan.rr_ratio`, the same function
+        :func:`~tbot.plan.build_plan` uses.  Re-implementing that expression here would give the
+        package two R:R formulas that could drift apart invisibly.
+
+        **The published plan is never overwritten.**  A shallow copy carries the re-derived
+        numbers; what the pipeline published stays on ``trade.plan`` and in the audit record.
+
+        **Why §8's full consistency check is NOT re-run here.**  It was the intended third test
+        and it does not work at fill time.  Run against a re-derived plan it reports two things,
+        neither of which is the failure mode this guard exists for: ``tp_min_count`` (a
+        build-time concern the pipeline already gated at G16) and
+        ``notional_usd != qty * blended entry`` — which is true of *every* trigger fill, clean
+        ones included, because the quantity was solved against the planned entry and nothing has
+        re-solved it.  Re-running it in full would cancel every trigger trade in the book.  That
+        size drift is real and it is ``manage._reverify_budget``'s job (S6-R11/S6-R12: close the
+        excess quantity, never widen the stop) — a module the harness does not reach, recorded in
+        the module docstring above.  The inverted ladder it was wanted for is already covered,
+        and covered more directly, by :meth:`_trigger_geometry_problems`, which tests the stop and
+        **every** target against the price actually paid.
+        """
+        from ..plan import rr_for_gate, rr_ratio
+
+        plan = trade.plan
+        stop = dec(plan.stop_price)
+        tps = [dec(tp.price) for tp in plan.take_profits]
+        if not tps:
+            return ()
+
+        rederived = copy.copy(plan)
+        rederived.average_entry = fill
+        rederived.planned_average_entry = fill
+        rederived.rr_to_tp1 = rr_ratio(fill, stop, tps[0])
+        rederived.rr_to_final_tp = rr_ratio(fill, stop, tps[-1])
+        trade.rederived_plan = rederived
+
+        problems: list[str] = []
+        rr = rr_for_gate(self.config, rederived)
+        floor = dec(self.config.min_rr)
+        if rr < floor:
+            problems.append(
+                f"R:R from the fill {fill} is {rr:.2f}, below min_rr {floor} "
+                f"(planned {rr_for_gate(self.config, plan):.2f})")
+
+        return tuple(problems)
+
     def _fill_trigger_entries(self, trade: _LiveTrade, i: int, ts: datetime,
                               open_: Decimal) -> None:
         """A5 — every rung of a trigger-family plan enters at this bar's open, taker, adverse."""
@@ -1053,11 +1112,12 @@ class BacktestEngine:
         # as a take-profit.  No new state: PositionState.CANCELLED already exists, and the reason
         # string carries the detail the way a gate veto does.
         problems = self._trigger_geometry_problems(trade, price)
+        problems += self._trigger_ratio_problems(trade, price)
         if problems:
             self._close_unfilled(
                 trade, i, ts, PositionState.CANCELLED,
                 "trigger fill refused: " + "; ".join(problems),
-                ("SPEC-12.2-A5", "CF-16"),
+                ("SPEC-12.2-A5", "CF-16", "CF-42"),
             )
             return
         for rung in trade.plan.entries:

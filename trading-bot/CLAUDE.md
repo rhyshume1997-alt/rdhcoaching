@@ -212,6 +212,17 @@ falls back to `PortfolioState(equity_usd=DEFAULT_STARTING_EQUITY)` → `engine.p
 argument does. Independently confirmed live: the dashboard printed
 `125.634447 x 79.596005 = $10,000.00` from a different code path.
 
+**RESOLVED 2026-09-15 — both halves, and the fix is in the harness, not in `972`.**
+`pipeline.py:972` is unchanged. The decision was: trigger plans **arm**; at fill they are
+re-checked against the price actually paid; a plan whose geometry no longer holds is
+**cancelled at fill** rather than opened. Side first (an inverted stop or target still yields a
+healthy `abs()` ratio, so a ratio-only re-gate would have passed all 12), then `min_rr` re-run
+via `rr_for_gate` against a plan re-priced from the fill. No new config key and no new
+threshold: percent-drift is a proxy for a question the bot can answer exactly.
+Re-run on this same 600-bar file: **17 trades -> 5, net -10,660.06 -> -10.75, wrong-side
+take-profits 7-of-9 -> none, 12 trigger fills refused** (against 12 trigger trades here).
+Still not a strategy result — 5 trades is under the 30-trade floor.
+
 **OPEN DESIGN QUESTION — do not patch this tired.** What is the maximum acceptable
 distance from price to entry, and does a trigger plan (a) get vetoed before arming, or
 (b) re-derive its stop/TP geometry against the realised fill? Different fixes, different

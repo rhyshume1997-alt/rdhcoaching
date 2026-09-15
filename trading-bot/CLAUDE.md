@@ -280,6 +280,76 @@ So the open design question at the end of the section above stands unchanged, bo
 it: the maximum acceptable distance, and whether a trigger plan is vetoed before arming or
 re-derives its geometry against the realised fill.
 
+### DIAGNOSIS 2026-09-15 — stops are placed inside the noise, and every risk number inherits it
+
+Measured on the 27 out-of-sample trades of the 900-bar run. **Diagnosis only — nothing fixed.**
+
+**The finding.** Stop distance, measured as `|realised average entry − stop|` as a percentage of
+the entry price, spans **2,167×** across 27 trades: **0.0021% to 4.5729%**, median **0.549%**.
+The median 4H candle in that window ranges **1.402%**. So:
+
+* **21 of 27 trades have a stop distance smaller than a single median candle.**
+* The median stop is **0.39×** a median candle.
+* The tightest is **1/668th** of one.
+
+These are not stops. They are noise triggers, and price crosses them by accident.
+
+**Consequence 1 — `r_multiple` is not a risk measure on this run.** `engine.py:1338-1339` computes
+`risk_per_unit = |pos.average_entry − trade.initial_stop|` from the **realised** average. As that
+distance collapses, 1R collapses with it and R explodes. Sorted by stop distance, R is almost a
+pure function of it:
+
+| ref | family | stop distance | as % of entry | planned R:R | R | net USD |
+|---|---|---|---|---|---|---|
+| T0049 | trigger | 0.00208 | **0.0021%** | 17.05 | **−99.54** | −21.23 |
+| T0063 | retest | 0.00244 | 0.0023% | **3062.86** | −54.26 | −12.74 |
+| T0015 | retest | 0.00255 | 0.0030% | **2115.46** | −43.17 | −12.80 |
+| … | | | | | | |
+| T0019 | retest | 0.46566 | 0.5824% | 10.10 | −1.22 | **−70.81** |
+| T0062 | retest | 4.64411 | 4.5729% | 8.84 | −0.15 | −17.99 |
+
+**R and USD rank the book in opposite orders.** T0049 is the worst trade in R and among the
+*smallest* dollar losses; T0019 is the worst in dollars at −1.22R. The reported
+`expectancy −7.83 R` is an artefact of stop-distance variance and must not be quoted as edge.
+The USD figures (mean win +14.12, mean loss −32.10, 0.44:1 against the 1.70:1 needed to break
+even at 37%) are the trustworthy ones.
+
+**Partial fills are NOT the cause — ruled out, not assumed.** The exploded-R trades all completed
+their ladder (`full`); every `partial` fill sits at the **wide** end of the distance range. The
+partial-fill mechanism could explain at most ~6.7× (rung 0 of the 15/32.5/52.5 split) and points
+the wrong way regardless.
+
+**This is not the 972 trigger drift.** 25 of 27 are `retest` family, one `trigger`, one
+`flip_pending`. A separate defect, upstream of the fill.
+
+**Consequence 2 — `min_rr` is fooled in the same direction, and the gate is inert.** R:R is
+`|target − ref| / |ref − stop|` (`plan.py` `rr_ratio`). The same collapsing denominator inflates
+the numerator's verdict: the closer a plan sits to its own stop, the better G14 thinks it is.
+Planned R:R across the 27: **min 8.84, median 38.69, max 3,062.86**. `min_rr = 2.0`.
+
+**Not one trade came within 4× of the floor. G14 never bound on this run.** The gate that is
+supposed to be the binding quality test is decorative while stops are this tight — including the
+re-gate shipped at the trigger fill, which recomputes the same ratio with the same denominator.
+
+**What this does NOT tell us.** Whether the tight stops come from zone geometry (a box whose far
+edge is nearly at the entry), from `stop_buffer_zone_fraction` applied to a thin zone, or from
+the entry ladder placing the average almost on the invalidation level. That is the next
+diagnostic and it needs the plan-construction path, not the harness.
+
+**Three candidate fixes, none applied, deliberately:**
+
+1. **A minimum stop distance** — would refuse these at construction. Needs a number, and there is
+   none in the corpus: it would be `[OUR CHOICE]` with a sweep bracket. Note he *does* speak to
+   this qualitatively (a stop belongs beyond the wick, CF-14), so the shape is his even though
+   the threshold would be ours.
+2. **A risk-denominator correction** — make `r_multiple` divide by the *intended* risk (the
+   sizing budget) rather than the realised stop distance. Fixes the statistic; **fixes nothing
+   about the trading**, and would hide the defect rather than surface it.
+3. **Both** — 1 to stop taking the trades, 2 so the metric stops lying about the ones taken.
+
+The ordering matters: applying 2 alone would make these 27 trades look ordinary while the bot
+kept placing stops 1/668th of a candle from its entry.
+
 ## Traps that have already caught someone
 
 - **Margin vs notional.** "10%" is the margin he commits, not position face value. At 10×
@@ -293,6 +363,12 @@ re-derives its geometry against the realised fill.
   (`engine.py:899`), so an unfilled rung removes its quantity too. Rung 0 alone lands at
   **0.31x** the budgeted loss. Pricing the entry without re-pricing the quantity gets this
   exactly backwards.
+- **`r_multiple` is only a risk measure if the stop is a real distance.** It divides by
+  `|realised average entry - initial stop|` (`engine.py:1338`). On the 900-bar OOS run that
+  distance spanned 2,167x and 21 of 27 stops were tighter than a single median candle, so R
+  ranked the book almost inversely to dollars: the worst trade at -99.54R lost 21 USD, and the
+  worst in dollars (-70.81) was -1.22R. Read USD before R on any run until stop distances are
+  known to be sane. Diagnosed 2026-09-15.
 - **Percentages measured over hand-drawings.** Two readings (8.10% on 1H, 26.99% on 4H)
   look like clean thresholds and are measured across sketches, not candles. Both are
   recorded as explicitly rejected in FRAME_FINDINGS.md.

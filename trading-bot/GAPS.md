@@ -25,7 +25,7 @@ scaffolding as a building.
 | shipped | status | what would make it real |
 |---|---|---|
 | `max_entry_distance_pct` (CHANGELOG_EVIDENCE.md, DISCORD CHECK 2026-09-15) | off by default; the threshold that would make it useful is **still unmeasured** | the 2026-09-12 resting-entry batch needs spot at post time from bybit to tighten `sweep_bracket`; then a sweep |
-| GAP 1 `backtest --split` | **operational** — this one genuinely works today | nothing; it is ready for the sweep it exists to protect |
+| GAP 1 `backtest --split` | **operational, with a naming defect** — it splits correctly but `in_sample_fraction` measures over RAW bars, so a "2/3" split at 900 bars is really 25% in-sample by *analysable* bars (warm-up eats 500). First OOS run recorded under GAP 1. | decide whether the fraction should measure over the post-warm-up region, or report both counts |
 | GAP 2 correlated-exposure cap | **operational in the pipeline, not in the backtest** — A1 landed, and two follow-up defects are fixed: a 3-bar correlation could drive the cap (now floored at `min_correlation_overlap_bars`), and the veto reason stated the *requested* lookback rather than the bars actually measured. `tbot backtest` still injects no portfolio state, so it cannot fire there | a PortfolioState built from the engine's own live trades |
 | A1 context channel + `align_series` | **operational** — and it fixed a live defect (`rolling_correlation` correlated misaligned dates, sign-inverting on a periodic path) | nothing |
 
@@ -95,6 +95,45 @@ be reportable. Without `--split`, output byte-identical to today; both paths tes
   (`run.in_sample.json`, `run.out_of_sample.json`); the unsuffixed name is not written.
 - 12 tests in `tests/test_integration.py`, including the acceptance test
   `test_backtest_without_split_is_byte_identical_to_the_single_run`. Suite 1,075 -> **1,087**.
+
+### The first out-of-sample run (2026-09-15)
+
+`tbot backtest --csv data/sol_4h.csv --tf 4H --symbol SOLUSDT --max-bars 900 --split`,
+shipped defaults, nothing tuned. 577s wall clock (predicted ~14 min; inside the ±2× band).
+
+| | in-sample | out-of-sample |
+|---|---|---|
+| bars | 0–599 | 600–899 |
+| **analysable** bars | **100** | **300** |
+| closed trades | 1 | 27 |
+| equity | 10,000 → 9,984.75 | 10,000 → 9,660.71 |
+| net P&L | −15.25 | **−339.29** |
+| win rate | 0% (0W/1L) | 37.0% (10W/17L) |
+| Wilson 95% | 0.0–79.3% | 21.5–55.8% |
+| expectancy | −5.54 R | −7.83 R |
+
+**Neither segment concludes anything.** 1 and 27 closed trades, both under the 30-trade floor,
+and both intervals are too wide to separate any hypothesis from any other. The harness says so
+itself in both blocks. Out-of-sample is *nearly* at the floor — one more window would reach it.
+
+**A defect in `--split` that this run exposed.** The fraction applies to **total** bars, but the
+first 500 bars are warm-up and analysable at all. At 900 bars a "66.7% in-sample" split gives
+the in-sample segment **100** analysable bars and out-of-sample **300** — an actual in-sample
+share of **25%**, the inverse of what was asked for. The larger segment is the one that is
+supposed to be held back.
+
+The split is not *wrong* — it is chronological, disjoint and free of lookahead, and the number
+above is real. But **`in_sample_fraction` does not mean what its name says** whenever warm-up is
+a large share of the series, and at these sizes it always is. A true 2/3 of *analysable* bars at
+n=900 needs `--split 0.85`. Two candidate fixes, neither made yet: measure the fraction over the
+post-warm-up region instead of the raw series, or keep the raw-series meaning and report both
+numbers so the reader is never misled. **Until that is settled, read any `--split` output by its
+analysable-bar counts, which the header prints, not by the percentage.**
+
+**What the −339.29 does not mean.** It is 27 trades in one 50-day window on one symbol, after a
+defect fix landed hours earlier, with expectancy dominated by outliers exactly as the 600-bar run
+was. It is not evidence about the strategy. What it *is*: the first number this project has
+produced where the held-back segment was genuinely held back.
 
 **No sweep runner was added**, as instructed.
 
@@ -260,11 +299,17 @@ correctness requirement, not a nicety.
 | the book | `_mark(i, ts, close)` marks one close | one equity curve across N symbols is a different accounting model |
 | portfolio gates | never injected today | they would fire for the first time; expect the trade count to move |
 
-**The cost multiplier is the blocker.** CLAUDE.md open item 5: the harness re-runs every
-detector from bar 0 on each bar — 800 bars ≈ 22 min, 1500 ≈ 77 min. Multiply by N. Ten symbols
-at 800 bars is ≈ 3.7 hours **for one configuration**, before any sweep, and a sweep is the
-reason the split in GAP 1 exists. **A2 is hostage to the O(n²) fix and should not be attempted
-before it.**
+**The cost multiplier is the blocker.** *Figures corrected 2026-09-15 — the exponent was
+wrong.* Per-bar cost is **O(n^2.2)** measured, so a full run is **O(n^3.2)**, not O(n²)
+(CLAUDE.md open item 5 carries the seven-point curve). ~14 min at 900 bars, **~85 min at 1500**,
+each **± roughly 2×** because cost depends on which bars as well as how many — 0.757s vs 1.338s
+per bar at identical window length on different data. Multiply by N symbols. **A2 is hostage to
+that cost and should not be attempted before it.**
+
+Note what the fix is *not*: caching the ATR array was measured and rejected — it is rebuilt once
+per bar, 0.5 ms inside a 9.8 s bar. The cost is `trendlines.py` `_touches`, O(P³) pairwise pivot
+geometry. And the **sweep** is not blocked by any of this: 30 configs are 30 independent
+processes at ~122 MB each on 10 physical cores, blocked only by free RAM.
 
 #### A3 — what already exists and must not be rebuilt
 
@@ -342,8 +387,10 @@ Subject is making HH/HL while the benchmark is not.
 
 ### The shape of the recommendation
 
-**A1 only, B1 or B3 on top, A2 not until the O(n²) fix.** B2 is the cheap experiment that
-proves the ranking call site without paying for A1 first.
+**A1 only, B1 or B3 on top, A2 not until the per-bar cost comes down.** B2 is the cheap
+experiment that proves the ranking call site without paying for A1 first. *(2026-09-15: "the
+O(n²) fix" was the wrong name for it — the real curve is O(n^3.2) total, and the target is
+`trendlines.py` `_touches`, not a data-layer cache.)*
 
 But see the sequencing note at the top of this file: **none of this should be built yet.**
 

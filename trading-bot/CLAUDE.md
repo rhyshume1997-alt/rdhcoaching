@@ -114,11 +114,39 @@ python scripts/fetch_klines.py --help            # pull real OHLCV (needs intern
 4. **Decide what replaces BVOL24H.** The ticker is dead (CF-48). The bot degrades
    gracefully, so `bvol_size_multiplier` silently never halves leverage. Either wire a
    live volatility source or delete the three keys.
-5. **The backtest is O(n²) and that blocks the sweep.** `SAMPLE_RUN.md`: ~22 min for
-   800 bars, "grows with the square of the series length" — the harness re-runs every
-   detector from bar 0 on each bar. Measured: 600 bars ~12 min, 1500 bars ~77 min. A
-   sweep over `swing_k` × `sufficient_gap_pct_by_tf` × instruments is days of wall clock
-   at that cost. Either cache detector output across bars or the sweep is impractical.
+5. **The backtest is O(n^3.2) in total, and that is what gates the sweep.** *Measured
+   2026-09-15, replacing an O(n²) estimate that was wrong in the exponent.* Per-bar cost of
+   `analyse_bar` on `data/sol_4h.csv`, wall clock, after the `atr_value` fix:
+
+   | window | 200 | 400 | 600 | 800 | 1000 | 1250 | 1500 |
+   |---|---|---|---|---|---|---|---|
+   | per bar | 0.14s | 0.52s | 1.34s | 2.72s | 4.51s | 8.29s | **11.71s** |
+
+   Log-log fit **t(n) ≈ 9.06e-7 · n^2.23** — per-bar is **O(n^2.2)**, not O(n), so a full run is
+   **O(n^3.2)**, not O(n²). Integrated over a 500-bar warm-up that projects to ~2 min at 600
+   bars, ~7 at 750, ~14 at 900, ~40 at 1200, **~85 at 1500**.
+
+   **Every projection here carries roughly a 2× band.** Cost depends on *which* bars, not only
+   how many: `analyse_bar(600)` measures 0.757s on the last 600 bars of `sol_4h.csv` and 1.338s
+   on the first 600 — a 1.8× spread at identical window length, because different data yields
+   different object counts. Treat these as a range, never a point estimate. The one directly
+   measured full run (600 bars, 62s) sits *below* the model's 120s.
+
+   **The old "~12 min / ~77 min" figure was roughly right and is not retired for being wrong** —
+   ~85 min at 1500 bars is close to its 77. What was wrong was the *exponent*, and with it every
+   extrapolation built on it.
+
+   **Caching the ATR array is NOT the fix — measured and rejected.** `atr_array` is memoised on
+   the Series' derived-array cache and is rebuilt **exactly once per bar**, costing **0.5 ms**
+   inside a 9.8 s bar at n=1500. Pre-warming the cache (perfect inheritance) changes a bar by
+   −1.5%, i.e. noise. The bottleneck is `detectors/trendlines.py` `_touches`: O(P³) pairwise
+   pivot geometry, ~2,601 calls per bar. Any real fix goes there, not at the data layer — and
+   note the trendline stage is 57.7% of a bar but is **CF-37 working as specified** (stated
+   twice, not `[OUR CHOICE]`), so it is a sweep target, never a switch to flip.
+
+   **The sweep is embarrassingly parallel and is blocked by RAM, not by this curve.** 30 configs
+   are 30 independent processes — no shared cache, no correctness hazard, each one the existing
+   binary. A worker measures ~122 MB; the machine has 10 physical cores / 12 logical.
 6. **Test the 77–82% win rate claim.** Coded as a hypothesis in SPEC §12.5, never tested.
 7. **Build `detectors/indicators.py`** — RSI divergence and EMA200 confluence classes.
    The pipeline stage exists and reports itself unavailable rather than silently skipping.

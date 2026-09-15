@@ -9,7 +9,8 @@ where the strategy produced almost nothing, section 4 says which gate stopped it
 > box height beyond the box's far edge instead of 0.15 ATR beyond a candle anchor. Plans that hang
 > off a zone — not the two S/R tickets quoted in §3 — would move, and with them `stop_too_tight`,
 > the R:R counters and the sizes that follow from stop width. The run has not been regenerated
-> (~22 minutes wall clock); every other number below still stands.
+> (~22 minutes wall clock — see the 2026-09-15 correction in §2 on how that scales); every
+> other number below still stands.
 
 > **Stale in a second respect (F9, the R:R basis).** This run gated G14 on R:R measured to
 > **TP1**. `rr_measured_to` now defaults to `final_tp` (`../FRAME_FINDINGS.md` F9), which is where
@@ -58,6 +59,17 @@ python -m tbot backtest \
 Wall clock: about 22 minutes. The harness calls the pipeline once per post-warm-up bar and every
 detector re-derives its whole live set from bar 0 each time (INTERFACES.md §6.2), so the cost
 grows with the square of the series length.
+
+> **Correction, 2026-09-15 — the 22 minutes stands, the explanation of it does not.** The wall
+> clock above is what this recorded run took and is left as measured. But "grows with the square
+> of the series length" understates it: per-bar cost was measured at **O(n^2.2)**, which makes a
+> full run **O(n^3.2)**. Seven-point curve in `../CLAUDE.md` open item 5. Two consequences worth
+> carrying: projections from this figure are **± roughly 2×**, because cost depends on *which*
+> bars as well as how many (0.757s vs 1.338s per bar at identical window length on different
+> data); and the cost is **not** detector output being re-derived in the way this sentence
+> implies — the ATR array is rebuilt exactly once per bar (0.5 ms of a 9.8 s bar, measured, a
+> cache there was rejected). It is `detectors/trendlines.py` `_touches`, O(P³) pairwise pivot
+> geometry, ~2,601 calls per bar.
 
 - bars: **800** 4H bars, 2022-01-01 to 2022-05-14
 - warm-up discarded (SPEC.md §12.1): **500** bars, so **300** bars were actually analysed

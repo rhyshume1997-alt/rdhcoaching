@@ -12,7 +12,39 @@ governs how each one ships:
   and the change is stated;
 - one gap per commit, full suite green before moving on.
 
-Status legend: `OPEN` · `DESIGN` (proposals written, nothing implemented) · `DONE`.
+Status legend: `OPEN` · `DESIGN` (proposals written, nothing implemented) · `IMPLEMENTED, NOT OPERATIONAL` (code shipped, dependency missing) · `DONE`.
+
+---
+
+## Read this before counting closed gaps
+
+**Nothing in this file has changed what the bot does.** Three commits of new subsystems are in
+and every one of them is inert by default. Counting them as progress would be counting
+scaffolding as a building.
+
+| shipped | status | what would make it real |
+|---|---|---|
+| `max_entry_distance_pct` (CHANGELOG_EVIDENCE.md, DISCORD CHECK 2026-09-15) | off by default; the threshold that would make it useful is **still unmeasured** | the 2026-09-12 resting-entry batch needs spot at post time from bybit to tighten `sweep_bracket`; then a sweep |
+| GAP 1 `backtest --split` | **operational** — this one genuinely works today | nothing; it is ready for the sweep it exists to protect |
+| GAP 2 correlated-exposure cap | **implemented, not operational** — it cannot assess a single slot | GAP 3 section A1, the universe feed |
+
+### The sequencing risk, recorded because it is the thing most likely to be forgotten
+
+**The core strategy has never produced one trustworthy backtest.** Gaps 1 and 2 are defensible
+ahead of that: out-of-sample discipline is a *prerequisite* for validation, correlation control
+is risk management, and neither touches how a trade is chosen or planned.
+
+**GAP 3 is different in kind: it is a strategy change.** A setup-selection layer ranks plans.
+Ranking plans that are themselves wrong produces a confident ordering of broken plans — and it
+makes the breakage *harder* to see, because the ranking looks like it is doing work.
+
+So GAP 3 is **designed and not built**, deliberately, and the trigger for building it is not a
+date but a result: a backtest that holds positions across bars and places take-profits on the
+correct side, on plans whose entries are not drifting far from market. Until that exists,
+building the ranker is building on sand. *(The entry-drift and trigger-drift work is tracked
+outside this file; this note records the dependency, not its detail.)*
+
+GAPS 4 and 5 are proposal-only for the same reason and have not been started.
 
 ---
 
@@ -74,7 +106,7 @@ bar; below that the command refuses with a usage error rather than reporting an 
 
 ## GAP 2 — No correlation control on concurrent positions
 
-**Status:** DONE (2026-09-15). See "What shipped" at the end of this entry.
+**Status:** IMPLEMENTED, **NOT OPERATIONAL** (2026-09-15). Correct, tested code that cannot currently assess a single slot: it is blocked on GAP 3's section A1. Scaffolding waiting on a dependency, not a closed gap.
 
 **What is missing.** `max_concurrent_leverage_global = 4` (`config.py:306`) counts *tickets*, not
 *exposures*. Four alt longs in a correlated market is one position with four tickets and four
@@ -147,7 +179,7 @@ rejections and plan ids are unchanged bar-for-bar with the flag off. Suite 1,087
 
 ## GAP 3 — No relative strength / cross-symbol ranking
 
-**Status:** OPEN — design proposals first, no code.
+**Status:** DESIGN (2026-09-15). Costed below. **Do not build yet** — see the sequencing note at the top of this file.
 
 **What is missing.** The pipeline analyses **one symbol in isolation**. Nothing ranks the
 universe, so nothing chooses between symbols.
@@ -174,11 +206,145 @@ it was pointed at. In a real universe that is close to random selection among su
 *(The review cited "131 setups from 100 bars"; I could not locate that figure in SAMPLE_RUN.md.
 The verifiable equivalents are the 14,015 / 300 / 23 above, which make the same point.)*
 
-**Blocked on a design decision.** Candidates worth costing: performance vs a benchmark (BTC) over
-N lookbacks; position within own recent range; structure divergence (making HH/HL while the
-benchmark is not); behaviour on the last market-wide down day. Each must state **what it needs
-from the data layer** — the pipeline receives one symbol's window today, and that plumbing is
-plausibly the real cost, not the metric. Propose 2–3, cost them, do not pick one unilaterally.
+**Blocked on a design decision — and on a dependency that is bigger than the decision.**
+Designs below, priced. **Nothing implemented.**
+
+---
+
+### A. THE PLUMBING — price this first, it is the shared dependency
+
+GAP 2 is already blocked on this, so it is not Gap 3's cost alone. The headline finding:
+
+> **The harness → pipeline boundary passes two arguments and drops every other injection point
+> on the floor.** `default_plan_provider` calls `entry(window.series, config)`
+> (`backtest/engine.py:473`). `pipeline.run()` accepts `context`, `calendar`,
+> `portfolio_state`, `profile`, `active_symbols` and `ltf_series` (`pipeline.py:1247-1257`) and
+> **none of them is ever passed by the harness.** This is not "the universe feed has no data" —
+> the channel does not exist.
+
+SAMPLE_RUN.md already records the consequences as live degradation: `:236` *"The §10 portfolio
+gates never ran"*, `:251` no portfolio state, `:255` no cross-market context, `:257` no LTF
+series. **CF-04 concurrency has therefore never been evaluated in any backtest ever run.**
+
+The work splits into a moderate half and a large half, and they unlock different things.
+
+#### A1 — aligned multi-symbol injection (moderate)
+
+Give the pipeline a `Mapping[str, Series]` truncated to `now`, per bar.
+
+| what | where | why it is not free |
+|---|---|---|
+| widen `BarWindow` | `engine.py:238-251` — holds exactly one `series`/`symbol`/`tf` | dataclass + every construction site |
+| widen `PlanProvider` | `engine.py:430-438` | it is a `Protocol`; tests implement it too |
+| populate and pass | `engine.py:473` | the one-line drop that causes all of the above |
+| **timestamp alignment** | **does not exist** — `grep -E "def align\|reindex\|common_index"` over `tbot/*.py` returns nothing | symbols list at different dates and have different gaps; bar *i* of SOL is not bar *i* of BTC |
+| extend the lookahead audit | `engine.py:~750` audits `plans`/`setups`/`detections` only | one un-truncated series in the map silently leaks the future into a ranking |
+
+**A latent bug A1 must fix on the way.** `regime.rolling_correlation` (`regime.py:433-437`)
+takes a **positional** tail — `n = min(len(a), len(b), lookback)` then `a.close[-n:]`,
+`b.close[-n:]`. Nothing checks that the two tails cover the same *dates*. With one series today
+(DXY) that is merely fragile; with N symbols of differing history it silently correlates
+mismatched dates — and it is the primitive GAP 2's cap is built on. Alignment is therefore a
+correctness requirement, not a nicety.
+
+**A1 unlocks:** GAP 2 becomes operational; metrics B1, B3 and the benchmark variant of B4.
+**A1 does not unlock:** anything that needs N symbols *simulated together*.
+
+#### A2 — N-symbol simulation (large, and gated on something else)
+
+| what | where | why it is expensive |
+|---|---|---|
+| the loop | `engine.py:728-760` — `BacktestEngine(series, ...)`, `for i in range(n)` over one series | this is the harness's spine |
+| the result | `engine.py:1296` — `BacktestResult` is per-symbol (`symbol`, `tf`, `bars`) | metrics, `--save-run`, `explain` and the split all read it |
+| the book | `_mark(i, ts, close)` marks one close | one equity curve across N symbols is a different accounting model |
+| portfolio gates | never injected today | they would fire for the first time; expect the trade count to move |
+
+**The cost multiplier is the blocker.** CLAUDE.md open item 5: the harness re-runs every
+detector from bar 0 on each bar — 800 bars ≈ 22 min, 1500 ≈ 77 min. Multiply by N. Ten symbols
+at 800 bars is ≈ 3.7 hours **for one configuration**, before any sweep, and a sweep is the
+reason the split in GAP 1 exists. **A2 is hostage to the O(n²) fix and should not be attempted
+before it.**
+
+#### A3 — what already exists and must not be rebuilt
+
+`dashboard/store.py` `MarketData` is a working per-`(symbol, tf)` registry with `.get()` and
+`.series(...)`, fed live, capped at 24 pairs (`dashboard/settings.py:89`). **The universe data
+structure already exists.** What the dashboard does *not* do is the cross-symbol call:
+`dashboard/analysis.py:192` runs `pipeline.analyse_bar(series, config)` **per symbol,
+independently, with no context** — the same two-argument call the harness makes.
+
+So the missing pieces are narrower than "build a universe feed": (a) a backtest-side loader for
+N CSVs, (b) the alignment helper, (c) the call site that hands the map down. (a) and (c) are
+small; (b) is the real work and is shared.
+
+---
+
+### B. THE METRIC — cheap once A1 exists, and one is cheap today
+
+Costed against A, not from zero. **Provenance first, because it is not clean:** relative
+strength is *not* absent from his thinking. The Discord record has him rotating into it
+explicitly — *"Don't ask me why but I am following strength"* (ICP, 2025-11-06) and *"The
+strength clearly is in privacy coins/narrative"* (2025-11-04). But he never mechanises it: no
+lookback, no benchmark, no threshold, no ranking rule anywhere in eight transcripts or the
+written record. **The idea has weak behavioural support; every number in every option below is
+ours.**
+
+#### B1 — performance vs a benchmark (BTC) over N lookbacks
+
+Return over *k* bars minus BTC's return over the same *k*, for a few *k*, combined into one
+score.
+
+- **Needs:** A1 only, and only **one** extra series. Not the N-symbol engine — each symbol is
+  scored against BTC independently, so it works inside today's single-symbol run.
+- **Cost:** smallest of the three that are actually cross-symbol.
+- **Weakness:** it measures momentum, not setup quality. It is a *filter* ("is this symbol
+  leading?"), not a *selector* ("which of these two setups do I take?"). It cannot rank two
+  symbols against each other at one instant unless something compares their scores — see B2.
+- **Sweep surface:** the lookback set and the combination weights. Both entirely ours.
+
+#### B2 — position within its own recent range
+
+Percentile of close within the trailing *N*-bar high/low.
+
+- **Needs:** **nothing.** It is a primitive over the subject series alone. Computable today, no
+  plumbing at all.
+- **Cost:** near zero to compute. But *ranking* on it needs somewhere to compare N scalars —
+  which is a far smaller piece than A2: a scalar per symbol per bar, not N series through the
+  pipeline. That comparison point does not exist either, but it is cheap to add once A1's call
+  site exists.
+- **Weakness:** it is not cross-symbol at all on its own, and it is close to information the
+  pipeline already has — `detectors/ranges.py` computes ranges and `classify_price` already
+  places price within one. Risk of re-deriving an existing object under a new name.
+- **Honest read:** this is the one that could ship first and prove the ranking *call site*
+  without paying for A1. That may be its real value.
+
+#### B3 — structure divergence vs the benchmark
+
+Subject is making HH/HL while the benchmark is not.
+
+- **Needs:** A1, plus running `detectors/structure.py` on the benchmark series each bar.
+- **Cost:** roughly doubles per-bar structure work. No new algorithm — `structure_state` and P11
+  are reused wholesale.
+- **Strength:** the most *his-method-shaped* of the three. He reasons in HH/HL constantly, and
+  it composes with the existing trend machinery rather than bolting a new indicator on.
+- **Weakness:** binary and coarse. It separates "diverging" from "not" and gives no ordering
+  within either bucket, so it filters well and ranks badly.
+
+#### B4 — behaviour on the last market-wide down day (listed, costed, not recommended alone)
+
+- **Benchmark-only variant:** needs A1. **Breadth variant** (how many of N fell) needs full A2.
+- **Weakness that rules it out as a primary:** event-sparse. On a few hundred 4H bars there may
+  be a handful of qualifying days, so the metric is low-resolution andimpossible to sweep
+  meaningfully. Better as a *tiebreak* on top of B1 than as the ranking itself.
+
+---
+
+### The shape of the recommendation
+
+**A1 only, B1 or B3 on top, A2 not until the O(n²) fix.** B2 is the cheap experiment that
+proves the ranking call site without paying for A1 first.
+
+But see the sequencing note at the top of this file: **none of this should be built yet.**
 
 ---
 

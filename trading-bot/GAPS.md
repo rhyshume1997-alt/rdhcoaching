@@ -570,8 +570,12 @@ Derived from the shipped config, at 10,000 equity and a 100-price instrument:
 | 2.0 | 200 | 20,000 | YES | 200.00 | 50% |
 | **4.0** | 100 | 10,000 | **no** | 400.00 | **100%** |
 
-**The ceiling binds for every stop tighter than 4.00% of entry.** The measured median stop is
-0.549%, so it binds on essentially every trade. `max_loss_pct_swing = 4.0` is unreachable except
+**The ceiling binds for every stop tighter than 4.00% of entry.** *Corrected 2026-09-16:* an
+earlier draft of this paragraph said it therefore binds "on essentially every trade", reasoning
+from the 0.549% median stop. Measured on 112 trades it binds on **28 of 77 in-sample and 17 of 35
+out-of-sample** - 36% and 49%. The threshold is right; the inference from it was not, because a
+partial ladder fill buys less than the full quantity and drops the notional back under the
+ceiling. That is the same bimodality reported below (14 at exactly 10,000, 13 at ~2,500). `max_loss_pct_swing = 4.0` is unreachable except
 at exactly a 4% stop.
 
 Corroborated by measurement, not only by arithmetic: on the 27-trade sample implied notional is
@@ -613,3 +617,69 @@ from -404 to -75, still negative.
 ceiling-bound trades, not only the dispersion of `initial_risk_usd`.** The dispersion is the
 symptom; the ceiling is the cause, and a guard that reports only the spread invites someone to
 treat the spread as the thing to fix.
+
+
+---
+
+# WHICH STOP GATE, SCORED IN DOLLARS ON 112 TRADES, 2026-09-16
+
+Run `1c87d11` over 1,500 bars with `--split`, then every closed trade bucketed by which gate
+would refuse it. **Dollars, not R.** R is circular here - 1R *is* the stop distance, so a
+tight-stop trade shows a catastrophic R whatever price did, and ranking gates by the R of their
+refusals ranks them by how tight those stops were. That is the question, not the answer.
+
+    build gate   refuses when the PLANNED  stop is inside min_stop_pct (visible at build)
+    fill  gate   refuses when the REALISED stop is inside min_stop_pct (only visible at fill)
+
+| | in-sample (n=77, book -729.43) | out-of-sample (n=35, book -483.28) |
+|---|---|---|
+| both | 10 / **-310.57** / mean -31.06 | 13 / **-341.02** / mean -26.23 |
+| build only | 26 / **+339.81** / mean +13.07 | 12 / **+96.55** / mean +8.05 |
+| fill only | **0** | **0** |
+| neither | 41 / **-758.67** / mean -18.50 | 10 / **-238.81** / mean -23.88 |
+| build gate | refuses 36 -> book **-758.67** | refuses 25 -> book -238.81 |
+| fill gate | refuses 10 -> book **-418.86** | refuses 13 -> book **-142.26** |
+| notional at the CF-02 ceiling | 28 of 77 | 17 of 35 |
+
+## Four findings
+
+**1. The build-time gate refuses the only profitable bucket, in both segments.** "build only" -
+planned stop inside the floor, realised stop outside it because the fill drifted away from the
+stop - is +339.81 and +96.55, positive mean in each. It replicates out-of-sample, so it is not a
+small-sample accident. In-sample the build gate is **actively harmful**: it removes +29.24 of
+profit and takes the book from -729.43 to -758.67.
+
+**2. "fill only" is empty in both segments, so the two gates are NESTED, not orthogonal.** Every
+sub-floor realised stop was already sub-floor at build. The fill gate refuses exactly the `both`
+bucket, a strict subset of the build gate's refusals: **the fill gate is the build gate minus the
+profitable bucket.** An earlier framing called these "two different seams" on the strength of a
+single fill-only trade (T0049) in a 27-trade window; that trade does not recur in 112 and the
+framing does not survive. Build-time and fill-time may still be different seams in principle -
+a plan can be sound and its fill ruinous - but on this data that case occurs once in 112.
+
+**3. The fill gate wins in both segments** (-729 -> -419 and -483 -> -142) and the advantage
+replicates out-of-sample, which is the test that matters.
+
+**4. The money is in `neither`.** 41 trades and -758.67 in-sample, 10 and -238.81 out-of-sample.
+**No stop gate touches the majority of the loss.** This gets stronger at n=112, not weaker.
+
+## What this licenses
+
+Build the **fill-time gate only**. It is strictly better in both segments, it cannot refuse the
+profitable bucket because it is a subset, and it needs no invented number - `min_stop_pct = 0.5`
+is CF-06, S7-C8, his. The build-time gate has now been measured as value-destroying in-sample and
+inferior out-of-sample; shipping it even defaulted off would be shipping something measured
+harmful.
+
+## Caveats that govern all of the above
+
+- **This is arithmetic on a closed book, not a re-simulation.** Refusing a trade changes equity,
+  concurrency and portfolio state, so the true effect needs the gate built and the backtest
+  re-run. It directs the build; it is not a result.
+- The `widened` flag in this run is stale: the run was launched at `1c87d11`, before `7044e75`
+  removed the reset that erased the flag whenever a clip fired, so clipped trades under-report.
+  The bucketing does not use that flag - it uses planned and realised distances - so the buckets
+  are sound and only that column is unreliable.
+- One symbol, one timeframe, one regime.
+- **The best available gate takes out-of-sample from -483 to -142. Still negative.** No stop gate
+  found here makes this system profitable.

@@ -1074,6 +1074,22 @@ class BacktestEngine:
         ``manage._reverify_budget`` (S6-R11/R12): close the excess quantity, never move the stop.
         That module is unreachable from the harness, and inventing a second answer here would put
         our judgement where his rule belongs.  So this gate only ever refuses to *open*.
+
+        **How much this actually catches, measured.**  Not much, and the shortfall is structural
+        rather than marginal.  The price handed in is ``rung.price`` for the first rung to fill,
+        and that rung is by construction the one *furthest* from the stop: stop distance is
+        ``1 - stop/p`` long and ``stop/p - 1`` short, monotone in ``p`` either way, and rung 0 is
+        the extreme rung in both directions.  So ``d(rung 0) >= d(blended average)`` always -
+        checked over the 1,500-bar split run at ``95b6d01``, 112 trades, **zero exceptions**, with
+        equality on the 83 single-rung fills where rung 0 *is* the average.
+
+        The gap is therefore confined to the ~29 multi-rung fills - and that is precisely where
+        the damage lives.  Of the 23 trades whose realised average sits inside the floor, 22 filled
+        a DCA rung on the far side of their own stop, and this gate refuses **2 of the 23**.  It is
+        not the remedy for that population; see GAPS.md, "The fill-time gate as built refuses 2 of
+        the 23 trades it was built for".  What that population needs is a decision about a CF-14
+        step-3 clip landing inside the entry ladder, which is a rule choice the sources do not
+        make.  This gate is left in place, defaulted off, doing exactly and only what it says.
         """
         if not self.config.min_stop_pct_enforced_at_fill:
             return ()
@@ -1198,7 +1214,9 @@ class BacktestEngine:
                 continue
             # Most affected plans are retest family, so a trigger-only check would miss nearly
             # all of them.  ``_fill_floor_problems`` returns () once anything has filled, so this
-            # can only refuse to OPEN - a part-filled ladder is never closed from here.
+            # can only refuse to OPEN - a part-filled ladder is never closed from here, and the
+            # floor is never re-asked against the blended average that the later rungs produce.
+            # That is the gate's main limitation, measured in its docstring, not a detail.
             floor_problems = self._fill_floor_problems(trade, price)
             if floor_problems:
                 self._close_unfilled(

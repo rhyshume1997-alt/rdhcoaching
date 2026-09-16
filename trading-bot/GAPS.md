@@ -683,3 +683,143 @@ harmful.
 - One symbol, one timeframe, one regime.
 - **The best available gate takes out-of-sample from -483 to -142. Still negative.** No stop gate
   found here makes this system profitable.
+
+---
+
+# The fill-time gate as built refuses 2 of the 23 trades it was built for
+
+Measured on the `--split` 1,500-bar run written at `95b6d01` (flag absent, therefore flag-off;
+identical book to the `3dbf33b` verdict run). Everything below is measured from that run file.
+
+## First, the existing table above is confirmed, not corrected
+
+An earlier instruction to me said the four-bucket table "predates `7044e75` and has a stale
+`widened` column". That instruction was confused, and I carried the confusion. **The table above
+never used the `widened` flag** - its own caveat says so: it buckets on *planned distance* vs
+*realised distance*. Recomputed on a run that postdates `7044e75`, it reproduces to the cent:
+
+| | in-sample | out-of-sample |
+|---|---|---|
+| both | 10 / -310.57 | 13 / -341.02 |
+| build only | 26 / +339.81 | 12 / +96.55 |
+| fill only | 0 | 0 |
+| neither | 41 / -758.67 | 10 / -238.81 |
+
+Bucketing instead on *did the CF-06 widen actually fire* answers a different question and gives a
+different table. Neither is wrong; they are not the same question, and the difference is not a
+correction of one by the other:
+
+| | in-sample | out-of-sample |
+|---|---|---|
+| both (widen fired AND realised inside) | 0 | 0 |
+| build only (widen fired) | 2 / -125.00 | 3 / -187.67 |
+| fill only (realised inside, widen never fired) | 10 / -310.57 | 13 / -341.02 |
+| neither | 65 / -293.86 | 19 / **+45.40** |
+
+`widened` and `clipped` never co-occur in 112 trades, which is why the `both` cell is empty under
+the flag bucketing: where the step-3 clip fires it supersedes the widen, so only one flag is ever
+set. **The 23 trades in question are the same 23 under either bucketing** - table A calls them
+`both`, table B calls them `fill only`.
+
+## The finding: the gate checks the wrong price, and it is not a marginal miss
+
+`_fill_limit_rungs` calls `_fill_floor_problems(trade, price)` with `price = rung.price`, and the
+gate returns `()` once `filled_qty_total > 0`. So it runs **once, against rung 0**, never against
+the blended average. That is defensible as written - at the first fill, rung 0 is the only price
+actually paid - but rung 0 is, by construction, the price **furthest from the stop**:
+
+    long:   d(p) = (p - s) / p = 1 - s/p     increasing in p, and rung 0 is the highest rung
+    short:  d(p) = (s - p) / p = s/p - 1     decreasing in p, and rung 0 is the lowest rung
+
+Either way `d(rung 0) >= d(average)`, so the gate can only ever refuse a **subset** of what the
+closed-book arithmetic refused. Measured, the subset is almost empty - rung 0 clears the floor on
+21 of the 23:
+
+| ref | rung 0 | average | d(rung 0) | d(average) | gate | R |
+|---|---|---|---|---|---|---|
+| IS T0055 | 90.0186 | 89.6028 | 0.4925% | 0.0308% | **refuse** | -5.06 |
+| OOS T0039 | 76.3464 | 76.3464 | 0.4271% | 0.4271% | **refuse** | -1.29 |
+| IS T0013 | 82.1479 | 83.9163 | 2.6076% | 0.4453% | miss | -1.28 |
+| IS T0002 | 88.1333 | 89.0361 | 1.0372% | 0.0127% | miss | -10.85 |
+| OOS T0084 | 103.2757 | 104.1270 | 0.8267% | **0.0023%** | miss | **-54.26** |
+
+...and 18 more, all `miss`. **The gate refuses 2 of 23.** The worst trade in the dataset - OOS
+T0084 at -54.26R, a stop 0.0023% from the average - has a rung 0 sitting 0.8267% away, comfortably
+clear of the floor, so the gate waves it through.
+
+**Prediction, recorded before the confirming run finishes:** the flag-ON re-simulation will log
+**2 refusals**, not the 23 the closed-book arithmetic implied, and the out-of-sample book will
+move from -483.28 by roughly the -1.29 of OOS T0039, not to -142.26. `neither` and `build only`
+cannot contribute refusals: their realised distance is already >= the floor, and d(rung 0) is
+larger still.
+
+## The real mechanism is the ladder, not the floor
+
+What actually distinguishes those 23 trades is not stop width. It is that **22 of 23 filled a DCA
+rung on the far side of their own stop** - adding size at a price where the position was already
+invalidated:
+
+| bucket | filled 2+ rungs | had a filled rung beyond the stop |
+|---|---|---|
+| build only (n=5) | 2 | **0** (0%) |
+| fill only (n=23) | 22 | **22** (96%) |
+| neither (n=84) | 7 | 4 (5%) |
+
+IS T0013 is the whole mechanism in one trade, all on bar 543: rung 0 (entry) fills 29.79 @ 82.1479;
+rung 1 (dca) fills 89.37 - three times the size - @ 84.5058, which is **past the stop at 84.2900**;
+the average lands at 83.9163, i.e. 0.4453% from the stop; the stop fills on the same bar.
+
+`place_stop` already owns this principle and states it in prose - it takes `beyond_price=
+_ladder_extreme(rungs)`, documented as *"A stop that does not invalidate the whole ladder is not a
+stop"*. But that guard governs **only the F6 zone-fraction branch**, and the CF-14 step-3 opposing-
+level clip runs afterwards and re-creates exactly the condition the guard exists to prevent. All
+23 of these trades were clipped (100%); clipping alone predicts nothing (91-100% of `neither` was
+clipped too); what predicts the disaster is a clip that lands **inside the ladder**.
+
+## What this does and does not license
+
+It does **not** license a code change. The resolution is a genuine rule choice with at least three
+defensible answers - drop the rungs beyond the clipped stop, let the clip stand down as the F6
+branch already does under `beyond_price`, or take the trade as now - and the sources pick none of
+them. CF-14 step 3 is a hard stated rule and it wins on stop placement; nothing in the source says
+what happens to a ladder the clipped stop no longer invalidates. **This is the same class of
+decision as CF-28/CF-29 and it waits for Rhys.**
+
+What it does establish:
+
+- The closed-book figure **-483 -> -142 does not survive contact with the code**. That number
+  assumed a gate on the realised blended average; the gate that exists is on rung 0. Any statement
+  of that improvement, in this file or elsewhere, is retired.
+- `min_stop_pct_enforced_at_fill` (`b88351e`) is honest about what it does and is ~9% effective
+  against the population it was aimed at. It ships `False` and is left in place, documented here.
+- Out-of-sample, the 19 trades in `neither` made **+45.40** with 13 winners. The entire -483.28
+  out-of-sample loss is the 16 gated trades. In-sample `neither` is still -293.86, so this does
+  **not** say the rest of the system is profitable - one segment, n=19, below the 30-trade floor.
+
+## The narrow question is answered: there is no second mechanism
+
+Within `neither` - normal-stop trades only - losers stop at about -1R and nothing overruns:
+
+| | losers | mean R | median R | min R | worse than -1.05R | close reasons |
+|---|---|---|---|---|---|---|
+| in-sample | 16 | -1.066 | -1.087 | -1.271 | 14/16 | stop 15, trail_out 1 |
+| out-of-sample | 6 | -0.640 | -0.152 | -1.256 | 3/6 | stop 3, trail_out 3 |
+
+The overrun is fees and slippage on top of -1R, not an unnamed defect. Every trade in the dataset
+worse than -1.5R - 7 in-sample, 10 out-of-sample, **17 of 17** - sits in the 23. So the remaining
+problem inside normal-stop trades is purely the payoff ratio: `neither` wins 62 of 84 and still
+loses money, which is CF-28/CF-29 truncating winners, already documented above.
+
+## A reporting trap this run exposed
+
+In-sample `expectancy_r` is -0.385 and out-of-sample is **-2.564**, driven by losers averaging
+-4.412R. Both are artefacts: OOS T0084 risked $0.23 and lost $12.48, which is -54.26R. Meanwhile
+`initial_risk_usd` spans $0.23 to $368.35 - a 505x spread - so R is not a common unit across
+trades and summing it is not meaningful. In `neither`, expectancy is **+0.096R but -2.96 USD**:
+positive in R, negative in dollars. **Read dollars first.** This is the case for the §12.5
+reporting guard, which is still unbuilt.
+
+Also: in-sample headline net P&L is -639.02 but the closed book is **-729.43**. The report
+discloses why - `1 position(s) still open at the end: excluded from the closed-trade metrics` -
+and the +90.41 difference is that position's unrealised mark. Out-of-sample has none open, so the
+two segments' headline numbers are not like for like.

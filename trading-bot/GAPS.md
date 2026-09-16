@@ -865,3 +865,55 @@ worked example for the unbuilt §12.5 reporting guard, not a hypothetical.
 Out-of-sample: **34 trades, 38.24%, -428.12.** In-sample: **76 trades, 57.89%, -623.45.** Both
 segments still lose, in-sample still loses, and the best stop gate measured in this package moves
 out-of-sample by 11%. **No out-of-sample edge, and no stop gate found here creates one.**
+
+## Where the money actually goes: partition by mechanism, not by hypothetical gate
+
+The two tables above tell **opposite stories about `neither`**, and that needs saying plainly
+rather than leaving both on the page:
+
+    table A (planned vs realised distance)   neither = 51 trades   -997.48
+    table B (the CF-06 widen flag)           neither = 84 trades   -248.46
+
+The entire disagreement is one bucket. Table A isolates 38 trades - planned stop inside the floor,
+realised stop outside it - into their own cell, where they are **+436.36** (IS +339.81, OOS +96.55).
+Table B has no cell for them and folds them into `neither`. Nothing else differs: A's `both` is
+B's `fill only`, the same 23 trades, and 51 + 38 - 5 = 84.
+
+So "the money is in `neither`, stops are a sideshow" was an artefact of reading table A, and the
+opposite reading is an artefact of table B. **Both tables partition by which hypothetical gate
+would refuse a trade. Neither partitions by cause**, so neither answers "where does the money go".
+
+Partitioning by the measured mechanism does - did a filled rung land on the far side of this
+trade's own stop:
+
+| | trades | share | net USD | share of loss | wins |
+|---|---|---|---|---|---|
+| a filled rung beyond its own stop | **26** | 23% | **-958.95** | **79%** | **0** |
+| clean ladder | 86 | 77% | -253.76 | 21% | 62 |
+| | 112 | | -1,212.71 | | 62 |
+
+In-sample 13 trades / -602.63, out-of-sample 13 / -356.32. **Zero winners in 26, across both
+segments.** This is the sharpest statement available from this data and it supersedes both
+tables for the purpose of ranking what to fix.
+
+Two things follow that the floor-based bucketings could not show:
+
+- **The floor lens undercounts the mechanism.** 22 of the 26 sit in `fill only`; the other **4
+  carry -362.52** (3 in-sample at -292.06, 1 out-of-sample at -70.46) and are invisible to every
+  stop-floor bucketing, because their blended average still cleared 0.5% while a rung had already
+  filled past the stop. One `fill only` trade conversely had no such rung. The floor is a proxy
+  for the mechanism, and a lossy one.
+- **The correct figure for the clip-inside-ladder population is -651.59 over 23 trades** (or
+  -958.95 over 26 on the mechanism partition). **-964.26 is the 28-trade total** and includes the
+  5 `build only` trades at -312.67, which are a different population - none of them filled a rung
+  beyond its stop. An earlier summary of mine attributed the 28-trade total to the 23-trade
+  bucket, overstating it by 48%. That number never entered this file; it is corrected here so the
+  record contradicts it explicitly.
+
+### The one-line diagnosis
+
+`place_stop` runs anchor -> F6/P19 buffer -> wick band -> `min_stop_pct` floor -> CF-14 step-3
+clip. **Step 3 is the only step that moves the stop toward the entry, it runs last, and nothing
+re-validates after it.** Three findings in three days are that single property: the floor undone
+by the clip, the `widened` flag erased by the clip (`7044e75`), and the ladder-invalidation
+invariant broken by the clip. One architectural fact, found three times.

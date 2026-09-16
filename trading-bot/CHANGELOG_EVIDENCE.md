@@ -568,3 +568,59 @@ a distance, so the question may be the wrong shape).
 | `bot/tests/test_pipeline.py` | 4 regression tests; `_ALLOWED_KEYS` gains the 2 keys |
 | `bot/tests/{test_primitives,test_integration,test_dashboard}.py` | Count invariants 245 -> 247 |
 | `SPEC.md` | §11 total line and the 11.3 row record the 2 Discord-derived additions |
+
+---
+
+## Q16 — What happens when the stop cannot sit beyond the whole entry ladder — **`derived`**
+
+Not one of the original fifteen. It was raised by a measured defect: the backtest fills DCA rungs
+on the far side of the trade's own stop - the bot adds size at a price where its stop says the
+trade is already dead. 26 of 112 trades, **-958.95, 79 % of the total loss, zero winners**
+(`GAPS.md`). Two sessions had concluded this was a rule choice the sources do not make, and that
+Rhys had to pick a remedy. **The recordings make it.**
+
+**Evidence — four independent passages, four sessions:**
+
+1. **TBOT1 `[00:38:08]`** - the closest to a stated rule. *"ladder all the way till honestly like
+   **I would want a wider stop**. Um ladder all the way to like 260ish. **I wouldn't have a DCA
+   there.**"* He prices the ladder against the stop he could actually place, and declines the rung
+   rather than accept a stop inside it.
+2. **S6 `[01:11:53]`-`[01:12:28]`** - **the exact CF-14 step-3 collision, worked on tape.** The stop
+   cannot go where he wants because an opposing zone is in the way: *"stop loss very hard to place
+   here... if I place it here below this wick, it's basically in... another support area/demand
+   zone."* His resolution: *"You can have DCA there and then **probably a tighter stop. It's going
+   to be have to be here.** Okay. So, there **then probably DCA there.**"* He takes the tighter
+   stop - step 3 wins, as `CONFLICTS.md` already rules - and then **re-sites the DCA inside it**.
+   The ladder yields to the stop.
+3. **S6 `[00:23:05]`-`[00:23:39]`** - when the geometry will not allow it, the rung is dropped
+   entirely: *"this is in a range where **you do not have a DCA**. Now, stops on this one was tough,
+   right? Cuz like you can't put it down here. So, the only stop that you could have put was like
+   right there."* ... *"If you had no DCA, you got like a 5.2 % move."*
+4. **A one-entry trade is normal and sanctioned**, so dropping the rung costs nothing structurally:
+   S8 `[00:31:44]` *"you don't DCA on these type of plays. Okay? These are only **one entry, one
+   stop loss**"*; S8 `[01:02:28]` *"**You can have one DCA or no DCA.**"*; S5 `[00:41:10]` *"Or you
+   have **no final DCA. You just have one stop-loss.**"*
+
+**Counter-examples: none found.** Across roughly fifteen worked chart examples in S5-S8 and TBOT1
+the ordering is invariably entry -> DCA -> stop, with the stop beyond the whole ladder (S5
+`[00:51:21]`, S6 `[00:13:11]`, `[00:42:25]`, `[01:27:35]`, `[01:35:26]`, S7 `[00:06:41]`, S8
+`[00:48:34]`, `[01:03:38]`, `[01:19:57]`, `[01:28:33]`). Searches for a stop placed *between* entry
+and DCA returned nothing. This is a grep-and-read sweep of 112k words, not a proof of exhaustiveness.
+
+**The rule:** *the stop constrains the ladder, not the reverse.* A rung that would sit beyond the
+placeable stop is not placed - it is moved inside the stop, or dropped, and a one-entry trade is an
+acceptable outcome.
+
+**What the bot does instead:** `build_plan` sites the ladder first, `place_stop` then lets the
+CF-14 step-3 clip move the stop *inside* that ladder, and nothing re-checks. `place_stop` already
+holds the principle for one branch - `beyond_price=_ladder_extreme(rungs)`, *"a stop that does not
+invalidate the whole ladder is not a stop"* - but only inside the F6 zone-fraction branch, and
+step 3 runs after it.
+
+**Status: this reverses nothing.** It does not touch the `CONFLICTS.md` precedence ruling that step
+3 overrides F6 - S6 `[01:12:28]` has him take the tighter stop too. It adds what happens to the
+ladder *afterwards*, which the ruling never addressed. **This is an extraction gap, not a rule
+choice, and not a judgement call for the user to make.**
+
+Not yet applied. Per the standing convention it ships behind a flag defaulted off and is measured
+against the current book before anything changes.

@@ -863,9 +863,13 @@ class TradePlan:
     #: return: ``PlanBuild`` holds it, the plan does not, so nothing downstream could say why a
     #: stop sat where it sat.  Answering "was this stop inside the ``min_stop_pct`` floor, and if
     #: so which rule put it there" then needed an instrumented re-run rather than a query.
-    #: ``stop_widened_to_min_pct`` is true when the CF-06 floor widened the stop;
-    #: ``stop_clipped_to_level_id`` names the opposing level when CF-14 step 3 clipped it, which
-    #: **undoes** the widening by design (``plan.py``: the clip runs after the floor and wins).
+    #: ``stop_widened_to_min_pct`` records that the CF-06 floor **fired** during placement, not
+    #: that the final price still respects it.  ``stop_clipped_to_level_id`` names the opposing
+    #: level when CF-14 step 3 clipped the stop; that clip runs after the floor and wins on
+    #: **price**, but it no longer erases the record of the floor firing.  The two are therefore
+    #: **not** exclusive: both set is the signature of a stop the floor widened and step 3 then
+    #: pulled back inside the floor.  Whether the final price respects the floor is derivable
+    #: from the price; whether the floor ever fired is not, which is why it is recorded.
     stop_widened_to_min_pct: bool = False
     stop_clipped_to_level_id: str | None = None
 

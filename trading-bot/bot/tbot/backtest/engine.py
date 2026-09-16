@@ -655,12 +655,15 @@ class ClosedTrade:
     excess_risk_usd: Decimal
     liquidated: bool
     fills: tuple[Fill, ...]
-    #: Why ``initial_stop`` sits where it does: the CF-06 ``min_stop_pct`` floor widened it, or
-    #: CF-14 step 3 clipped it to an opposing level, or neither.  ``place_stop`` decides both on
-    #: its :class:`~tbot.plan.StopDecision`, but that object dies at ``build_plan``'s return -
-    #: ``PlanBuild`` holds it, the plan did not - so a saved run could not say why a stop sat
-    #: where it sat, and the question needed an instrumented re-run instead of a query.  The
-    #: clip **undoes** the widening by design and wins, so the two are near-exclusive.
+    #: Why ``initial_stop`` sits where it does: the CF-06 ``min_stop_pct`` floor fired during
+    #: placement, and/or CF-14 step 3 clipped the stop to an opposing level.  ``place_stop``
+    #: decides both on its :class:`~tbot.plan.StopDecision`, but that object dies at
+    #: ``build_plan``'s return - ``PlanBuild`` holds it, the plan did not - so a saved run could
+    #: not say why a stop sat where it sat, and the question needed an instrumented re-run
+    #: instead of a query.  The clip runs after the floor and wins on **price**, but no longer
+    #: erases the record of the floor firing, so the two are **not** near-exclusive: both set
+    #: means the floor widened this stop and step 3 pulled it back inside the floor, which is
+    #: the dominant path on every sample measured so far.
     stop_widened_to_min_pct: bool = False
     stop_clipped_to_level_id: str | None = None
 

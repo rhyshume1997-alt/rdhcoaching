@@ -312,6 +312,88 @@ def test_a3_can_be_relaxed_by_config(cfg):
     assert len([e for e in result.events if e.kind is EventKind.FILL]) == 1
 
 
+def _floor_fixture():
+    """A long whose stop sits far inside ``min_stop_pct`` of the price it will actually pay."""
+    bars = [(100.0, 101.0, 99.0, 100.0),
+            (100.0, 100.5, 90.0, 100.0),     # fills the 95 limit at 95
+            (100.0, 115.0, 99.0, 112.0)]
+    # stop 94.98 is 0.021% below a 95 fill - two orders of magnitude inside the 0.5% floor.
+    plan = make_plan(entries=((95.0, 1.0),), stop=94.98, tps=((110.0, 1.0),), qty=2.0)
+    return make_series(bars), plan
+
+
+def test_a_fill_inside_the_min_stop_floor_is_refused_when_enabled(cfg):
+    """CF-06's floor, re-asked at the price actually paid.
+
+    ``place_stop`` enforces ``min_stop_pct`` against the PLANNED entry, and CF-14 step 3 may then
+    clip the stop back inside the floor deliberately, so a plan can reach its fill carrying a stop
+    the bot has already judged unusable. Nothing re-asked. This is the re-ask.
+
+    No new number - the threshold is ``min_stop_pct`` itself, which is his (CF-06, S7-C8). Only
+    the moment is new.
+    """
+    series, plan = _floor_fixture()
+    on = cfg.with_overrides(min_stop_pct_enforced_at_fill=True)
+    result = run(series, on, OneShotProvider(plan, at_index=0))
+
+    assert result.trades == (), "a fill inside the sourced floor must not open a position"
+    refusals = [e for e in result.events if "limit fill refused" in e.message]
+    assert refusals, "the refusal must be recorded, not silent"
+    assert "min_stop_pct" in refusals[0].message and "CF-06" in refusals[0].message
+
+
+def test_the_floor_gate_is_bit_identical_while_disabled(cfg):
+    """The flag is off by default, so the shipped bot must be unchanged by its existence.
+
+    Asserting "no trades were refused" would pass against a gate that never fires for any reason,
+    including a bug. This asserts the DEFAULT run equals the explicitly-disabled run field for
+    field, and that the same book with the flag ON differs - so the fixture is one the gate acts
+    on, and the equality above is a real invariant rather than a fixture that never triggers it.
+    """
+    # A fresh plan per run: the engine marks rungs filled in place, so reusing one plan object
+    # would hand the second run a ladder that already claims to have filled on a bar it has not
+    # reached - which the lookahead audit correctly refuses.
+    def go(**overrides):
+        series, plan = _floor_fixture()
+        c = cfg.with_overrides(**overrides) if overrides else cfg
+        return run(series, c, OneShotProvider(plan, at_index=0))
+
+    default = go()
+    explicit = go(min_stop_pct_enforced_at_fill=False)
+    enabled = go(min_stop_pct_enforced_at_fill=True)
+
+    assert cfg.min_stop_pct_enforced_at_fill is False, "the flag must ship OFF"
+    assert len(default.trades) == len(explicit.trades)
+    for a, b in zip(default.trades, explicit.trades):
+        assert a == b, "the disabled gate changed a trade"
+    assert default.ending_equity == explicit.ending_equity
+
+    assert default.trades and not enabled.trades, (
+        "fixture must be one the gate acts on, or the equality above proves nothing")
+
+
+def test_the_floor_gate_never_closes_a_position_it_did_not_stop_opening(cfg):
+    """Once a rung has filled the position is open, and this gate is no longer the right tool.
+
+    A ladder's realised average moves toward the stop as DCA rungs fill, so a late rung can carry
+    an open position inside the floor. That is a management question with a sourced answer -
+    ``manage._reverify_budget`` (S6-R11/R12), close the excess quantity and never move the stop -
+    and inventing a second answer in the harness would put our judgement where his rule belongs.
+    """
+    bars = [(100.0, 101.0, 99.0, 100.0),
+            (100.0, 100.5, 94.0, 100.0),     # fills rung 0 at 95
+            (100.0, 100.5, 90.0, 100.0),     # fills rung 1 at 91, dragging the average down
+            (100.0, 115.0, 99.0, 112.0)]
+    plan = make_plan(entries=((95.0, 0.5), (91.0, 0.5)), stop=90.9,
+                     tps=((110.0, 1.0),), qty=2.0)
+    on = cfg.with_overrides(min_stop_pct_enforced_at_fill=True)
+    result = run(make_series(bars), on, OneShotProvider(plan, at_index=0))
+
+    assert result.trades or result.open_at_end, "the first rung must have opened a position"
+    assert not [e for e in result.events if "fill refused" in e.message], (
+        "the gate closed a position that was already open")
+
+
 def test_saved_run_records_the_terms_r_is_measured_from(cfg):
     """A run file must record the terms of ``r_multiple``, not only the ratio.
 

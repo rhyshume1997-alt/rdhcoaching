@@ -315,6 +315,26 @@ KEY_SPECS: tuple[KeySpec, ...] = (
         note='',
     ),
     KeySpec(
+        key='min_stop_pct_enforced_at_fill',
+        default=False,
+        spec_type='bool',
+        py_type='bool',
+        members=None,
+        minimum=None,
+        maximum=None,
+        source_id='[OUR CHOICE] — a switch, not a number: the threshold is min_stop_pct '
+                  '(CF-06, S7-C8), which is his',
+        group='11.1',
+        note='OFF by default. min_stop_pct is checked at BUILD time against the PLANNED entry '
+             '(plan.py), and CF-14 step 3 can legitimately clip the stop back inside the floor '
+             'afterwards, so a plan can reach its fill with a stop the bot has already judged '
+             'unusable. This re-checks the floor against the price actually paid and refuses '
+             'the fill rather than opening the position. Measured on 112 trades it takes the '
+             'out-of-sample book from -483 to -142 as closed-book arithmetic; that is not a '
+             're-simulation, and it does not make the system profitable. Turning it on changes '
+             'which trades are taken, so it stays off until a run says otherwise.',
+    ),
+    KeySpec(
         key='max_correlated_concurrent_enabled',
         default=False,
         spec_type='bool',
@@ -3331,6 +3351,7 @@ class Config:
     max_concurrent_leverage_scalp: int = 2
     max_concurrent_leverage_global: int = 4
     max_concurrent_spot: int = 5
+    min_stop_pct_enforced_at_fill: bool = False
     max_correlated_concurrent_enabled: bool = False
     max_correlated_concurrent: int = 2
     correlation_threshold: float = 0.7

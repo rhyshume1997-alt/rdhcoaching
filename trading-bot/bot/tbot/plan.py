@@ -71,6 +71,7 @@ __all__ = [
     "PlanInputs",
     "StopAnchor",
     "StopDecision",
+    "stop_distance_pct",
     "VehicleDecision",
     "SizeSolution",
     "ConsistencyReport",
@@ -394,6 +395,19 @@ class StopAnchor:
     reasons: tuple[str, ...] = ()
 
 
+def stop_distance_pct(reference: Decimal, stop: Decimal) -> Decimal:
+    """Stop width as a percentage of the entry reference: ``|ref - stop| / ref * 100``.
+
+    Extracted so there is exactly **one** of these in the package, for the same reason
+    :func:`rr_ratio` was: :attr:`StopDecision.stop_pct` compares it against ``min_stop_pct`` at
+    build time and the SS12 harness compares it against the same floor at the fill, and two copies
+    of the expression could drift apart silently. ``ZERO`` on a non-positive reference.
+    """
+    if reference <= ZERO:
+        return ZERO
+    return abs(reference - stop) / reference * HUNDRED
+
+
 @dataclass(frozen=True, slots=True)
 class StopDecision:
     """A placed stop: one price, plus the audit trail of how it got there."""
@@ -418,9 +432,7 @@ class StopDecision:
     @property
     def stop_pct(self) -> Decimal:
         """Stop width as a percentage of the reference (blended entry) price."""
-        if self.reference_price <= ZERO:
-            return ZERO
-        return abs(self.reference_price - self.price) / self.reference_price * HUNDRED
+        return stop_distance_pct(self.reference_price, self.price)
 
     @property
     def distance(self) -> Decimal:

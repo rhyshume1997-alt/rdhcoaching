@@ -1057,6 +1057,44 @@ class BacktestEngine:
                     f"TP{tp.index} {target} is behind the {plan.direction.value} fill {fill}")
         return tuple(problems)
 
+    def _fill_floor_problems(self, trade: _LiveTrade, fill: Decimal) -> tuple[str, ...]:
+        """Is the stop still further than ``min_stop_pct`` from the price actually paid?
+
+        **CF-06 / S7-C8 — his floor, re-asked at the fill.**  ``plan.place_stop`` already enforces
+        ``min_stop_pct``, but against the *planned* entry, and CF-14 step 3 may then clip the stop
+        back inside the floor on purpose (step 3 is a hard stated rule; the widen-to-floor remedy
+        is ``[OUR CHOICE]``, so the clip wins).  Either route leaves a plan arriving at its fill
+        with a stop the bot has already judged unusable, and nothing re-asks.
+
+        No new number: the threshold is ``min_stop_pct`` itself.  Only the *moment* is new.
+
+        **Why this refuses before the position opens, and not after.**  A ladder's realised
+        average moves toward the stop as DCA rungs fill, so a late rung can carry an already-open
+        position inside the floor.  That is a *management* question and it has a sourced answer -
+        ``manage._reverify_budget`` (S6-R11/R12): close the excess quantity, never move the stop.
+        That module is unreachable from the harness, and inventing a second answer here would put
+        our judgement where his rule belongs.  So this gate only ever refuses to *open*.
+        """
+        if not self.config.min_stop_pct_enforced_at_fill:
+            return ()
+        if trade.filled_qty_total > ZERO:
+            return ()                      # already open: see the docstring, not this gate's job
+        if fill <= ZERO:
+            return ()
+        from ..plan import stop_distance_pct
+
+        floor = dec(self.config.min_stop_pct)
+        # The same expression StopDecision.stop_pct compares against the floor at build time.
+        # Two copies could drift apart silently, which is why the harness imports it - the same
+        # reason it imports rr_ratio rather than reimplementing abs(target - ref) / stop_dist.
+        distance = stop_distance_pct(fill, dec(trade.plan.stop_price))
+        if distance >= floor:
+            return ()
+        return (
+            f"stop is {distance:.4f}% from the fill {fill}, inside the {floor}% min_stop_pct "
+            f"floor (CF-06, S7-C8)",
+        )
+
     def _trigger_ratio_problems(self, trade: _LiveTrade, fill: Decimal) -> tuple[str, ...]:
         """Re-run the G14 floor, and §8's own consistency check, against the realised fill.
 
@@ -1124,6 +1162,7 @@ class BacktestEngine:
         # string carries the detail the way a gate veto does.
         problems = self._trigger_geometry_problems(trade, price)
         problems += self._trigger_ratio_problems(trade, price)
+        problems += self._fill_floor_problems(trade, price)
         if problems:
             self._close_unfilled(
                 trade, i, ts, PositionState.CANCELLED,
@@ -1157,6 +1196,17 @@ class BacktestEngine:
             qty = trade.plan.qty_total * rung.size_fraction
             if qty <= ZERO:
                 continue
+            # Most affected plans are retest family, so a trigger-only check would miss nearly
+            # all of them.  ``_fill_floor_problems`` returns () once anything has filled, so this
+            # can only refuse to OPEN - a part-filled ladder is never closed from here.
+            floor_problems = self._fill_floor_problems(trade, price)
+            if floor_problems:
+                self._close_unfilled(
+                    trade, i, ts, PositionState.CANCELLED,
+                    "limit fill refused: " + "; ".join(floor_problems),
+                    ("CF-06", "S7-C8"),
+                )
+                return
             self._book_entry(trade, rung, i, ts, price, qty, OrderType.LIMIT,
                              dec(self.config.fee_maker_bps), dec(self.config.slippage_limit_bps),
                              ("SPEC-12.2-A3", "SPEC-12.2-A4", "CF-18"))

@@ -917,3 +917,53 @@ clip. **Step 3 is the only step that moves the stop toward the entry, it runs la
 re-validates after it.** Three findings in three days are that single property: the floor undone
 by the clip, the `widened` flag erased by the clip (`7044e75`), and the ladder-invalidation
 invariant broken by the clip. One architectural fact, found three times.
+
+## Is the ladder-invalidation principle ours to extend? No - CONFLICTS.md already ruled twice
+
+It was put to me that because `plan.py:535` marks the ladder guard **[OUR CHOICE]**, extending it
+past the CF-14 step-3 clip applies a decision this project already made rather than overriding the
+course, and so carries no authority problem. That reads the marker wider than it is.
+
+**The marker's scope is one branch choosing between two of OUR OWN buffer parameterisations.**
+CONFLICTS.md, F6 addendum, states it exactly: *"One guard is ours: if a DCA leg reaches past the
+far edge of its own box, the zone stop would not invalidate the whole ladder, so F6 stands down to
+the ATR fallback and records why."* F6 (zone fraction) and P19 (ATR) are both ours - P19 is called
+"OUR number" in the same file. The guard is us standing down **us**. It is not a general principle
+with authority over a sourced rule.
+
+**And the precedence it would reverse is already recorded, in two places:**
+
+- F6 addendum: *"Precedence is unchanged: step 3's `stop_never_beyond_opposing_level` clip still
+  overrides the F6 stop."*
+- F1 addendum: *"the `stop_never_beyond_opposing_level` clip still overrides it."*
+
+Step 3 is sourced - S5-R25 and S6-R18, and `stop_never_beyond_opposing_level` defaults true on
+S5-R25. So extending the guard past the clip does not apply an existing choice consistently; it
+**reverses a recorded CONFLICTS.md precedence ruling about a sourced rule.** That is a larger act,
+not a smaller one.
+
+Two things do genuinely distinguish this from CF-28/CF-29, and they survive:
+
+- **The source contradicts itself here, and CONFLICTS.md already says so**: *"A stop landing inside
+  another support/demand area is a bad stop - S6-R19 - but he places one anyway (S6-A13)."*
+  CF-28/CF-29 by contrast are his rules working exactly as specified. A conflict between two
+  sourced rules is a different object from a disagreement with one.
+- **The existing ruling was made without this evidence.** Whoever ruled "step 3 overrides F6" did
+  not know it yields 26 trades, zero winners, 79% of the loss. New evidence bearing on a recorded
+  ruling is a reason to revisit it - which is still a CONFLICTS.md-class decision, and still Rhys's.
+
+## Two numbers in that same re-ranking need correcting
+
+**"The clean-ladder book wins 62 of 86 - 72.1%".** That is the naive `net_pnl_usd > 0` count. The
+package's own §12.4 primary definition treats `abs(r_multiple) <= 0.05` as break-even, giving
+**57W / 23L / 6BE = 66.28%**. The argument is unharmed - a 66% win rate that loses -253.76 is a
+payoff-ratio problem and nothing else - but the naive count is the same trap that produced 63.64%
+against the report's 57.14% earlier on this page. **0 of 26 is robust under both definitions.**
+
+**"Resolving item 1 leaves -253.76 on 86 trades - still losing."** That is closed-book arithmetic,
+and this page has just finished documenting why that fails: the -483 -> -142 estimate overstated
+by 6x. Removing 2 trades happened to be a clean subtraction with zero surviving trades moved.
+Removing **26** will not be - equity path, concurrency, touch limits and budget re-verification all
+move. -253.76 is the book minus those trades, not what a re-simulation would produce, and whether
+the residual still loses is **unmeasured in either direction**. It needs a resolution chosen and a
+run, in that order.

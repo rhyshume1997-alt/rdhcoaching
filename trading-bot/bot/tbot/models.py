@@ -858,6 +858,16 @@ class TradePlan:
     #: not a first partial; ``rr_measured_to`` selects which of the two the G14 gate reads.
     #: ``None`` only on hand-built plans in tests that predate the field.
     rr_to_final_tp: Decimal | None = None
+    #: **CF-06 / CF-14** — how ``stop_price`` came to be where it is.  ``place_stop`` decides
+    #: both on its :class:`~tbot.plan.StopDecision`, but that object dies at ``build_plan``'s
+    #: return: ``PlanBuild`` holds it, the plan does not, so nothing downstream could say why a
+    #: stop sat where it sat.  Answering "was this stop inside the ``min_stop_pct`` floor, and if
+    #: so which rule put it there" then needed an instrumented re-run rather than a query.
+    #: ``stop_widened_to_min_pct`` is true when the CF-06 floor widened the stop;
+    #: ``stop_clipped_to_level_id`` names the opposing level when CF-14 step 3 clipped it, which
+    #: **undoes** the widening by design (``plan.py``: the clip runs after the floor and wins).
+    stop_widened_to_min_pct: bool = False
+    stop_clipped_to_level_id: str | None = None
 
 
 @dataclass(slots=True)

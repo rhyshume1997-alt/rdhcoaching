@@ -185,6 +185,10 @@ def _run_payload(args: argparse.Namespace, result: Any, report: Any,
                 "planned_average_entry": str(t.planned_average_entry),
                 "initial_stop": str(t.initial_stop),
                 "initial_risk_usd": str(t.initial_risk_usd),
+                # ...and WHY the stop sits there, so "was this inside the CF-06 floor, and which
+                # rule put it there" is a query on the record rather than an instrumented re-run.
+                "stop_widened_to_min_pct": t.stop_widened_to_min_pct,
+                "stop_clipped_to_level_id": t.stop_clipped_to_level_id,
             }
             for t in result.trades
         ],

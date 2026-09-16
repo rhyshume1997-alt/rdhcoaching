@@ -1359,6 +1359,8 @@ def build_plan(inputs: PlanInputs, config: Config) -> PlanBuild:
         expires_at_index=inputs.expires_at_index,
         source_ids=tuple(dict.fromkeys(src)),
         rr_to_final_tp=rr_final,
+        stop_widened_to_min_pct=stop.widened_to_min_stop_pct,
+        stop_clipped_to_level_id=stop.clipped_to_level_id,
     )
 
     rep = assert_plan_consistent(

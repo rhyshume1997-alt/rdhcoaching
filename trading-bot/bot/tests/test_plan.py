@@ -620,6 +620,37 @@ def test_stop_is_widened_to_the_min_stop_pct_floor(cfg: Config) -> None:
     assert money_close(d.stop_pct, dec(tight.min_stop_pct))
 
 
+def test_the_widening_flag_survives_onto_the_plan(cfg: Config) -> None:
+    """``place_stop`` deciding it is not enough; the plan has to carry the decision forward.
+
+    ``StopDecision.widened_to_min_stop_pct`` and ``.clipped_to_level_id`` were computed correctly
+    and then dropped: ``PlanBuild`` held the decision, ``TradePlan`` did not, and nothing in the
+    package read either. The cost was not abstract - asking "was this stop inside the CF-06
+    floor, and which rule put it there" of 27 saved trades needed an instrumented re-run of the
+    whole backtest, because the record could not answer it.
+
+    Both halves are asserted against a build that genuinely sets the flag. An equality check on
+    a build where the floor never fires reads ``False == False`` and would pass against a plan
+    field hard-coded to ``False``, which is the mistake this docstring exists to stop someone
+    repeating: ``min_stop_pct`` is raised to 5.0 here precisely so the flag is **true**.
+    """
+    wide = cfg.with_overrides(min_stop_pct=5.0)
+    build = PL.build_plan(_inputs(wide), wide)
+    assert build.stop is not None and build.plan is not None
+    assert build.stop.widened_to_min_stop_pct, (
+        "fixture must trigger the CF-06 floor or this test proves nothing")
+
+    assert build.plan.stop_widened_to_min_pct is True
+    assert build.plan.stop_clipped_to_level_id == build.stop.clipped_to_level_id
+
+    # ...and false when the floor does not fire, so the field tracks the decision rather than
+    # being true by construction.
+    quiet = PL.build_plan(_inputs(cfg), cfg)
+    assert quiet.stop is not None and quiet.plan is not None
+    assert quiet.stop.widened_to_min_stop_pct is False
+    assert quiet.plan.stop_widened_to_min_pct is False
+
+
 def test_short_stop_sits_above_the_entry(cfg: Config) -> None:
     rows = flat_series(40)
     rows[30] = (100.0, 100.6, 99.8, 100.0)

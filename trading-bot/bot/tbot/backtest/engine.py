@@ -655,6 +655,14 @@ class ClosedTrade:
     excess_risk_usd: Decimal
     liquidated: bool
     fills: tuple[Fill, ...]
+    #: Why ``initial_stop`` sits where it does: the CF-06 ``min_stop_pct`` floor widened it, or
+    #: CF-14 step 3 clipped it to an opposing level, or neither.  ``place_stop`` decides both on
+    #: its :class:`~tbot.plan.StopDecision`, but that object dies at ``build_plan``'s return -
+    #: ``PlanBuild`` holds it, the plan did not - so a saved run could not say why a stop sat
+    #: where it sat, and the question needed an instrumented re-run instead of a query.  The
+    #: clip **undoes** the widening by design and wins, so the two are near-exclusive.
+    stop_widened_to_min_pct: bool = False
+    stop_clipped_to_level_id: str | None = None
 
     @property
     def full_ladder(self) -> bool:
@@ -1366,6 +1374,8 @@ class BacktestEngine:
             rung_fill_flags=tuple(r.filled for r in plan.entries),
             touch_index_at_entry=pos.touch_index_at_entry,
             excess_risk_usd=trade.excess_risk_usd, liquidated=trade.liquidated,
+            stop_widened_to_min_pct=plan.stop_widened_to_min_pct,
+            stop_clipped_to_level_id=plan.stop_clipped_to_level_id,
             fills=tuple(trade.fills),
         )
         self._closed.append(closed_trade)

@@ -1604,6 +1604,44 @@ def test_the_surviving_rung_is_resized_to_the_whole_position(uncapped: Config) -
     assert plan.planned_average_entry == dec(100.0)
 
 
+def _two_rungs_beyond_the_stop(cfg: Config) -> PL.PlanInputs:
+    """A THREE-rung ladder where the clip lands the stop above rungs 1 and 2, so two are dropped.
+
+    ``_clipped_inside_ladder`` has exactly two rungs, so it can only ever drop one - which is why
+    the note's ``keep + 1`` arithmetic was right by coincidence there and wrong in general.
+
+    Two drops need the stop above rung 1, so the blended entry must exceed rung 1: a wide first
+    gap and a narrow second (100 / 95.0 / 94.5 at .15/.325/.525 blends to 95.4875). The opposing
+    level at 95.2 then clips the stop to 95.401, above both DCA rungs.
+    """
+    return _inputs(cfg, opposing_levels=[level("OPP", 95.2)],
+                   dca_levels=[level("L1", 95.0), level("L2", 94.5)])
+
+
+def _three_rung(cfg: Config, **kw) -> Config:
+    """``dca_count_default`` ships at 1, so the shipped ladder is two rungs. Ask for three."""
+    return _with(cfg, dca_count_default=2, **kw)
+
+
+def test_the_drop_note_counts_the_whole_original_ladder(uncapped: Config) -> None:
+    """The note reports how much of the ladder went, so it must not assume exactly one rung did.
+
+    ``build_entry_ladder`` rebinds ``rungs``, so the original length is gone by the time the note
+    is written. Reconstructing it as ``keep + 1`` silently understates every multi-drop: here two
+    rungs carrying 85 % of the position are removed and the note claimed one of two kept.
+    """
+    base = _three_rung(uncapped)
+    cfg = _three_rung(uncapped, entry_ladder_must_sit_inside_stop=True)
+    off = PL.build_plan(_two_rungs_beyond_the_stop(base), base).plan
+    assert [r.price for r in off.entries] == [dec(100.0), dec(95.0), dec(94.5)], (
+        "fixture must start with three rungs or this proves nothing")
+
+    build = PL.build_plan(_two_rungs_beyond_the_stop(cfg), cfg)
+    assert [r.price for r in build.plan.entries] == [dec(100.0)]
+    note = next(n for n in build.notes if "entry_rungs_dropped_outside_stop" in n)
+    assert "1_of_3_kept" in note, note
+
+
 def test_the_stop_is_not_re_placed_after_the_drop(uncapped: Config) -> None:
     """Step 3 keeps the last word on the stop - he takes the tighter stop too (S6 [01:12:28])."""
     off = PL.build_plan(_clipped_inside_ladder(uncapped), uncapped).plan

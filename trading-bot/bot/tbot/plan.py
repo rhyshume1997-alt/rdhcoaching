@@ -1361,6 +1361,9 @@ def build_plan(inputs: PlanInputs, config: Config) -> PlanBuild:
     if config.entry_ladder_must_sit_inside_stop:
         keep = rungs_the_stop_invalidates(rungs, stop.price, setup.direction)
         if keep < len(rungs):
+            # Captured BEFORE build_entry_ladder rebinds ``rungs``: after the rebuild the
+            # original length is gone, and the note below reports how much of the ladder went.
+            dropped_from = len(rungs)
             if keep == 0:
                 return PlanBuild(
                     None, stop=stop, vehicle_decision=vd,
@@ -1380,7 +1383,7 @@ def build_plan(inputs: PlanInputs, config: Config) -> PlanBuild:
             )
             notes.extend(n for n in regrown if n not in notes)
             notes.append(
-                f"entry_rungs_dropped_outside_stop:{keep}_of_{keep + 1}_kept "
+                f"entry_rungs_dropped_outside_stop:{keep}_of_{dropped_from}_kept "
                 f"stop={stop.price} (Q17)"
             )
             planned_avg = blended_entry(rungs)

@@ -402,7 +402,15 @@ class StopDecision:
     anchor: StopAnchor
     reference_price: Decimal
     buffer: Decimal
+    #: CF-14 step 3 moved the stop inside this opposing level.  The clip runs **after** the
+    #: ``min_stop_pct`` widening and wins, by design: step 3 is a hard stated rule and the floor
+    #: is ``[OUR CHOICE]``, so inverting the precedence would put our preference above his rule.
     clipped_to_level_id: str | None = None
+    #: The CF-06 ``min_stop_pct`` floor fired during placement.  This says the floor **fired**,
+    #: not that the final price still respects it: a later clip can pull the stop back inside the
+    #: floor, and when it does, both flags are true and :attr:`stop_pct` is below the floor.
+    #: Whether the final price respects the floor is derivable from the price; whether the floor
+    #: ever fired is not, which is why this is recorded rather than reconstructed.
     widened_to_min_stop_pct: bool = False
     reasons: tuple[str, ...] = ()
     source_ids: tuple[str, ...] = ("CF-14", "P19")
@@ -599,7 +607,15 @@ def place_stop(
                     price = P.apply_stop_buffer(lp, Direction.LONG, atr_buf)
                     clipped = lvl.id
         if clipped is not None:
-            widened = False
+            # ``widened`` is deliberately NOT reset here.  It records whether the CF-06 floor
+            # FIRED, which is a fact about placement; whether the final price still respects the
+            # floor is a different fact, derivable from the price itself.  Collapsing the two
+            # made the flag report ``False`` for the case that matters most - the floor fired and
+            # CF-14 step 3 overruled it - so a saved run could not tell that apart from "the
+            # floor never needed to fire".  On one 27-trade sample the flag read true twice, on
+            # exactly the two trades that were never clipped, while eleven clipped trades ended
+            # with a stop inside the floor and the record denied the floor had fired at all.
+            # ``reasons`` always carried both facts; the flags now match it.
             reasons.append(
                 f"stop_moved_inside_opposing_level:{clipped} "
                 f"(CF-14 step 3, S5-R25, S6-R19)"

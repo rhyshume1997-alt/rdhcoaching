@@ -1424,6 +1424,42 @@ def test_f6_keeps_the_opposing_level_clip_and_the_min_stop_floor(uncapped: Confi
     assert clipped.price == dec("98.5") + P.stop_buffer(series, uncapped, 59)
 
 
+def test_a_clip_inside_the_floor_reports_both_rules_firing(cfg: Config) -> None:
+    """The case where CF-06 and CF-14 step 3 disagree, which neither rule's own test covers.
+
+    The floor widens a too-tight stop out to ``min_stop_pct``; CF-14 step 3 then pulls it back
+    toward the entry, to a distance the floor has already judged unusable, and nothing re-checks
+    the floor afterwards. Two sourced rules composing into an unsourced outcome.
+
+    ``place_stop`` used to set ``widened_to_min_stop_pct = False`` whenever it clipped, so this
+    exact case - the one that matters - reported as though the floor had never fired. The two
+    behaviours were each tested in isolation and their interaction was not: the clip test never
+    looked at ``widened``, and the floor test passed no opposing levels. This is that test.
+
+    It asserts the composition, not the precedence. The precedence is deliberate and stays:
+    step 3 is a hard stated rule and the floor is ``[OUR CHOICE]``.
+    """
+    rows = flat_series(40)
+    rows[30] = (100.0, 100.5, 99.95, 100.0)
+    s = make_series(rows)
+    tight = cfg.with_overrides(stop_buffer_atr=0.0)
+    kw = dict(direction=Direction.LONG, bar_index=30, reference_price=dec(100), at_index=39)
+
+    free = PL.place_stop(s, tight, **kw)
+    assert free.widened_to_min_stop_pct, "fixture must trigger the floor or this proves nothing"
+    assert money_close(free.stop_pct, dec(tight.min_stop_pct))
+
+    # An opposing support sitting between the entry and the floor-widened stop.
+    both = PL.place_stop(s, tight, opposing_levels=[level("OPP", 99.8)], **kw)
+    assert both.clipped_to_level_id == "OPP"
+    assert both.widened_to_min_stop_pct, (
+        "the floor fired and the clip overruled it; the record must say both happened")
+    assert both.stop_pct < dec(tight.min_stop_pct), (
+        "fixture must leave the final stop inside the floor or it is not this case")
+    assert any("stop_widened_to_min_stop_pct" in r for r in both.reasons)
+    assert any("stop_moved_inside_opposing_level" in r for r in both.reasons)
+
+
 def test_f6_is_still_subject_to_the_cf06_wide_stop_ladder(uncapped: Config) -> None:
     """CF-06 runs *after* F6: a zone so deep that its stop is > 9 % still tightens/downgrades."""
     series = make_series(flat_series(60))

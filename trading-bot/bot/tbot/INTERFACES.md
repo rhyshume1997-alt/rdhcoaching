@@ -192,7 +192,7 @@ invariants (`min_zone_depth_atr < max_zone_depth_atr`, `rsi_oversold < rsi_overb
 maximum, source_id, group, note)`. Use `KEY_SPEC_BY_NAME[k].source_id` whenever you need to print
 or log why a number is what it is.
 
-**Do not add keys** without transcript evidence. The 254 are the complete tunable surface (§11.13 + the 8 evidence-derived additions of CHANGELOG_EVIDENCE.md + the 3 frame-derived additions of FRAME_FINDINGS.md: F1 `zone_wick_band_enabled` / `zone_wick_band_max_ratio` from pass 1, F6 `stop_buffer_zone_fraction` from pass 2 + the 2 Discord-derived additions of CHANGELOG_EVIDENCE.md: `max_entry_distance_enabled` / `max_entry_distance_pct` + the 4 GAPS.md GAP 2 additions: `max_correlated_concurrent_enabled`, `max_correlated_concurrent`, `correlation_threshold`, `correlation_lookback_bars`, `min_correlation_overlap_bars` + `min_stop_pct_enforced_at_fill`, the fill-time re-ask of the CF-06 floor + `entry_ladder_must_sit_inside_stop`, the Q16 ladder-vs-stop rule). If a rule needs a number
+**Do not add keys** without transcript evidence. The 254 are the complete tunable surface (§11.13 + the 8 evidence-derived additions of CHANGELOG_EVIDENCE.md + the 3 frame-derived additions of FRAME_FINDINGS.md: F1 `zone_wick_band_enabled` / `zone_wick_band_max_ratio` from pass 1, F6 `stop_buffer_zone_fraction` from pass 2 + the 2 Discord-derived additions of CHANGELOG_EVIDENCE.md: `max_entry_distance_enabled` / `max_entry_distance_pct` + the 4 GAPS.md GAP 2 additions: `max_correlated_concurrent_enabled`, `max_correlated_concurrent`, `correlation_threshold`, `correlation_lookback_bars`, `min_correlation_overlap_bars` + `min_stop_pct_enforced_at_fill`, the fill-time re-ask of the CF-06 floor + `entry_ladder_must_sit_inside_stop`, the Q17 ladder-vs-stop rule). If a rule needs a number
 that is not in the table, that is a spec gap: raise it, do not invent a local constant. If you
 must hard-code an unavoidable engineering constant, mark it `[OUR CHOICE]` in the docstring and
 flag it for the sweep list.
@@ -647,7 +647,7 @@ Owns no configuration keys of its own; it reads `level_tolerance_atr`, `touch_re
 | `dca_count_default` | `1` | CF-17; S6-R16 |
 | `dca_count_max` | `2` | CF-17; S2-R9, S6 `[01:01:51]` |
 | `dca_count_scalp_max` | `1` | CF-17; S8-R17 |
-| `entry_ladder_must_sit_inside_stop` | `false` | Q16 derived, TBOT1 `[00:38:08]`, S6 `[01:12:28]`, S6 `[00:23:05]` — drop rungs the final stop no longer invalidates |
+| `entry_ladder_must_sit_inside_stop` | `false` | Q17 derived, TBOT1 `[00:38:08]`, S6 `[01:12:28]`, S6 `[00:23:05]` — drop rungs the final stop no longer invalidates |
 | `dca_size_split_2` | `[0.39, 0.61]` | CF-18; Q3 derived, S6 `[00:48:10]` — 35:55 of his own LINK ladder (avg 17.6332 reproduces exactly) |
 | `dca_size_split_3` | `[0.2, 0.3, 0.5]` | CF-18; Q3 derived, S6 `[00:38:49]`-`[00:40:05]` — 35:55:100 = 18.4/29.0/52.6, avg 17.9215 exact |
 | `dca_size_split_wick_heavy_2` | `[0.25, 0.75]` | CF-18; Q3 stated, S6 `[01:54:34]` ("very light there, like 20 to 30%") |

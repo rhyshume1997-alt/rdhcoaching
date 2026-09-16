@@ -1553,7 +1553,7 @@ def test_f9_a_hand_built_plan_without_the_field_falls_back_to_tp1(uncapped: Conf
     assert PL.rr_for_gate(uncapped, plan) == plan.rr_to_tp1
 
 
-# --------------------------------------------------------------------- Q16: ladder vs stop
+# --------------------------------------------------------------------- Q17: ladder vs stop
 #
 # The CF-14 step-3 clip can pull the stop INSIDE the entry ladder, leaving DCA rungs resting at
 # prices the stop says the trade is already dead at.  Measured on 112 real trades that is 26
@@ -1668,7 +1668,7 @@ def _rung(i: int, price: float, size: str = "0.5") -> EntryRung:
 
 
 class TestRungsTheStopInvalidates:
-    """Direct cover for the Q16 predicate, including the boundary ``build_plan`` cannot reach.
+    """Direct cover for the Q17 predicate, including the boundary ``build_plan`` cannot reach.
 
     A rung sitting EXACTLY on the stop is dead: entering there is entering at the price that
     closes the trade.  The clip always adds a buffer, so no end-to-end fixture lands on it, and

@@ -282,7 +282,7 @@ def _ladder_extreme(rungs: Sequence[EntryRung]) -> Decimal | None:
 def rungs_the_stop_invalidates(
     rungs: Sequence[EntryRung], stop_price: Decimal | float, direction: Direction
 ) -> int:
-    """How many leading rungs the final stop still invalidates (**Q16**).
+    """How many leading rungs the final stop still invalidates (**Q17**).
 
     A rung at or beyond the stop is a rung the trade would add size to at a price where its own
     stop says the position is already dead.  He does not place those: TBOT1 ``[00:38:08]`` prices
@@ -1345,7 +1345,7 @@ def build_plan(inputs: PlanInputs, config: Config) -> PlanBuild:
         return PlanBuild(None, stop=stop, vehicle_decision=vd,
                          reasons=vd.reasons, notes=tuple(notes))
 
-    # --- 3b. Q16: the stop constrains the ladder, not the reverse ---------------------------
+    # --- 3b. Q17: the stop constrains the ladder, not the reverse ---------------------------
     # CF-14 step 3 has now had the last word on the stop - and it keeps it, exactly as
     # CONFLICTS.md rules and as he does himself at S6 [01:12:28].  What no ruling covered is what
     # happens to a ladder the clipped stop no longer invalidates.  He answers that too: the rung
@@ -1364,7 +1364,7 @@ def build_plan(inputs: PlanInputs, config: Config) -> PlanBuild:
             if keep == 0:
                 return PlanBuild(
                     None, stop=stop, vehicle_decision=vd,
-                    reasons=("no_entry_rung_the_stop_invalidates (Q16, TBOT1 [00:38:08])",),
+                    reasons=("no_entry_rung_the_stop_invalidates (Q17, TBOT1 [00:38:08])",),
                     notes=tuple(notes),
                 )
             rungs, regrown = build_entry_ladder(
@@ -1381,7 +1381,7 @@ def build_plan(inputs: PlanInputs, config: Config) -> PlanBuild:
             notes.extend(n for n in regrown if n not in notes)
             notes.append(
                 f"entry_rungs_dropped_outside_stop:{keep}_of_{keep + 1}_kept "
-                f"stop={stop.price} (Q16)"
+                f"stop={stop.price} (Q17)"
             )
             planned_avg = blended_entry(rungs)
             ref_price = sizing_reference(config, rungs)

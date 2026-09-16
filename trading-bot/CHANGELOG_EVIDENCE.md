@@ -571,7 +571,7 @@ a distance, so the question may be the wrong shape).
 
 ---
 
-## Q16 — What happens when the stop cannot sit beyond the whole entry ladder — **`derived`**
+### Q17 — What happens when the stop cannot sit beyond the whole entry ladder — **`derived`**
 
 Not one of the original fifteen. It was raised by a measured defect: the backtest fills DCA rungs
 on the far side of the trade's own stop - the bot adds size at a price where its stop says the

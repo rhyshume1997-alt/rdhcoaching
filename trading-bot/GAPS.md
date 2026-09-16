@@ -823,3 +823,45 @@ Also: in-sample headline net P&L is -639.02 but the closed book is **-729.43**. 
 discloses why - `1 position(s) still open at the end: excluded from the closed-trade metrics` -
 and the +90.41 difference is that position's unrealised mark. Out-of-sample has none open, so the
 two segments' headline numbers are not like for like.
+
+## Confirmed by re-simulation: the prediction held exactly
+
+Both 1,500-bar `--split` runs at `b88351e`, identical but for the flag.
+
+|  | OFF | ON | delta |
+|---|---|---|---|
+| IS closed trades | 77 | **76** | -1 |
+| IS headline net | -639.02 | -623.45 | +15.57 |
+| IS closed book | -729.43 | -713.86 | +15.57 |
+| IS win rate (def. 1) | 57.14% (44W/27L/6BE) | 57.89% (44W/26L/6BE) | +0.75pp |
+| IS expectancy | -0.3847 R / -9.47 USD | -0.3232 R / -9.39 USD | |
+| OOS closed trades | 35 | **34** | -1 |
+| OOS net | -483.28 | **-428.12** | +55.16 |
+| OOS win rate (def. 1) | 37.14% (13W/22L) | 38.24% (13W/21L) | +1.10pp |
+| OOS expectancy | -2.5637 R / -13.81 USD | **-2.6011 R** / -12.59 USD | |
+
+**Two refusals, and they are the two named in advance** - IS T0055 (rung 0 at 0.4925%) and OOS
+T0039 (0.4271%). Nothing else changed: **zero surviving trades moved P&L in either segment**, so
+the caveat that refusing trades reshuffles equity and concurrency did not bite at this size. The
+removals are clean subtractions of -15.57 and -55.16.
+
+The OFF run also reproduces the pre-flag book to the cent (-729.43 / -483.28), which is
+`b88351e`'s bit-identical-while-disabled property confirmed on real data rather than on a fixture.
+
+**The predicted improvement was 2 trades; the closed-book arithmetic had implied 23. Out-of-sample
+moved -483.28 -> -428.12, not -483 -> -142.** The estimate overstated the gain by about 6x.
+
+### The R trap, caught in the act
+
+Out-of-sample `expectancy_r` got **worse** when a losing trade was removed: -2.5637 -> -2.6011,
+while `expectancy_usd` improved -13.81 -> -12.59. T0039 risked $42.71 and lost 1.29R, so deleting
+it *raised* the average |R| of the losers that remain - several of which risked under $6 and so
+score -3R to -54R on losses of a few dollars. A number that moves the wrong way when the book
+improves is not an expectancy. **Dollars are the headline; R is diagnostic only.** This is now a
+worked example for the unbuilt §12.5 reporting guard, not a hypothetical.
+
+### The verdict is unchanged
+
+Out-of-sample: **34 trades, 38.24%, -428.12.** In-sample: **76 trades, 57.89%, -623.45.** Both
+segments still lose, in-sample still loses, and the best stop gate measured in this package moves
+out-of-sample by 11%. **No out-of-sample edge, and no stop gate found here creates one.**

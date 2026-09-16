@@ -1259,6 +1259,29 @@ KEY_SPECS: tuple[KeySpec, ...] = (
              'the geometry and not this threshold, which stays OUR number.',
     ),
     KeySpec(
+        key='entry_ladder_must_sit_inside_stop',
+        default=False,
+        spec_type='bool',
+        py_type='bool',
+        members=None,
+        minimum=None,
+        maximum=None,
+        source_id='Q16 derived — TBOT1 `[00:38:08]` ("ladder all the way till honestly I would '
+                  'want a wider stop... I wouldn\'t have a DCA there"); S6 `[01:12:28]` (the '
+                  'CF-14 step-3 collision worked on tape: tighter stop, then the DCA re-sited '
+                  'inside it); S6 `[00:23:05]` ("you do not have a DCA" when the stop cannot be '
+                  'placed); one-entry trades sanctioned at S8 `[00:31:44]`, S8 `[01:02:28]`, '
+                  'S5 `[00:41:10]`. [OUR CHOICE] is the SWITCH only, not the rule: the rule and '
+                  'the threshold (the stop itself) are his.',
+        group='11.3',
+        note='Drops entry rungs that the final stop no longer invalidates. CF-14 step 3 keeps '
+             'winning on stop placement - he takes the tighter stop too - this only says what '
+             'happens to the ladder afterwards, which no CONFLICTS.md ruling addressed. The '
+             'ladder is rebuilt through build_entry_ladder with a reduced dca_count so '
+             'entry_split renormalises: a one-entry survivor sizes at 1.0, not at its old 0.15. '
+             'Sweep: false (measure first), true.',
+    ),
+    KeySpec(
         key='dca_size_split_2',
         default=[0.39, 0.61],
         spec_type='list',
@@ -3419,6 +3442,7 @@ class Config:
     dca_count_scalp_max: int = 1
     dca_count_breakdown: int = 0
     dca2_min_zone_depth_atr: float = 1.5
+    entry_ladder_must_sit_inside_stop: bool = False
     dca_size_split_2: list[float] = field(default_factory=lambda: [0.39, 0.61])
     dca_size_split_3: list[float] = field(default_factory=lambda: [0.15, 0.325, 0.525])
     dca_size_split_wick_heavy_2: list[float] = field(default_factory=lambda: [0.25, 0.75])

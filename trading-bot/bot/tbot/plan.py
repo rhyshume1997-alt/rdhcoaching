@@ -279,6 +279,32 @@ def _ladder_extreme(rungs: Sequence[EntryRung]) -> Decimal | None:
     return funded[-1].price if funded else None
 
 
+def rungs_the_stop_invalidates(
+    rungs: Sequence[EntryRung], stop_price: Decimal | float, direction: Direction
+) -> int:
+    """How many leading rungs the final stop still invalidates (**Q16**).
+
+    A rung at or beyond the stop is a rung the trade would add size to at a price where its own
+    stop says the position is already dead.  He does not place those: TBOT1 ``[00:38:08]`` prices
+    the ladder against the stop he could actually place and declines the rung; S6 ``[01:12:28]``
+    hits the CF-14 step-3 collision, takes the tighter stop and re-sites the DCA inside it;
+    S6 ``[00:23:05]`` drops the DCA entirely where the stop cannot be placed.
+
+    Zero-sized rungs do not count against the ladder, for the reason :func:`_ladder_extreme`
+    already gives: the TBOT1-C6 low-conviction legs are armed but not funded, they buy nothing,
+    and the engine skips them at fill time.  The ladder is monotone by construction, so this is a
+    prefix count.
+    """
+    stop = dec(stop_price)
+    for i, r in enumerate(rungs):
+        if r.size_fraction <= ZERO:
+            continue
+        dead = r.price <= stop if direction is Direction.LONG else r.price >= stop
+        if dead:
+            return i
+    return len(rungs)
+
+
 def build_entry_ladder(
     config: Config,
     *,
@@ -1318,6 +1344,47 @@ def build_plan(inputs: PlanInputs, config: Config) -> PlanBuild:
     if vd.skip:
         return PlanBuild(None, stop=stop, vehicle_decision=vd,
                          reasons=vd.reasons, notes=tuple(notes))
+
+    # --- 3b. Q16: the stop constrains the ladder, not the reverse ---------------------------
+    # CF-14 step 3 has now had the last word on the stop - and it keeps it, exactly as
+    # CONFLICTS.md rules and as he does himself at S6 [01:12:28].  What no ruling covered is what
+    # happens to a ladder the clipped stop no longer invalidates.  He answers that too: the rung
+    # moves inside the stop, or it is dropped and the trade goes one-entry (S6 [00:23:05]; one
+    # entry sanctioned at S8 [00:31:44], S8 [01:02:28], S5 [00:41:10]).  Re-siting requires
+    # inventing a price, so this drops - the remedy he states in words.
+    #
+    # Rebuilt through build_entry_ladder rather than by slicing the list, so entry_split
+    # renormalises: a lone survivor sizes at 1.0, not at the 0.15 it carried as leg one of three.
+    # The stop is NOT re-placed afterwards.  That would be circular, and it is unnecessary:
+    # dropping the rungs nearest the stop moves the average away from it, so the CF-06 floor can
+    # only get further from violation, never closer.
+    if config.entry_ladder_must_sit_inside_stop:
+        keep = rungs_the_stop_invalidates(rungs, stop.price, setup.direction)
+        if keep < len(rungs):
+            if keep == 0:
+                return PlanBuild(
+                    None, stop=stop, vehicle_decision=vd,
+                    reasons=("no_entry_rung_the_stop_invalidates (Q16, TBOT1 [00:38:08])",),
+                    notes=tuple(notes),
+                )
+            rungs, regrown = build_entry_ladder(
+                config,
+                direction=setup.direction,
+                entry_price=entry_price,
+                entry_level_id=inputs.entry_level.id,
+                dca_levels=inputs.dca_levels,
+                dca_count=keep - 1,
+                at_index=at,
+                wick_heavy=inputs.wick_heavy,
+                conviction=setup.conviction,
+            )
+            notes.extend(n for n in regrown if n not in notes)
+            notes.append(
+                f"entry_rungs_dropped_outside_stop:{keep}_of_{keep + 1}_kept "
+                f"stop={stop.price} (Q16)"
+            )
+            planned_avg = blended_entry(rungs)
+            ref_price = sizing_reference(config, rungs)
 
     # --- 4. take-profits (CF-27, CF-28) -----------------------------------------------------
     tps, tp_notes = select_take_profits(

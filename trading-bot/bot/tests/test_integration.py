@@ -172,7 +172,7 @@ def test_cli_config_runs(capsys):
     assert cli.main(["config"]) == 0
     out = capsys.readouterr().out
     assert "key" in out and "source" in out
-    assert "253 keys exist in total" in out
+    assert "254 keys exist in total" in out
 
 
 def test_cli_config_json_is_machine_readable(capsys):

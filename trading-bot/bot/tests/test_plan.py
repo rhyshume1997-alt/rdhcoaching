@@ -14,6 +14,8 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
+import dataclasses
+
 import pytest
 
 import tbot.plan as PL
@@ -1549,3 +1551,152 @@ def test_f9_a_hand_built_plan_without_the_field_falls_back_to_tp1(uncapped: Conf
     assert plan is not None
     plan.rr_to_final_tp = None
     assert PL.rr_for_gate(uncapped, plan) == plan.rr_to_tp1
+
+
+# --------------------------------------------------------------------- Q16: ladder vs stop
+#
+# The CF-14 step-3 clip can pull the stop INSIDE the entry ladder, leaving DCA rungs resting at
+# prices the stop says the trade is already dead at.  Measured on 112 real trades that is 26
+# trades, -958.95 and zero winners (GAPS.md).  He answers it himself - TBOT1 [00:38:08] declines
+# the rung, S6 [01:12:28] re-sites it, S6 [00:23:05] drops it - and the flag ships off.
+
+def _clipped_inside_ladder(cfg: Config) -> PL.PlanInputs:
+    """Inputs whose step-3 clip lands the stop ABOVE the 97.0 DCA rung but below the average.
+
+    The opposing level at 97.3 clips the stop to 97.5012.  The ladder is 100.00 / 97.00, so the
+    DCA rung - carrying 61 % of the size - rests a full 0.5 below the stop.  A clip further up
+    (98.0) instead trips ``assert_plan_consistent``'s "stop is not below the blended entry", which
+    is a different failure and not the one under test.
+    """
+    return _inputs(cfg, opposing_levels=[level("OPP", 97.3)])
+
+
+def _with(cfg: Config, **kw) -> Config:
+    return dataclasses.replace(cfg, **kw)
+
+
+def test_the_defect_this_rule_exists_for_is_real_while_the_flag_is_off(uncapped: Config) -> None:
+    """Guard against a vacuous fixture: OFF must genuinely rest a funded rung beyond the stop."""
+    plan = PL.build_plan(_clipped_inside_ladder(uncapped), uncapped).plan
+    assert plan is not None
+    assert plan.stop_clipped_to_level_id == "OPP"
+    beyond = [r for r in plan.entries if r.size_fraction > 0 and r.price <= plan.stop_price]
+    assert beyond, "fixture no longer reproduces the defect; the rest of this block proves nothing"
+    assert beyond[0].price == dec(97.0)
+    assert beyond[0].size_fraction == dec("0.61")
+
+
+def test_a_funded_rung_the_stop_no_longer_invalidates_is_dropped(uncapped: Config) -> None:
+    cfg = _with(uncapped, entry_ladder_must_sit_inside_stop=True)
+    build = PL.build_plan(_clipped_inside_ladder(cfg), cfg)
+    assert build.ok, build.reasons
+    plan = build.plan
+    assert [r.price for r in plan.entries] == [dec(100.0)]
+    assert all(r.price > plan.stop_price for r in plan.entries)
+    assert any("entry_rungs_dropped_outside_stop" in n for n in build.notes)
+
+
+def test_the_surviving_rung_is_resized_to_the_whole_position(uncapped: Config) -> None:
+    """Dropping a rung must renormalise, or the trade goes on at 39 % of its intended size."""
+    cfg = _with(uncapped, entry_ladder_must_sit_inside_stop=True)
+    plan = PL.build_plan(_clipped_inside_ladder(cfg), cfg).plan
+    assert plan.entries[0].size_fraction == dec(1)
+    assert plan.planned_average_entry == dec(100.0)
+
+
+def test_the_stop_is_not_re_placed_after_the_drop(uncapped: Config) -> None:
+    """Step 3 keeps the last word on the stop - he takes the tighter stop too (S6 [01:12:28])."""
+    off = PL.build_plan(_clipped_inside_ladder(uncapped), uncapped).plan
+    cfg = _with(uncapped, entry_ladder_must_sit_inside_stop=True)
+    on = PL.build_plan(_clipped_inside_ladder(cfg), cfg).plan
+    assert on.stop_price == off.stop_price
+    assert on.stop_clipped_to_level_id == off.stop_clipped_to_level_id == "OPP"
+
+
+def test_dropping_moves_the_average_away_from_the_stop_never_toward_it(uncapped: Config) -> None:
+    """Why not re-placing the stop is safe: the CF-06 floor can only get further from violation."""
+    off = PL.build_plan(_clipped_inside_ladder(uncapped), uncapped).plan
+    cfg = _with(uncapped, entry_ladder_must_sit_inside_stop=True)
+    on = PL.build_plan(_clipped_inside_ladder(cfg), cfg).plan
+    assert on.planned_average_entry > off.planned_average_entry      # long: away from a stop below
+    assert (on.planned_average_entry - on.stop_price
+            > off.planned_average_entry - off.stop_price)
+
+
+def test_a_ladder_the_stop_still_invalidates_is_untouched(uncapped: Config) -> None:
+    cfg = _with(uncapped, entry_ladder_must_sit_inside_stop=True)
+    build = PL.build_plan(_inputs(cfg), cfg)          # no opposing level, stop at 93.80
+    assert [r.price for r in build.plan.entries] == [dec(100.0), dec(97.0)]
+    assert not any("entry_rungs_dropped_outside_stop" in n for n in build.notes)
+
+
+def test_an_unfunded_low_conviction_rung_does_not_count_against_the_ladder(
+    uncapped: Config,
+) -> None:
+    """TBOT1-C6 legs are armed but sized to zero; they buy nothing, so they extend nothing.
+
+    This is the same carve-out ``_ladder_extreme`` already makes, and the engine agrees with it -
+    ``_fill_limit_rungs`` skips any rung whose qty is zero.
+    """
+    cfg = _with(uncapped, entry_ladder_must_sit_inside_stop=True)
+    inputs = _inputs(cfg, setup=make_setup(conviction=Conviction.LOW),
+                     opposing_levels=[level("OPP", 97.3)])
+    build = PL.build_plan(inputs, cfg)
+    assert build.ok, build.reasons
+    rung = [r for r in build.plan.entries if r.price == dec(97.0)]
+    assert rung and rung[0].size_fraction == dec(0), "the unfunded leg should still be armed"
+    assert not any("entry_rungs_dropped_outside_stop" in n for n in build.notes)
+
+
+def test_the_ladder_rule_is_bit_identical_while_disabled(uncapped: Config) -> None:
+    default = PL.build_plan(_clipped_inside_ladder(uncapped), uncapped).plan
+    explicit_cfg = _with(uncapped, entry_ladder_must_sit_inside_stop=False)
+    explicit = PL.build_plan(_clipped_inside_ladder(explicit_cfg), explicit_cfg).plan
+    for f in dataclasses.fields(default):
+        assert getattr(default, f.name) == getattr(explicit, f.name), f.name
+
+    # ...and the equality above is not vacuous: switching it ON does change this very plan.
+    on_cfg = _with(uncapped, entry_ladder_must_sit_inside_stop=True)
+    on = PL.build_plan(_clipped_inside_ladder(on_cfg), on_cfg).plan
+    assert on.entries != default.entries
+    assert on.qty_total != default.qty_total
+
+
+def _rung(i: int, price: float, size: str = "0.5") -> EntryRung:
+    return EntryRung(index=i, price=dec(price), size_fraction=dec(size),
+                     kind="entry" if i == 0 else "dca", level_id=f"L{i}")
+
+
+class TestRungsTheStopInvalidates:
+    """Direct cover for the Q16 predicate, including the boundary ``build_plan`` cannot reach.
+
+    A rung sitting EXACTLY on the stop is dead: entering there is entering at the price that
+    closes the trade.  The clip always adds a buffer, so no end-to-end fixture lands on it, and
+    without this class a ``<=`` -> ``<`` mutation survives the whole suite.
+    """
+
+    def test_a_long_rung_exactly_on_the_stop_is_dead(self) -> None:
+        rungs = [_rung(0, 100.0), _rung(1, 97.0)]
+        assert PL.rungs_the_stop_invalidates(rungs, dec(97.0), Direction.LONG) == 1
+
+    def test_a_short_rung_exactly_on_the_stop_is_dead(self) -> None:
+        rungs = [_rung(0, 100.0), _rung(1, 103.0)]
+        assert PL.rungs_the_stop_invalidates(rungs, dec(103.0), Direction.SHORT) == 1
+
+    def test_a_rung_a_tick_inside_the_stop_survives(self) -> None:
+        rungs = [_rung(0, 100.0), _rung(1, 97.0)]
+        assert PL.rungs_the_stop_invalidates(rungs, dec("96.99"), Direction.LONG) == 2
+        short = [_rung(0, 100.0), _rung(1, 103.0)]
+        assert PL.rungs_the_stop_invalidates(short, dec("103.01"), Direction.SHORT) == 2
+
+    def test_it_counts_a_prefix_not_a_total(self) -> None:
+        rungs = [_rung(0, 100.0), _rung(1, 97.0), _rung(2, 94.0)]
+        assert PL.rungs_the_stop_invalidates(rungs, dec(95.0), Direction.LONG) == 2
+
+    def test_unfunded_rungs_are_transparent(self) -> None:
+        rungs = [_rung(0, 100.0, "1"), _rung(1, 97.0, "0"), _rung(2, 94.0, "0")]
+        assert PL.rungs_the_stop_invalidates(rungs, dec(98.0), Direction.LONG) == 3
+
+    def test_an_entirely_dead_ladder_counts_zero(self) -> None:
+        rungs = [_rung(0, 100.0), _rung(1, 97.0)]
+        assert PL.rungs_the_stop_invalidates(rungs, dec(101.0), Direction.LONG) == 0

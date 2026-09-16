@@ -549,3 +549,67 @@ that remain open, none of them resolved here:
 
 The honest next step is to fix the stop-distance defect and re-run this exact command, so the
 before and after differ by one change. Not to tune anything.
+
+---
+
+# WHY 1R IS NOT CONSTANT: the CF-02 ceiling replaces risk-first sizing, 2026-09-16
+
+Risk-first sizing solves `qty = loss_budget / |stop - entry|` so that every trade risks the same
+money. It is not in force. The CF-02 notional ceiling clamps the notional, and
+`plan.solve_size` **re-solves quantity from the clamped notional** (`risk.py`, `max_notional`
+docstring), so whenever the ceiling binds the quantity is fixed and **risk floats with stop
+distance instead**.
+
+Derived from the shipped config, at 10,000 equity and a 100-price instrument:
+
+| stop % of entry | risk-first qty | notional | ceiling binds | actual risk | vs 400 budget |
+|---|---:|---:|---|---:|---:|
+| 0.002 | 200,000 | 20,000,000 | YES | 0.20 | 0.05% |
+| 0.5 | 800 | 80,000 | YES | 50.00 | 12.5% |
+| 1.0 | 400 | 40,000 | YES | 100.00 | 25% |
+| 2.0 | 200 | 20,000 | YES | 200.00 | 50% |
+| **4.0** | 100 | 10,000 | **no** | 400.00 | **100%** |
+
+**The ceiling binds for every stop tighter than 4.00% of entry.** The measured median stop is
+0.549%, so it binds on essentially every trade. `max_loss_pct_swing = 4.0` is unreachable except
+at exactly a 4% stop.
+
+Corroborated by measurement, not only by arithmetic: on the 27-trade sample implied notional is
+bimodal and both modes are exact - 14 trades at **exactly 10,000** (the ceiling, binding) and 13
+at ~2,500 (partial ladder fills). Per-trade risk across that book runs 0.21 to 118.63 USD, 565x.
+
+## This has happened once before, in the same function
+
+`max_notional`'s own docstring records it: when the leverage row held 10.0 - his *margin*
+percentage enforced as a *notional* ceiling - it "silently capped every leverage trade at roughly
+0.7 % portfolio risk instead of the 4-5 % the CF-01 ladder assigns". Raising the row to 100%
+moved the binding threshold from 0.4% to 4.0%. **It did not remove the mechanism**, and nothing
+reports when the ceiling is what decided a trade's size.
+
+## The number that ties it to his method
+
+His worked sizing example accepts **$729 notional on a $1,000 portfolio, 72.9%** (Q8, S6
+`[00:08:36]`-`[00:11:27]`). At a 4% risk budget that implies a stop around **5.5%** of entry.
+The bot's median stop is **0.549%** - an order of magnitude tighter. `min_stop_pct = 0.5`
+(CF-06, S7-C8) exists precisely to stop that, and the CF-14 step 3 clip undoes it
+(see the clip/floor interaction above).
+
+So the three findings are one finding:
+
+1. the CF-14 clip pulls stops back inside the sourced CF-06 floor, and nothing re-checks
+2. stops an order of magnitude tighter than his method implies
+3. the CF-02 ceiling turns those tight stops into tiny positions, so risk varies 565x and the
+   4% budget is never spent
+
+## What this does NOT establish
+
+Whether the ceiling, the floor, or the stop placement is the thing to change. That is a design
+decision about which sourced rule gives way, and it is not ours to take. It also does not say
+the book would be profitable with constant risk - the verdict run lost money on both segments,
+and a dollar re-scoring of the 27-trade sample shows the best available stop gate takes the book
+from -404 to -75, still negative.
+
+**The reporting guard (step 4) should therefore report implied notional and the count of
+ceiling-bound trades, not only the dispersion of `initial_risk_usd`.** The dispersion is the
+symptom; the ceiling is the cause, and a guard that reports only the spread invites someone to
+treat the spread as the thing to fix.

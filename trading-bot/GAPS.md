@@ -967,3 +967,96 @@ Removing **26** will not be - equity path, concurrency, touch limits and budget 
 move. -253.76 is the book minus those trades, not what a re-simulation would produce, and whether
 the residual still loses is **unmeasured in either direction**. It needs a resolution chosen and a
 run, in that order.
+
+---
+
+# Q17 measured: the rule works, the book doubles its loss, and neither fact means what it looks like
+
+Two 1,500-bar `--split` runs at `5c465ff`, identical but for
+`entry_ladder_must_sit_inside_stop`.
+
+| | OFF | ON |
+|---|---|---|
+| IS closed trades | 77 | **59** |
+| IS headline net | -639.02 | **-1202.21** |
+| IS closed book | -729.43 | **-1557.17** |
+| IS win rate | 57.14% (44W/27L/6BE) | 54.24% (32W/27L) |
+| IS expectancy | -0.3847 R / -9.47 USD | **-0.2205 R** / -26.39 USD |
+| OOS closed trades | 35 | **28** |
+| OOS net | -483.28 | **-1015.53** |
+| OOS win rate | 37.14% | 42.86% |
+| OOS expectancy | -2.5637 R / -13.81 USD | **-0.4530 R** / -36.27 USD |
+
+**The rule does exactly what it was built to do.** Trades that filled a rung beyond their own stop:
+**13 -> 0 in-sample, 13 -> 0 out-of-sample.** The defect is gone, completely, in both segments.
+
+**And the book roughly doubles its loss in both segments.** Also real.
+
+## Why both are true: the CF-02 ceiling was silently limiting size
+
+Nothing here is a strategy getting worse. Sizing is not risk-first in this package - GAPS.md already
+records that the CF-02 notional ceiling replaces it - and under a ceiling, **risk is proportional to
+stop distance**:
+
+    risk ~= min(risk_budget, notional_ceiling x stop_distance%)
+          = min($400, $10,000 x stop_distance%)
+
+Predicted ceiling-bound: **72/77 and 34/35 (OFF), 58/59 and 28/28 (ON)** - essentially every trade in
+both arms. The formula reproduces the actual `initial_risk_usd` within 2 % on 28/77 and 48/59; the
+rest are the partial-ladder cases where the realised average differs from the planned one used at
+sizing time, which is the same CF-02 finding already on this page.
+
+So a stop dragged to 0.5 % of entry sizes at **$50 of risk**, not $400. The bot was trading tiny
+size *precisely on the setups with the broken geometry*. Q17 removes the rung that pulled the
+average toward the stop, the stop distance widens, and the ceiling stops binding so hard:
+
+| | median `initial_risk_usd` |
+|---|---|
+| IS | $57.14 -> **$133.72** (2.3x) |
+| OOS | $25.32 -> **$89.86** (3.5x) |
+
+The book moves almost exactly in proportion - IS 2.13x, OOS 2.10x. **The losses were not smaller
+before. They were the same losses at a fraction of the size, because the geometry that made them
+losses was also capping the bet.**
+
+**Per unit of risk the rule is a large improvement**, which is the number that is not size-confounded:
+out-of-sample expectancy goes **-2.5637 R -> -0.4530 R**, in-sample -0.3847 -> -0.2205. Out-of-sample
+win rate rises 37.14 % -> 42.86 %. Read in R it is the biggest single improvement measured in this
+project; read in dollars it is the worst result. **Both are the same fact seen through the sizing
+model, and this is the third time on this page that dollars and R have pointed opposite ways.**
+
+## But the implementation is too blunt, and that part is mine
+
+**It drops the DCA from almost every plan, not from the broken ones:**
+
+| plan rung counts | OFF | ON |
+|---|---|---|
+| in-sample | 1 rung: 20, 2 rungs: 100 | **1 rung: 93**, 2 rungs: 5 |
+| out-of-sample | 1 rung: 11, 2 rungs: 80 | **1 rung: 78**, 2 rungs: 1 |
+
+That is ~95 % of plans converted to one-entry trades. He uses a DCA constantly, so this is no longer
+his method - and it is not what he does in the passage the rule was derived from. **He has two
+remedies and I implemented only one.** S6 `[01:12:28]` **re-sites** the DCA inside the tighter stop
+(*"there then probably DCA there"*); S6 `[00:23:05]` **drops** it, but only where the stop cannot be
+placed at all. Dropping is his answer for the no-room case. Re-siting is his answer for the common
+case, and the common case is 95 % of plans.
+
+Re-siting does not need an invented price either, which was my stated reason for choosing the drop:
+CF-17 already says each DCA takes the next structural level against the trade, so re-siting is that
+same rule reading from the levels the stop still invalidates. **The correct implementation filters
+`dca_levels` to those inside the final stop and only drops when none remain.** Not built.
+
+## What this does and does not establish
+
+- **The -639.02 / -483.28 baseline is not "his rule set as taught."** It is his rule set with an
+  accidental size limiter attached to its own worst setups. Every comparison on this page made
+  against that baseline is a comparison against an under-risked book.
+- **Q17 as built is not shippable** and the flag stays off. It fixes the geometry and breaks the
+  method.
+- **Nothing here changes the verdict.** Out-of-sample loses in both arms, in-sample loses in both
+  arms. A rule that improves out-of-sample expectancy from -2.56 R to -0.45 R still leaves it
+  negative.
+- The drop count could not be read from the run files at all: `PlanBuild.notes` never reach the
+  `--save-run` record, so `entry_rungs_dropped_outside_stop` appears zero times in a run where the
+  rule fired on 93 plans. The rung counts above come from the `plan` event text instead. **A
+  diagnostic the record cannot carry is not a diagnostic**; worth fixing before the next measurement.

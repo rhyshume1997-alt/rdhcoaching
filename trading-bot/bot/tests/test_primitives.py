@@ -1325,6 +1325,54 @@ class TestInterfacesWorkedExamples:
     If one of these fails, the documentation other agents are coding against is wrong: fix both.
     """
 
+    def test_section_7_documents_the_shipped_defaults(self):
+        """§7's table is a THIRD copy of every default, and nothing compared it to the other two.
+
+        ``f6b267c`` fixed ``dca_size_split_3`` and ``tp_count_swing`` in the dataclass field and
+        in ``KEY_SPECS`` - the two copies that disagreed and produced the 27-vs-11 divergence -
+        and left §7 stating the superseded values, and the superseded *provenance* with them: the
+        row credited the S6 transcript arithmetic that the Discord evidence explicitly supersedes.
+
+        The existing §7 tests check key **names** and the key **count**. Neither reads a value, so
+        all 254 documented defaults were unverified and two of them were wrong.
+
+        Long literals are truncated with an ellipsis in the table, so those are prefix-matched;
+        everything else is compared exactly.
+        """
+        import re
+        from pathlib import Path
+
+        table = Path(__file__).resolve().parents[1] / "tbot" / "INTERFACES.md"
+        spec = {k.key: k.default for k in KEY_SPECS}
+        row = re.compile(r"^\|\s*`([a-z0-9_]+)`\s*\|\s*`([^`]*)`\s*\|")
+
+        def norm(value):
+            if isinstance(value, bool):
+                return "true" if value else "false"
+            return str(value).replace(" ", "").replace("'", '"').strip('"').lower()
+
+        checked, wrong = 0, []
+        for line in table.read_text(encoding="utf-8").splitlines():
+            m = row.match(line)
+            if not m or m.group(1) not in spec:
+                continue
+            key, doc, actual = m.group(1), norm(m.group(2).strip()), norm(spec[m.group(1)])
+            checked += 1
+            if doc.endswith("...") or doc.endswith("\u2026"):
+                if actual.startswith(doc.rstrip(".\u2026")):
+                    continue
+            if doc == actual:
+                continue
+            try:
+                if float(doc) == float(actual):
+                    continue
+            except ValueError:
+                pass
+            wrong.append(f"{key}: SS7 says {doc!r}, KEY_SPECS says {actual!r}")
+
+        assert checked >= 250, f"only matched {checked} rows; the table format changed"
+        assert not wrong, "INTERFACES.md SS7 disagrees with KEY_SPECS:\n  " + "\n  ".join(wrong)
+
     def test_example_8_1_zone_box_and_fill(self, cfg, syn):
         s, f = syn.series, syn.features
         box = P.zone_box(s, cfg, f.consolidation_start, f.consolidation_end)

@@ -649,7 +649,7 @@ Owns no configuration keys of its own; it reads `level_tolerance_atr`, `touch_re
 | `dca_count_scalp_max` | `1` | CF-17; S8-R17 |
 | `entry_ladder_must_sit_inside_stop` | `false` | Q17 derived, TBOT1 `[00:38:08]`, S6 `[01:12:28]`, S6 `[00:23:05]` — drop rungs the final stop no longer invalidates |
 | `dca_size_split_2` | `[0.39, 0.61]` | CF-18; Q3 derived, S6 `[00:48:10]` — 35:55 of his own LINK ladder (avg 17.6332 reproduces exactly) |
-| `dca_size_split_3` | `[0.2, 0.3, 0.5]` | CF-18; Q3 derived, S6 `[00:38:49]`-`[00:40:05]` — 35:55:100 = 18.4/29.0/52.6, avg 17.9215 exact |
+| `dca_size_split_3` | `[0.15, 0.325, 0.525]` | CF-18; Q3 **stated** in writing x3 — Discord #class-session-one M2, #class-session-five M8, and the linked risk doc. Supersedes the derived `[0.2, 0.3, 0.5]` from S6 `[00:38:49]`-`[00:40:05]` |
 | `dca_size_split_wick_heavy_2` | `[0.25, 0.75]` | CF-18; Q3 stated, S6 `[01:54:34]` ("very light there, like 20 to 30%") |
 | `duplicate_stop_offset_bps` | `1.5` | CF-05; S4-R34 |
 | `entry_family_flip_pending_enabled` | `True` | CF-16; Q10 stated, S4 `[00:55:38]` ("you're not going to place limit orders at the SR line") |
@@ -670,7 +670,7 @@ Owns no configuration keys of its own; it reads `level_tolerance_atr`, `touch_re
 | `stop_wick_max_pct` | `3.0` | CF-14; S6-R18 |
 | `tp_count_price_discovery_max` | `5` | CF-27; S6-R36 |
 | `tp_count_scalp` | `3` | CF-27; S8-R19, TBOT1-R17 |
-| `tp_count_swing` | `2` | CF-27; S4-R1/R2, S6-R20 |
+| `tp_count_swing` | `3` | CF-27; S4-R1/R2, S6-R20 — corrected to 3 by Discord #class-session-one M4 and the linked risk doc, both **stated**: "TP1 40% TP2 30% TP3 30%" |
 | `tp_min_count` | `2` | CF-27; S5-R26 |
 | `tp_split_2` | `[0.5, 0.5]` | CF-28; Q4 stated, S4 `[00:17:53]` `[00:18:27]` ("if it's two TPS, then I do 50/50") |
 | `tp_split_3` | `[0.4, 0.3, 0.3]` | CF-28; Q4 stated, S4 `[00:18:27]` ("if it's three TPS, I have 40 30 30") |

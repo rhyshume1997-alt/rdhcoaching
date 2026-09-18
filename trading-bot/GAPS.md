@@ -1132,3 +1132,73 @@ And `k` correlates with losing:
 stop is tightest, which is where the geometry is broken. So raising it does not multiply the book by
 a scalar; it multiplies the losers far more than the winners. Expect the ceiling-raised cells to come
 in **worse than any uniform-scalar prediction**, and read them in bps, not dollars.
+
+---
+
+# The pre-declared cross-market test: three symbols, six segments, six losses
+
+Symbols, timeframe and protocol were **declared before the data existed** and before any result was
+seen: BTCUSDT and ETHUSDT alongside SOLUSDT, 4H, shipped config with nothing tuned, both segments
+reported for every symbol, 30-trade floor per segment, no symbol dropped for any reason. All three
+CSVs cover **SOL's exact window** (2026-01-07 -> 2026-09-14, 1,500 bars); the timestamp columns were
+verified byte-identical to `sol_4h.csv` before any run.
+
+| symbol | segment | n | net USD | gross USD | win % | gross bps | 30-trade floor |
+|---|---|---|---|---|---|---|---|
+| SOL | in-sample | 77 | -729.43 | -397.80 | 57.1 | -9.35 | OK |
+| SOL | out-of-sample | 35 | -483.28 | -311.96 | 37.1 | -14.02 | OK |
+| BTC | in-sample | 42 | -263.55 | -41.11 | 42.9 | -1.50 | OK |
+| BTC | out-of-sample | 18 | -382.44 | -252.16 | 27.8 | -19.39 | **BELOW** |
+| ETH | in-sample | 60 | -437.45 | -174.25 | 43.3 | -5.12 | OK |
+| ETH | out-of-sample | 26 | -1258.70 | -1070.11 | 34.6 | -56.64 | **BELOW** |
+
+**Every segment loses, and every segment loses before costs.** Gross is negative six times out of
+six, so on no symbol and in no segment is this a real edge being eaten by fees.
+
+## What it establishes
+
+**"SOL is the problem" is ruled out.** All three in-sample segments clear the 30-trade floor
+(77 / 42 / 60) and all three lose, net and gross. That is the question this test was set up to
+answer and it answers it.
+
+**It also lands harder than the SOL-only verdict did, because of the regime.** The chronological
+split puts a severe bear market in-sample and a strong rally out-of-sample:
+
+| symbol | in-sample | out-of-sample |
+|---|---|---|
+| BTC | -29.3 % | **+19.4 %** |
+| ETH | -41.0 % | **+32.5 %** |
+| SOL | -43.7 % | **+30.5 %** |
+
+A long-biased supply/demand system losing through a crash is unremarkable. **Losing through a
+19-32 % rally, on all three majors, is the finding.**
+
+## What it does NOT establish, stated plainly
+
+- **Two of the three out-of-sample segments are below the floor** — BTC at 18 trades, ETH at 26.
+  The harness says so itself in both reports (*"sample too small to conclude anything"*). Only SOL's
+  35 clears it. The out-of-sample direction agrees across all three, but only one of them is
+  conclusive on its own terms.
+- **Pooling does not fix that.** Pooled out-of-sample is 79 trades, which would clear the floor, but
+  these are not three independent samples: 4H log-return correlation is **0.84-0.88** pairwise, and
+  the package's own G17 gate (`correlation_threshold` 0.70, measured on closes, where it reads
+  0.91-0.96) would refuse to hold the three concurrently. By the bot's own sourced threshold they
+  are close to one position. **Three agreeing majors are not three confirmations.**
+- **It says nothing about regime.** One window, one bear-then-rally shape. Ruling out
+  *"2026 is the problem"* needs a different time window, not a different symbol.
+
+## A note on the two correlation figures
+
+0.84-0.88 (this section) and 0.91-0.96 (quoted alongside the G17 gate) are both correct and measure
+different things. `regime.rolling_correlation` is documented as *"Pearson correlation of the two
+series' closes"* over a 90-bar lookback — **price levels**, which on a shared trend are inflated by
+that trend. Log-return correlation is the honest measure of co-movement and of sample independence.
+Use the closes figure when the claim is *"the bot's own gate would refuse these"*, and the returns
+figure when the claim is *"these are not independent samples"*. Both claims hold; they need
+different numbers and the two are not interchangeable.
+
+## A reporting note
+
+The §12.5 guard fired on **all six segments** — R was demoted to a non-headline in every one, with
+the dispersion printed beside it. Its worst case here was ETH out-of-sample at **-3.4644 R against
+-48.41 USD**. In production, on data it had never seen, it did the job it was built for.

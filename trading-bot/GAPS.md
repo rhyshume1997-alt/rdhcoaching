@@ -1272,3 +1272,45 @@ plans on one symbol sharing an entry and a stop to sixteen decimal places. Wheth
 merge them into one position, refuse the later ones, or split the size three ways is **a rule choice
 the sources do not make** — S6-R11/R12 covers reducing an over-budget position but says nothing about
 one signal arriving three times. **Not built, not decided.**
+
+### Correction: the remedy is not undecided. He decides it, the package implements it, and the harness cannot reach it.
+
+The section above filed the duplicate-position remedy as *"a rule choice the sources do not make."*
+**That is wrong.** He states it as a personal rule, four times in one session:
+
+> S4 `[01:59:38]` — *"I never have more than two positions open at once."*
+> S4 `[02:00:48]` — *"the rule that I have for myself... I am never in more than two leverage
+> positions at once."*
+> S4 `[02:06:02]` — *"you don't want to have like for example **three longs or four longs open at
+> once**... I always have two positions open at once"*
+> S4 `[02:06:34]` — *"**two positions open per account.** Okay. Spot, you can have multiple."*
+
+And the package already carries it, sourced, not `[OUR CHOICE]`:
+
+    max_concurrent_leverage_swing  = 2   CF-04; S4-R30, S2-R32
+    max_concurrent_leverage_scalp  = 2   CF-04; S4-R30
+    max_concurrent_leverage_global = 4   CF-04; S4-C8
+    max_concurrent_spot            = 5   CF-04; S4-R31
+
+enforced in `risk.py:474-504`. **The third ETH position would have been refused by a sourced,
+shipped, configured gate.**
+
+It was not, for one reason: `PortfolioState` appears **zero times** in
+`tbot/backtest/engine.py`. The harness builds no portfolio state, so every concurrency gate is
+unreachable from it — which this file already records against GAP 2, remedy included: *"`tbot
+backtest` still injects no portfolio state, so it cannot fire there | a PortfolioState built from
+the engine's own live trades."*
+
+**So this is not a sixth defect awaiting a ruling. It is the first measured cost of a plumbing gap
+that has sat in this file as an architectural to-do with no price attached.** It has one now:
+**$900 of risk on one price level against a $400 budget, and 78 % of the worst segment in the
+study.** Two sourced gates would each have caught it independently — the concurrency cap, and GAP
+2's correlation cap, since three positions in one symbol correlate at 1.0 against a 0.70 threshold.
+
+Two things that keep this from being over-claimed:
+
+- **Concurrency caps count positions, not price levels.** Capping at 2 takes $900 of risk to $600,
+  not $300. Whether three setups resolving to one entry and one stop should collapse to a *single*
+  position is still unanswered — but it is a far smaller question than "what is the remedy", and it
+  is the only part of this that is genuinely undecided.
+- **No sign changes.** Six of six segments still lose. This is concentration, not edge.

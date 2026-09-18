@@ -1202,3 +1202,73 @@ different numbers and the two are not interchangeable.
 The §12.5 guard fired on **all six segments** — R was demoted to a non-headline in every one, with
 the dispersion printed beside it. Its worst case here was ETH out-of-sample at **-3.4644 R against
 -48.41 USD**. In production, on data it had never seen, it did the job it was built for.
+
+## Two qualifications to the cross-market table, and one of them uncovers a sixth defect
+
+### 1. "Every segment loses before costs" overstates one cell
+
+BTC in-sample gross is **-41.11 over 42 trades = -0.98 per trade**, against costs of -222.44. That
+is **flat before costs, not negative** — it is well inside noise for 42 trades. The accurate form is:
+
+> **Five of six segments lose before costs. The sixth is flat before costs and loses after them.**
+
+The fees hypothesis still dies — flat is not an edge — but the stronger sentence was wrong and the
+arithmetic is the first thing anyone will check.
+
+### 2. ETH out-of-sample is not the method losing badly. It is one trade counted three times.
+
+That segment was flagged as a 4x outlier (-41.16/trade against -14.01 next worst) and worth a query
+before being quoted. It was, and the cause is not what either session guessed — not a tiny stop, not
+a huge notional, not the -54R geometry:
+
+| ref | net | risk | notional | stop dist | R | close |
+|---|---|---|---|---|---|---|
+| T0004 | -326.62 | 300.56 | 10,147 | 2.9619 % | **-1.09** | stop |
+| T0006 | -325.92 | 299.91 | 10,125 | 2.9619 % | **-1.09** | stop |
+| T0007 | -324.95 | 299.02 | 10,096 | 2.9619 % | **-1.09** | stop |
+
+Three healthy, correctly-sized trades — a 2.96 % stop, notional at the CF-02 ceiling, risk near the
+$400 budget, each losing a normal **-1.09R**. And the event log shows they are **the same trade**:
+
+    bar 1168, 2026-07-21 00:00   all three fill at 1905.722385
+    stop 1849.2763202539405825   identical to 16 decimal places
+    bar 1189, 2026-07-24 12:00   all three stop out at 1848.35168209381361220875
+
+**Three distinct setups produced one position, taken three times:**
+
+    setup:ETHUSDT:4H:msb:295:long   primary order_block
+    setup:ETHUSDT:4H:msb:223:long   primary pattern
+    setup:ETHUSDT:4H:msb:853:long   primary pattern
+
+Three different market-structure breaks, detected at three different bars, resolving to the same
+entry level and the same stop. Each was funded independently: **$900 of risk on one price level
+against a $400 per-trade budget.**
+
+Swept across all 258 trades in the six segments, grouping on (average entry, initial stop):
+
+| segment | trades | duplicated groups | redundant trades | their net |
+|---|---|---|---|---|
+| SOL IS / OOS | 77 / 35 | 0 / 0 | 0 | — |
+| BTC IS / OOS | 42 / 18 | 0 / 0 | 0 | — |
+| ETH IS | 60 | 0 | 0 | — |
+| **ETH OOS** | 26 | **1** | **2** | **-977.49** |
+
+It happens **once in 258 trades, and that once is 78 % of the worst segment in the study.**
+
+**What this changes.** Keeping one of the three and dropping the redundant pair puts ETH
+out-of-sample at roughly **-607.83 over 24 trades**, still the worst cell but no longer a 4x outlier
+and no longer worth singling out. *(Closed-book arithmetic — this page has been wrong three times
+assuming removals are clean subtractions, and the caveat stands here too, though these three are
+simultaneous so the equity path barely moves.)* **No sign changes anywhere. Six of six still lose.**
+
+**What it does not change:** nothing about the verdict. It is a risk-control defect — concentration,
+not edge — and correcting it makes one segment's loss smaller without making any segment profitable.
+
+### The gap itself
+
+Nothing deduplicates distinct setups that resolve to the same position. `touch_limit` counts touches
+per level, and GAP 2's correlated-exposure cap governs *different symbols*; neither catches three
+plans on one symbol sharing an entry and a stop to sixteen decimal places. Whether the remedy is to
+merge them into one position, refuse the later ones, or split the size three ways is **a rule choice
+the sources do not make** — S6-R11/R12 covers reducing an over-budget position but says nothing about
+one signal arriving three times. **Not built, not decided.**

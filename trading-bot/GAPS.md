@@ -1314,3 +1314,35 @@ Two things that keep this from being over-claimed:
   position is still unanswered — but it is a far smaller question than "what is the remedy", and it
   is the only part of this that is genuinely undecided.
 - **No sign changes.** Six of six segments still lose. This is concentration, not edge.
+
+## The CF-04 gate measured: reachable, firing, and it delays rather than discards
+
+ETH 4H, 900 bars, identical but for `backtest_enforces_concurrency`.
+
+| | OFF | ON |
+|---|---|---|
+| closed trades | 27 | 27 |
+| net P&L | -423.59 | -423.59 |
+| win rate | 33.33 % (9W/16L/2BE) | 33.33 % (9W/16L/2BE) |
+| expectancy | -15.69 USD | -15.69 USD |
+| **`G-CF04` in the veto census** | **absent** | **5** |
+
+**The gate fires five times and the book does not move.** Every other gate count is identical
+between the arms, so the only difference is the five CF-04 refusals — which is the design working,
+not a no-op: a refused plan is deliberately not added to `_armed_plan_ids`, so it stays available and
+arms on a later bar once a slot frees. On this window the cap **delayed** five entries and cost
+nothing.
+
+That identity is also the end-to-end inertness evidence the unit test could not give: the flag is
+registered (`non-default config keys this run: backtest_enforces_concurrency`), the gate demonstrably
+runs, and the closed book is unchanged to the cent.
+
+**What this does not show.** The ETH duplicate — three plans on one entry and one stop — **is not in
+this window**: zero duplicated `(entry, stop)` groups across the 27 trades. `--max-bars` reslices the
+warm-up, so a different set of levels is detected and that case does not recur. So this establishes
+that the gate is reachable and fires; it does **not** establish that it would have refused the third
+of those three. That needs the full 1,500-bar `--split`, and it remains unrun.
+
+**Expected direction when it is run:** the third position refused, ETH out-of-sample roughly -607
+rather than -1258.70, no sign change anywhere. Recorded before the run, as the standard on this page
+now requires.

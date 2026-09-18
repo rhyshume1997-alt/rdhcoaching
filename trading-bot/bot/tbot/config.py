@@ -3224,6 +3224,24 @@ KEY_SPECS: tuple[KeySpec, ...] = (
         note='',
     ),
     KeySpec(
+        key='backtest_enforces_concurrency',
+        default=False,
+        spec_type='bool',
+        py_type='bool',
+        members=None,
+        minimum=None,
+        maximum=None,
+        source_id='CF-04; S4-R30, S4-R31, S4-C8 — his rule, already shipped in the caps below. '
+                  '[OUR CHOICE] is the SWITCH only: whether the HARNESS builds the PortfolioState '
+                  'his gate needs. The rule and every number in it are his.',
+        group='11.12',
+        note='GAPS.md records that `tbot backtest` injects no portfolio state, so every CF-04 '
+             'concurrency cap is unreachable from it - measured cost: three ETH plans on one entry '
+             'and one stop, $900 of risk against a $400 budget, 78%% of the worst segment in the '
+             'cross-market study. With this on, the engine builds a PortfolioState from its own '
+             'live trades each bar and concurrency_gate runs at arm time. Sweep: false, true.',
+    ),
+    KeySpec(
         key='backtest_execution_tf',
         default='1m',
         spec_type='tf',
@@ -3601,6 +3619,7 @@ class Config:
     spot_short_term_tp_move_pct: float = 12.5
     atr_period: int = 14
     pmt_bin_atr: float = 0.05
+    backtest_enforces_concurrency: bool = False
     backtest_execution_tf: str = '1m'
     intrabar_fill_model: str = 'stop_first'
     fee_maker_bps: float = 2.0

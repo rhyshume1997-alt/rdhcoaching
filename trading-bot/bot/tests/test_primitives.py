@@ -1047,8 +1047,8 @@ class TestP20PointsOfMostTouch:
 class TestConfig:
     def test_every_spec_key_is_present_with_its_default(self):
         cfg = Config.load()
-        assert len(KEY_SPECS) == 254
-        assert len(cfg.describe()) == 254
+        assert len(KEY_SPECS) == 255
+        assert len(cfg.describe()) == 255
         assert cfg.swing_k == 3 and cfg.min_confluence_count == 3.0
         assert cfg.zone_fill_invalidation_pct == 50.0
         assert cfg.touch_size_decay == [1.0, 1.0, 1.0, 0.66, 0.5]   # Q2
@@ -1164,7 +1164,7 @@ class TestConfig:
             # the inference is kept ONLY as an explicit withdrawal, never as a live figure
             assert "15,000-18,750 is WITHDRAWN" in spec.note
         # No account-size key was derived from it then, and none is derived from it now.
-        assert len(KEY_SPECS) == 254
+        assert len(KEY_SPECS) == 255
         assert not [k for k in KEY_SPEC_BY_NAME if "account_size" in k or "portfolio_size" in k]
 
     def test_sweep_brackets_are_machine_readable_where_evidence_bounded_them(self):
@@ -1438,13 +1438,13 @@ class TestInterfacesWorkedExamples:
         assert float(P.atr_at(s, cfg, 95)) == pytest.approx(1.791, abs=0.001)
 
     def test_config_ownership_table_covers_every_key(self):
-        """The §7 ownership tables must list all 254 keys exactly once."""
+        """The §7 ownership tables must list all 255 keys exactly once."""
         import re
         from pathlib import Path
         doc = (Path(__file__).resolve().parent.parent / "tbot" / "INTERFACES.md").read_text()
         section = doc.split("## 7 Config key ownership by module")[1].split("## 8 Worked")[0]
         listed = re.findall(r"^\| `([a-z0-9_]+)` \|", section, re.M)
-        assert len(listed) == len(set(listed)) == 254
+        assert len(listed) == len(set(listed)) == 255
         assert set(listed) == {spec.key for spec in KEY_SPECS}
 
 

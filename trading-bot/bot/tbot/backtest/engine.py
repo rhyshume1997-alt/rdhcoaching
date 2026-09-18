@@ -951,7 +951,65 @@ class BacktestEngine:
         for plan in output.plans:
             if plan.id in self._armed_plan_ids:
                 continue
+            refusal = self._concurrency_refusal(ts, plan)
+            if refusal is not None:
+                # Not armed at all, so the plan stays available if a slot frees up later: it is
+                # deliberately NOT added to ``_armed_plan_ids``.
+                self._rejections.append(RejectionRecord(
+                    bar_index=i, setup_id=plan.setup_id, gate="G-CF04",
+                    reason=refusal, symbol=plan.symbol, direction=plan.direction,
+                    source_ids=("CF-04", "S4-R30", "S4-R31", "S4-C8"),
+                ))
+                self._log.add(i, ts, EventKind.REJECTION,
+                              f"plan {plan.id} not armed: {refusal}",
+                              plan_id=plan.id, setup_id=plan.setup_id, gate="G-CF04",
+                              reason=refusal,
+                              source_ids=("CF-04", "S4-R30", "S4-R31", "S4-C8"))
+                continue
             self._arm(i, ts, plan, setups_by_id.get(plan.setup_id))
+
+    def _portfolio_snapshot(self, ts: datetime) -> "PortfolioState":
+        """The live book as the risk layer sees it — the state GAPS.md records as never built.
+
+        Every CF-04 concurrency cap is enforced in ``risk.concurrency_gate``, is configured from
+        his own numbers (``max_concurrent_leverage_swing`` 2, S4-R30), and has been unreachable
+        from this harness because nothing here ever constructed a :class:`PortfolioState`.  It
+        cost three ETH plans sharing one entry and one stop: $900 of risk on a $400 budget.
+        """
+        from ..risk import OpenSlot, PortfolioState
+
+        slots = tuple(
+            OpenSlot(
+                position_id=t.position.id,
+                account=t.account,
+                vehicle=t.plan.vehicle,
+                trade_class=t.plan.trade_class,
+                state=t.position.state,
+                notional_usd=t.entry_notional,
+                symbol=t.plan.symbol,
+            )
+            for t in self._live
+        )
+        # ``self._equity`` is the curve, not a number; realised equity is what line ~1595 uses.
+        return PortfolioState(equity_usd=self.starting_equity + self._realised,
+                              now=ts, open_slots=slots)
+
+    def _concurrency_refusal(self, ts: datetime, plan: TradePlan) -> str | None:
+        """His CF-04 cap, asked at arm time.  ``None`` when the plan may arm.
+
+        Armed-but-unfilled plans do NOT occupy a slot: ``OpenSlot.is_live`` counts only
+        PARTIAL/OPEN/MANAGING (SPEC.md §9.1), which is the engine's own state machine and his
+        distinction, not ours — a resting limit is not a position.
+        """
+        if not self.config.backtest_enforces_concurrency:
+            return None
+        from ..risk import concurrency_gate
+
+        gate = concurrency_gate(
+            self.config, self._portfolio_snapshot(ts),
+            vehicle=plan.vehicle, trade_class=plan.trade_class,
+        )
+        return None if gate.allowed else "; ".join(gate.reasons)
 
     def _arm(self, i: int, ts: datetime, plan: TradePlan, setup: Setup | None) -> None:
         self._armed_plan_ids.add(plan.id)

@@ -7,6 +7,8 @@ assertion, so the expected outcome is a raised :class:`LookaheadError`, not a wa
 
 from __future__ import annotations
 
+import dataclasses
+
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
@@ -15,6 +17,7 @@ import pytest
 import tbot.primitives as P
 from tbot.backtest.engine import (
     BacktestEngine,
+    _LiveTrade,
     BarWindow,
     DetectionRecord,
     EventKind,
@@ -32,6 +35,8 @@ from tbot.models import (
     Direction,
     EntryFamily,
     EntryRung,
+    Account,
+    Position,
     PositionState,
     Series,
     Setup,
@@ -977,3 +982,85 @@ def test_the_engine_uses_the_one_rr_formula_and_does_not_reimplement_it():
             raise AssertionError(
                 f"engine.py line {node.lineno} divides an abs() -- that is a second R:R "
                 f"formula; import tbot.plan.rr_ratio instead")
+
+
+# ------------------------------------------------- CF-04 concurrency, reachable from the harness
+#
+# His rule, stated four times in S4: "I never have more than two positions open at once"
+# [01:59:38], "two positions open per account" [02:06:34]. It is configured
+# (max_concurrent_leverage_swing = 2, CF-04 / S4-R30) and enforced in risk.concurrency_gate - and
+# until now no PortfolioState existed in this engine, so it could never fire. Measured cost: three
+# ETH plans on one entry and one stop, $900 of risk against a $400 budget.
+
+class TestHarnessConcurrency:
+
+    @staticmethod
+    def _engine(**kw) -> BacktestEngine:
+        cfg = dataclasses.replace(Config(), **kw)
+        return BacktestEngine(flat_series(8), cfg, warmup_bars=2)
+
+    @staticmethod
+    def _slot(eng, state: PositionState, tc: TradeClass = TradeClass.SWING) -> None:
+        """Put one trade on the engine's live book in the given position state."""
+        n = len(eng._live) + 1
+        plan = make_plan(trade_class=tc, vehicle=Vehicle.LEVERAGE)
+        pos = Position(id=f"P{n}:pos", plan_id=plan.id, account=Account.LEVERAGE_SWING,
+                       state=state, current_stop=plan.stop_price)
+        eng._live.append(_LiveTrade(
+            id=f"T{n}", ref=f"T{n:04d}", plan=plan, setup=None,
+            account=Account.LEVERAGE_SWING, entry_family=EntryFamily.RETEST,
+            position=pos, armed_index=0, initial_stop=plan.stop_price,
+            tp_hit_flags=[False] * len(plan.take_profits)))
+
+    def test_it_is_inert_while_the_flag_is_off(self) -> None:
+        eng = self._engine()
+        for _ in range(5):
+            self._slot(eng, PositionState.OPEN)
+        assert eng._concurrency_refusal(START, make_plan(vehicle=Vehicle.LEVERAGE)) is None
+
+    def test_a_third_live_swing_position_is_refused(self) -> None:
+        eng = self._engine(backtest_enforces_concurrency=True)
+        assert eng._concurrency_refusal(START, make_plan(vehicle=Vehicle.LEVERAGE)) is None
+        self._slot(eng, PositionState.OPEN)
+        assert eng._concurrency_refusal(START, make_plan(vehicle=Vehicle.LEVERAGE)) is None, "two is his limit, not one"
+        self._slot(eng, PositionState.OPEN)
+        refusal = eng._concurrency_refusal(START, make_plan(vehicle=Vehicle.LEVERAGE))
+        assert refusal is not None
+        assert "max_concurrent_leverage_swing_reached" in refusal
+
+    def test_an_armed_but_unfilled_plan_does_not_occupy_a_slot(self) -> None:
+        """SPEC.md §9.1 - only PARTIAL/OPEN/MANAGING count. A resting limit is not a position."""
+        eng = self._engine(backtest_enforces_concurrency=True)
+        for _ in range(4):
+            self._slot(eng, PositionState.ARMED)
+        assert eng._concurrency_refusal(START, make_plan(vehicle=Vehicle.LEVERAGE)) is None
+
+    def test_a_partial_fill_does_occupy_a_slot(self) -> None:
+        eng = self._engine(backtest_enforces_concurrency=True)
+        self._slot(eng, PositionState.PARTIAL)
+        self._slot(eng, PositionState.PARTIAL)
+        assert eng._concurrency_refusal(START, make_plan(vehicle=Vehicle.LEVERAGE)) is not None
+
+    def test_a_closed_position_frees_its_slot(self) -> None:
+        eng = self._engine(backtest_enforces_concurrency=True)
+        self._slot(eng, PositionState.OPEN)
+        self._slot(eng, PositionState.OPEN)
+        assert eng._concurrency_refusal(START, make_plan(vehicle=Vehicle.LEVERAGE)) is not None
+        eng._live[0].position.state = PositionState.CLOSED
+        assert eng._concurrency_refusal(START, make_plan(vehicle=Vehicle.LEVERAGE)) is None
+
+    def test_the_snapshot_reports_realised_equity_not_the_curve(self) -> None:
+        """``_equity`` is the curve list; reading it as a number was a live bug in the first cut."""
+        eng = self._engine(backtest_enforces_concurrency=True)
+        snap = eng._portfolio_snapshot(START)
+        assert snap.equity_usd == eng.starting_equity
+        assert isinstance(snap.equity_usd, Decimal)
+
+    def test_spot_is_counted_separately_and_capped_at_five(self) -> None:
+        """*"two positions open per account... Spot, you can have multiple"* - S4 [02:06:34]."""
+        eng = self._engine(backtest_enforces_concurrency=True)
+        for _ in range(4):
+            self._slot(eng, PositionState.OPEN)
+        spot = make_plan(vehicle=Vehicle.SPOT)
+        assert eng._concurrency_refusal(START, spot) is None, "leverage slots must not fill the spot cap"
+        assert eng._concurrency_refusal(START, make_plan(vehicle=Vehicle.LEVERAGE)) is not None

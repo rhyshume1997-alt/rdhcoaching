@@ -61,6 +61,20 @@ MIN_SAMPLE_FOR_CONCLUSION = 30
 #: **[OUR CHOICE]** — S5-A19 flags that "a win" is undefined in the corpus.
 BREAKEVEN_R_EPSILON = Decimal("0.05")
 
+#: Interquartile ratio of ``initial_risk_usd`` above which **R is not a common unit** across the
+#: trade population, so ``expectancy_r`` is reported but not headlined (SPEC.md §12.5).
+#: **[OUR CHOICE]** — the corpus never discusses aggregating R, and 1R *is* the stop distance, so
+#: summing R across trades with different stop widths adds unlike things.  Sweep 1.5 / 2.0 / 3.0.
+R_COMPARABLE_MAX_RISK_IQR_RATIO = Decimal("2.0")
+
+#: End-to-end ratio of ``initial_risk_usd`` above which R is not a common unit **even when the
+#: middle half is tight**.  The interquartile test alone is too robust for the failure mode that
+#: actually occurs: a real 700-bar run had a middle half spanning only 1.86x and still reported
+#: -4.7448 R per trade, because ONE trade risked $0.23 against a $42.60 median and its R was 185x
+#: overweighted.  A statistic that misses the case it was written for is not a guard.
+#: **[OUR CHOICE]**, same reasoning as above.  Sweep 3.0 / 4.0 / 10.0.
+R_COMPARABLE_MAX_RISK_FULL_RATIO = Decimal("4.0")
+
 _Z95 = 1.959963984540054
 
 
@@ -195,6 +209,70 @@ class RDistribution:
             worse_than_minus_1r=sum(1 for v in values if v < -1.0),
             histogram=counts,
         )
+
+
+@dataclass(frozen=True, slots=True)
+class RiskDispersion:
+    """**SPEC.md §12.5 reporting guard** — is ``expectancy_r`` a number worth headlining?
+
+    ``initial_risk = |average_entry - initial_stop| x filled_qty``, so 1R *is* the stop distance.
+    Where stop widths differ across trades, R denominates each trade in its own unit and the mean
+    of them is not an expectancy — a $0.23 trade losing $12 scores -54R and swamps the average
+    while moving the book by twelve dollars.  This measures that directly and says so in the
+    report.  **It changes no number**; it decides which number leads.
+
+    ``implied_notional`` is carried because risk is ``notional x stop_distance`` under the CF-02
+    ceiling rather than a budget, so the dispersion below is mostly a picture of stop widths.
+    """
+
+    trades: int
+    min_usd: Decimal
+    p25_usd: Decimal
+    median_usd: Decimal
+    p75_usd: Decimal
+    max_usd: Decimal
+    iqr_ratio: Decimal
+    full_ratio: Decimal
+    median_notional_usd: Decimal
+    r_is_comparable: bool
+    verdict: str
+
+    @classmethod
+    def of(cls, trades: Sequence[ClosedTrade]) -> "RiskDispersion":
+        if not trades:
+            return cls(0, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, True,
+                       "no closed trades")
+        rs = sorted(t.initial_risk_usd for t in trades)
+        ns = sorted(t.qty * t.average_entry for t in trades)
+        q = lambda f: rs[min(len(rs) - 1, int(f * len(rs)))]
+        lo, hi, p25, p75 = rs[0], rs[-1], q(0.25), q(0.75)
+        iqr = p75 / p25 if p25 > ZERO else ZERO
+        full = hi / lo if lo > ZERO else ZERO
+        wide_middle = p25 <= ZERO or iqr > R_COMPARABLE_MAX_RISK_IQR_RATIO
+        fat_tail = lo <= ZERO or full > R_COMPARABLE_MAX_RISK_FULL_RATIO
+        ok = not (wide_middle or fat_tail)
+        if ok:
+            verdict = (
+                f"risk per trade is within {R_COMPARABLE_MAX_RISK_IQR_RATIO}x across the middle "
+                f"half and {R_COMPARABLE_MAX_RISK_FULL_RATIO}x end to end, so R is a common unit "
+                f"here"
+            )
+        else:
+            why = []
+            if wide_middle:
+                why.append(f"spans {iqr:.2f}x across the middle half (p25 ${p25:.2f} -> p75 "
+                           f"${p75:.2f}), past the {R_COMPARABLE_MAX_RISK_IQR_RATIO}x limit")
+            if fat_tail:
+                why.append(f"spans {full:.1f}x end to end (${lo:.2f} -> ${hi:.2f}), past the "
+                           f"{R_COMPARABLE_MAX_RISK_FULL_RATIO}x limit — the ${lo:.2f} trade's R "
+                           f"is weighted {hi / lo if lo > ZERO else ZERO:.0f}x the ${hi:.2f} one's")
+            verdict = (
+                "risk per trade " + "; and ".join(why) + ". 1R is the stop distance, so R is "
+                "denominated differently in each trade and the mean of them is NOT an expectancy. "
+                "Read the USD column."
+            )
+        return cls(len(trades), lo, p25, rs[len(rs) // 2], p75, hi, iqr, full,
+                   ns[len(ns) // 2], ok, verdict)
 
 
 @dataclass(frozen=True, slots=True)
@@ -375,6 +453,7 @@ class MetricsReport:
     expectancy_r: Decimal
     expectancy_usd: Decimal
     r_distribution: RDistribution
+    risk_dispersion: RiskDispersion
     drawdown: Drawdown
     drawdown_by_account: tuple[tuple[str, Drawdown], ...]
     attribution: Attribution
@@ -441,8 +520,20 @@ class MetricsReport:
         add("")
 
         add("-- EXPECTANCY AND R DISTRIBUTION " + "-" * 44)
-        add(f"  expectancy                       {self.expectancy_r:+.4f} R per trade "
-            f"({self.expectancy_usd:+.2f} USD)")
+        d = self.risk_dispersion
+        if d.trades and not d.r_is_comparable:
+            add(f"  expectancy (HEADLINE)            {self.expectancy_usd:+.2f} USD per trade")
+            add(f"  expectancy in R                  {self.expectancy_r:+.4f}  "
+                f"** NOT COMPARABLE, do not headline (§12.5) **")
+            add(f"    {d.verdict}")
+        else:
+            add(f"  expectancy                       {self.expectancy_r:+.4f} R per trade "
+                f"({self.expectancy_usd:+.2f} USD)")
+        if d.trades:
+            add(f"  risk per trade (USD)             min {d.min_usd:.2f}  p25 {d.p25_usd:.2f}  "
+                f"med {d.median_usd:.2f}  p75 {d.p75_usd:.2f}  max {d.max_usd:.2f}")
+            add(f"    spread                         {d.iqr_ratio:.2f}x across the middle half, "
+                f"{d.full_ratio:.1f}x end to end   (median notional {d.median_notional_usd:,.0f})")
         r = self.r_distribution
         add(f"  R: p5 {r.p5:+.2f}  p25 {r.p25:+.2f}  median {r.median:+.2f}  "
             f"p75 {r.p75:+.2f}  p95 {r.p95:+.2f}")
@@ -659,6 +750,7 @@ def compute_metrics(result: BacktestResult) -> MetricsReport:
         expectancy_r=_mean([t.r_multiple for t in trades]),
         expectancy_usd=_mean([t.net_pnl_usd for t in trades]),
         r_distribution=RDistribution.of(trades),
+        risk_dispersion=RiskDispersion.of(trades),
         drawdown=Drawdown.of(curve),
         drawdown_by_account=_account_curves(result.equity_curve, result.starting_equity),
         attribution=_attribution(trades),

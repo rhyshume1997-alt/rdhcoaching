@@ -25,10 +25,13 @@ from tbot.backtest.metrics import (
     CLAIM_HIGH_PCT,
     CLAIM_LOW_PCT,
     MIN_SAMPLE_FOR_CONCLUSION,
+    R_COMPARABLE_MAX_RISK_FULL_RATIO,
+    R_COMPARABLE_MAX_RISK_IQR_RATIO,
     Bucket,
     ClaimComparison,
     Drawdown,
     RDistribution,
+    RiskDispersion,
     WinRates,
     compute_metrics,
 )
@@ -68,6 +71,8 @@ def trade(
     planned_average_entry: float = 100.0,
     excess_risk: float = 0.0,
     touch_index: int = 1,
+    risk: float = 100.0,
+    qty: float = 1.0,
 ) -> ClosedTrade:
     """One closed trade with an exactly specified outcome.  ``pnl`` defaults to ``r * 100`` USD."""
     net = dec(pnl if pnl is not None else r * 100.0)
@@ -77,10 +82,10 @@ def trade(
         conviction=conviction, entry_family=entry_family, account=Account.SPOT_SHORT,
         primary_class=primary_class, confluence_classes=classes, source_ids=("CF-10", "S5-R15"),
         opened_index=0, closed_index=bars, opened_at=START,
-        closed_at=START + timedelta(hours=bars), bars_in_trade=bars, qty=dec(1.0),
+        closed_at=START + timedelta(hours=bars), bars_in_trade=bars, qty=dec(qty),
         average_entry=dec(average_entry), planned_average_entry=dec(planned_average_entry),
         initial_stop=dec(90.0), exit_price=dec(110.0), gross_pnl_usd=net + dec(1.0),
-        fees_usd=dec(1.0), funding_usd=dec(0.0), net_pnl_usd=net, initial_risk_usd=dec(100.0),
+        fees_usd=dec(1.0), funding_usd=dec(0.0), net_pnl_usd=net, initial_risk_usd=dec(risk),
         r_multiple=dec(r), close_reason=close_reason, tps_hit=tps_hit, tp_count=tp_count,
         rungs_planned=len(rungs), rungs_filled=sum(rungs), rung_fill_flags=tuple(rungs),
         touch_index_at_entry=touch_index, excess_risk_usd=dec(excess_risk), liquidated=False,
@@ -400,3 +405,79 @@ def test_metrics_on_an_empty_run_are_all_zero_and_do_not_raise():
     assert report.claim.sample_size == 0
     assert "nothing can be said" in report.claim.conclusion
     assert report.render()
+
+
+# ------------------------------------------------------------ §12.5: is R worth headlining?
+#
+# initial_risk = |average_entry - initial_stop| x filled_qty, so 1R IS the stop distance. Where
+# stop widths differ across trades, the mean of their R values adds unlike things: measured on
+# real data a $0.23 trade losing $12 scored -54R and dragged out-of-sample expectancy to -2.56R
+# while moving the book by twelve dollars. The guard changes no number; it decides which leads.
+
+class TestRiskDispersionGuard:
+
+    def test_a_constant_risk_book_keeps_R_as_the_headline(self) -> None:
+        d = RiskDispersion.of([trade(f"T{i}", r=0.5, risk=100.0) for i in range(8)])
+        assert d.r_is_comparable
+        assert d.iqr_ratio == dec(1)
+        assert "common unit" in d.verdict
+
+    def test_a_dispersed_risk_book_loses_the_headline(self) -> None:
+        trades = [trade(f"T{i}", r=0.5, risk=risk)
+                  for i, risk in enumerate([1.0, 5.0, 20.0, 60.0, 100.0, 200.0, 400.0, 900.0])]
+        d = RiskDispersion.of(trades)
+        assert not d.r_is_comparable
+        assert d.iqr_ratio > R_COMPARABLE_MAX_RISK_IQR_RATIO
+        assert "NOT an expectancy" in d.verdict
+        assert "Read the USD column" in d.verdict
+
+    def test_a_tight_middle_with_one_tiny_trade_still_loses_the_headline(self) -> None:
+        """The real failure mode, from a live 700-bar run the first version of this guard passed.
+
+        Middle half spanned only 1.86x, so the interquartile test alone said "comparable" while the
+        report printed -4.7448 R per trade off a single $0.23 trade against a $42.60 median. The
+        outlier is the whole problem and the robust statistic is exactly the one that hides it.
+        """
+        risks = [0.23, 31.63, 35.0, 42.60, 45.0, 58.68, 60.0, 118.63]
+        d = RiskDispersion.of([trade(f"T{i}", r=0.5, risk=v) for i, v in enumerate(risks)])
+        assert d.iqr_ratio <= R_COMPARABLE_MAX_RISK_IQR_RATIO, "middle half is tight, as on real data"
+        assert d.full_ratio > R_COMPARABLE_MAX_RISK_FULL_RATIO
+        assert not d.r_is_comparable, "the tail test is what has to catch this"
+        assert "end to end" in d.verdict
+        assert "516x" in d.verdict           # 118.63 / 0.23, the weighting the mean is hiding
+
+    def test_the_threshold_is_the_boundary_it_claims_to_be(self) -> None:
+        """p75/p25 exactly at the limit passes; a hair past it fails."""
+        at = RiskDispersion.of([trade(f"T{i}", r=0.5, risk=v)
+                                  for i, v in enumerate([100.0, 100.0, 200.0, 200.0])])
+        assert at.iqr_ratio == dec(2)
+        assert at.r_is_comparable
+        over = RiskDispersion.of([trade(f"T{i}", r=0.5, risk=v)
+                                    for i, v in enumerate([100.0, 100.0, 201.0, 201.0])])
+        assert over.iqr_ratio > dec(2)
+        assert not over.r_is_comparable
+
+    def test_it_reports_notional_because_risk_is_notional_times_stop_width(self) -> None:
+        d = RiskDispersion.of([trade(f"T{i}", r=0.5, risk=100.0, qty=3.0, average_entry=50.0)
+                                 for i in range(4)])
+        assert d.median_notional_usd == dec(150)
+
+    def test_an_empty_book_does_not_claim_incomparability(self) -> None:
+        d = RiskDispersion.of([])
+        assert d.trades == 0 and d.r_is_comparable
+
+    def test_the_render_demotes_R_and_says_why(self) -> None:
+        trades = [trade(f"T{i}", r=0.5, risk=risk)
+                  for i, risk in enumerate([1.0, 5.0, 20.0, 60.0, 100.0, 200.0, 400.0, 900.0])]
+        text = compute_metrics(make_result(trades)).render()
+        assert "expectancy (HEADLINE)" in text
+        assert "NOT COMPARABLE, do not headline" in text
+        assert "risk per trade (USD)" in text
+        # the R number is still present - the guard demotes it, it does not hide it
+        assert "expectancy in R" in text
+
+    def test_the_render_leaves_a_constant_risk_book_alone(self) -> None:
+        text = compute_metrics(
+            make_result([trade(f"T{i}", r=0.5, risk=100.0) for i in range(8)])).render()
+        assert "NOT COMPARABLE" not in text
+        assert "R per trade" in text

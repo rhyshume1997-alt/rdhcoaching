@@ -1060,3 +1060,75 @@ same rule reading from the levels the stop still invalidates. **The correct impl
   `--save-run` record, so `entry_rungs_dropped_outside_stop` appears zero times in a run where the
   rule fired on 93 plans. The rung counts above come from the `plan` event text instead. **A
   diagnostic the record cannot carry is not a diagnostic**; worth fixing before the next measurement.
+
+## The denominator trap, fourth instance - and this one is mine
+
+A scale-invariant yardstick was proposed for reading the ceiling 2x2: **P&L per unit of entry
+notional**, in basis points of turnover. Scaling every position by `k` multiplies notional and gross
+alike, so the ratio is unchanged. Correct, and it is the right unit. Applying it to the runs already
+in hand:
+
+| | notional | gross | net | costs |
+|---|---|---|---|---|
+| baseline IS | $425,231 | **-9.35 bps** | -17.15 bps | 7.80 bps |
+| baseline OOS | $222,575 | **-14.02 bps** | -21.71 bps | 7.70 bps |
+| Q17-on IS | $563,987 | **-19.35 bps** | -27.61 bps | 8.26 bps |
+| Q17-on OOS | $268,777 | **-30.43 bps** | -37.78 bps | 7.35 bps |
+
+**On this measure Q17 is worse, not better** - out-of-sample gross goes -14.02 -> -30.43 bps.
+
+That contradicts what this page said two sections ago: *"per unit of risk the rule is a large
+improvement, which is the number that is not size-confounded"*, citing out-of-sample expectancy
+-2.5637 R -> -0.4530 R. **That claim was wrong and the error is the same one this page has now
+documented three times before.**
+
+`initial_risk = stop_distance x filled_qty`, so R is denominated in stop width. **Q17's entire
+mechanism is widening stop width.** Dividing by a denominator the treatment inflates makes the ratio
+improve whether or not anything got better. I wrote the circularity warning on this page myself and
+then leaned on R as though it were the clean unit. It is the confounded one here; notional is not.
+
+**Corrected reading of Q17: worse in dollars, worse per unit of notional, better only in R - and R
+is the unit its own mechanism moves.**
+
+One limit on that, stated so it is not over-read: Q17 also changes *which* trades happen (77 -> 59,
+35 -> 28), so neither dollars nor bps is a pure comparison across its arms - bps removes the size
+confound and leaves the selection effect. bps is a clean comparison across the **ceiling** arms,
+where the trade population is what changes least and position size is what changes most.
+
+## Two corrections to the gross-P&L figure
+
+**Gross is worse than reported, because the loss it was taken from was the flattered one.** Gross was
+computed as `-639.02 + 293.57 + 38.06 = -307.39`. The -639.02 is the *equity* change, which includes
+one position still open at the end carrying +90.41 unrealised. On the closed book:
+
+| | closed book | fees | funding | **gross** | costs as share of loss |
+|---|---|---|---|---|---|
+| in-sample | -729.43 | 293.57 | 38.06 | **-397.80** | 45 % |
+| out-of-sample | -483.28 | 164.58 | 6.74 | **-311.96** | 35 % |
+
+**The conclusion strengthens rather than weakens: the system loses before costs in BOTH segments.**
+So costs are not the cause - they roughly double a loss that already exists - and *"a real edge eaten
+by fees, so trade less often or on a cheaper venue"* is dead as a hypothesis. That is the cheapest
+finding in the file and it closes a whole branch.
+
+## The size multiple is not a scalar, and it is concentrated on the losers
+
+The prediction that the ceiling-raised cell lands near `baseline x the size multiple` assumes a
+uniform `k`. It is not uniform, because the ceiling binds as a function of stop distance:
+
+| | min | median | max | unscaled (k=1) |
+|---|---|---|---|---|
+| in-sample | 1.00x | 2.59x | **315x** | 5 of 77 |
+| out-of-sample | 1.00x | 6.91x | **1704x** | 1 of 35 |
+
+And `k` correlates with losing:
+
+| quartile by size multiple | in-sample net | out-of-sample net |
+|---|---|---|
+| top (scales most) | **-741.16** over 20 | **-172.22** over 9 |
+| bottom (scales least) | -18.77 over 19 | **+164.72** over 8 |
+
+**The ceiling was differentially suppressing the worst trades** - it binds hardest exactly where the
+stop is tightest, which is where the geometry is broken. So raising it does not multiply the book by
+a scalar; it multiplies the losers far more than the winners. Expect the ceiling-raised cells to come
+in **worse than any uniform-scalar prediction**, and read them in bps, not dollars.

@@ -701,3 +701,50 @@ showed the shape of this - risk up 2.3x, loss up 2.1x.
 rather than capping it, so any fixed percentage re-commits the same error at a different number. A
 real cap belongs on *leverage*, as an exchange limit, and that number is not in the corpus. The key
 already accepts up to 1000.0, so the measurement runs through `--set` with no code change.
+
+### Addendum — no leverage cap is sourced, and his rule does not need one
+
+Confirmed independently: **no maximum leverage is stated anywhere in the corpus.** Only casual
+mentions ("I always do 10x", "10x leverage or 20x leverage"), nothing prescriptive. His rule as
+extracted is therefore *unbounded* - it derives notional and never caps it.
+
+So **whatever replaces 100.0 is `[OUR CHOICE]` exactly as 100.0 was**, and must carry the marker and
+a sweep bracket. Correcting an unsourced constant by substituting a different unsourced constant and
+calling it his is the specific failure this file exists to prevent.
+
+**But the unboundedness is less alarming than it looks, because his rule is scale-invariant in the
+ratio that matters.** With margin fixed at 10 % of equity and leverage solved so the stop-out costs
+4 %, the stop always sits at the same fraction of the distance to liquidation:
+
+    stop at d = 0.4 / L        liquidation at 1 / L        d / (1/L) = 0.40, for every L
+
+| leverage | stop | liquidation | stop as a share of the way there |
+|---|---|---|---|
+| 10x | 4.000 % | 10.000 % | 0.40 |
+| 40x | 1.000 % | 2.500 % | 0.40 |
+| 72.9x | 0.549 % | 1.372 % | 0.40 |
+| 200x | 0.200 % | 0.500 % | 0.40 |
+
+**The stop is 40 % of the way to liquidation at any leverage.** Raising the ceiling therefore does
+not move the position closer to liquidation - that ratio is fixed by his own 10 %-margin / 4 %-risk
+pair. The engine models liquidation (`engine._check_liquidation`), so this is checkable rather than
+assumed, and the runs below report `liquidations`.
+
+What *does* scale with notional is **fees and funding**, both charged on notional in §12.3. At 729 %
+of equity they are 7.3x what the shipped book paid, against an in-sample `total_funding_usd` of
+38.06 and `total_fees_usd` of 293.57. A cap is therefore a practical necessity (exchange limits,
+funding drag) rather than a risk-control one - which is precisely why it is ours to choose and must
+be marked, swept, and never presented as his.
+
+### The 2x2, because one cell is not interpretable
+
+Sizing corrected with Q17 **off** leaves the broken ladder geometry in place, and derived leverage on
+the tightest measured stop is ~19,000x. That is the ladder defect read through a corrected sizing
+rule, not his method. Q17 **widens** stops and so **lowers** derived leverage, while the sizing
+correction **raises** size - the two push opposite ways, and only the pair states what his method
+does. All four cells are therefore measured:
+
+| | ceiling 100 % (shipped) | ceiling 1000 % |
+|---|---|---|
+| Q17 off | the baseline | where the new ceiling sits |
+| Q17 on | -1202.21 / -1015.53 | **his method** |

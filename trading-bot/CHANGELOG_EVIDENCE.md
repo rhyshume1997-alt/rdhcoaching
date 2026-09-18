@@ -624,3 +624,80 @@ choice, and not a judgement call for the user to make.**
 
 Not yet applied. Per the standing convention it ships behind a flag defaulted off and is measured
 against the current book before anything changes.
+
+---
+
+## Q18 — Is the notional ceiling his rule? — **`stated`, and it is not**
+
+Raised by the Q17 measurement: fixing the ladder geometry doubled the book's loss because it
+widened stops, which released a size cap nobody had identified as binding. Chasing what the cap
+actually is leads here.
+
+### His sizing rule, stated as a rule
+
+**S7 `[00:25:54]`** — the only place he teaches sizing as a procedure rather than mentioning a habit:
+
+> *"you have a $1,000 portfolio. **You enter each play with 10 % of your portfolio.** Okay. So uh you
+> know **whatever the leverage is you calculate that you only lose four to 5 % of your port** in that
+> swing play."*
+
+Two quantities, and only one of them is fixed:
+
+* **margin = 10 % of portfolio** — fixed.
+* **leverage = whatever makes the stop-out loss 4-5 %** — *derived from the stop distance*.
+
+Corroborated as a target rather than a cap at **S7 `[00:14:13]`** (*"you're going to be playing with
+your position size in advance that you lose no more than four to 5 %"*) and **S2 `[01:47:44]`**
+(*"a swing play go in with four to 5 % risk if your stop loss to get hit"*).
+
+### Where the 10x came from, and why it is not a rule
+
+**S2 `[01:52:12]`** is the sole "10x" statement, and it is a spreadsheet walkthrough, not a method:
+
+> *"Position long. Leverage. **I always do 10x, but whatever leverage you put, go ahead and put
+> there.**"*
+
+He is filling in a column of his trading-log template and generalises it away in the same sentence.
+
+### The defect
+
+`max_notional_pct_leverage = 100.0`, and its own note states the derivation: *"10 % margin x 10x
+default leverage = 100 % of equity."* **That hard-codes the habit as a constraint.** Solving his
+actual rule:
+
+    L = 0.4 / stop_distance          notional = 0.10 x equity x L
+
+| stop distance | required leverage | required notional |
+|---|---|---|
+| **4.00 %** | **10.0x** | **100 % of equity** <- the shipped ceiling |
+| 2.00 % | 20.0x | 200 % |
+| 1.00 % | 40.0x | 400 % |
+| 0.549 % | 72.9x | 729 % |
+
+**The ceiling is exactly the notional his method needs at a 4.00 % stop.** It is not a cap he
+states; it is one stop width frozen into a constant. Every tighter stop is silently under-sized,
+and tighter is almost all of them - measured stop distances reach 4 % on **5 of 77** in-sample and
+**1 of 35** out-of-sample.
+
+Consequence, measured on the shipped baseline: median realised risk is **$57.14 against a $400
+budget in-sample (7.0x under) and $25.32 out-of-sample (15.8x under)**.
+
+### This is Q8, half-fixed
+
+Q8 found `max_notional_pct_leverage = 10.0` was his *margin* figure enforced as a *notional*
+ceiling, under-risking by ~5x, and corrected it to 100.0 by multiplying margin by 10x. That
+corrected the margin/notional confusion and **preserved the fixed-leverage assumption underneath
+it**, which S7 `[00:25:54]` contradicts directly. The same bug, one layer down.
+
+### What follows - and it is not good news
+
+Under his stated rule the bot should be risking 4-5 % per swing trade. It has been risking a median
+of 0.57 % in-sample. **Every result this project has produced was measured on a book trading roughly
+one seventh of its intended size**, including the "no out-of-sample edge" verdict. Correcting it
+does not improve that verdict; it scales the losses toward their intended magnitude. Q17 already
+showed the shape of this - risk up 2.3x, loss up 2.1x.
+
+**No default changed here.** The correct ceiling is not another constant: his rule derives notional
+rather than capping it, so any fixed percentage re-commits the same error at a different number. A
+real cap belongs on *leverage*, as an exchange limit, and that number is not in the corpus. The key
+already accepts up to 1000.0, so the measurement runs through `--set` with no code change.

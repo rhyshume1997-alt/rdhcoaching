@@ -1,0 +1,102 @@
+!!! SUPERSEDED IN PLACES - see 09-CORRECTIONS-2026-09-06.md before using this file.
+!!! Corrected here: C8 the caption blocker applies to the public channel only
+!!! Nothing below is deleted. The corrections file says what changed and why.
+
+================================================================
+CONSOLIDATED RULE STATE  —  v3
+Supersedes v1 and v2 and everything scattered across the other
+files for anything bot-facing. Read this one before coding.
+Two claims from v2 are weakened here. Both were mine.
+================================================================
+
+CODEABLE NOW
+  ENTRY LOCATION — proximal edge of the BODY band, WITH ONE KNOWN EXCEPTION
+    The edge price reaches first. Long into demand from above -> TOP edge.
+    Short into supply from below -> BOTTOM edge. Where a zone is drawn as two
+    bands (darker body band, pale wick band), use the BODY band's edge; the
+    wick band is not part of the entry geometry.
+    Four confirmations:
+        2023-10-24 BNB 1D    SHORT   entry on body-band bottom edge, 0.5 px
+        2024-06-09 BTC 1D    LONG    entry on box top edge,          0.5 px
+        S8 1:02:28 DOGE 2h   SHORT   entry at fraction 1.00
+        S8 1:03:38 DOGE 2h   SHORT   entry at fraction 1.00
+        S8 1:28:33 SOL 4h    LONG    entry at fraction 0.01 from top
+    ONE MEASURED EXCEPTION, and it is real, not an artefact:
+        TBOT1 1:09:19 OM 1h  LONG    entry at fraction 0.173 from the zone top
+    Re-measured with getImageData, R:R gate passed (2.971 vs printed 2.97), and
+    a full-width row scan across x 200-1150 found only two horizontal lines in
+    the region (rows 544 and 608) with nothing at the entry row 555 — so there
+    is no narrower nested body band that would put this entry on an edge. The
+    zone is a single band and the entry sits about a sixth inside it.
+    DO NOT code the edge rule as unconditional until this is explained.
+
+  POSITION TOOL DECODE — for reading any future frame
+    Amount = account balance on a $1,000 nominal base ($1,000 derived, not
+    assumed). risk = 1000 - Amount(stop leg). reward = Amount(target) - 1000.
+    Printed % is entry-relative. Printed R:R = target distance / stop distance.
+    Risk is $250 on every frame checked, 2022-11 to 2025-06, eight trades.
+
+  ZONE EDGES — bodies, not wicks. Unchanged across all passes.
+
+  MEASUREMENT GATE — use this on every future frame
+    Accept a frame's geometry only if
+        (entry_row - target_row) / (stop_row - entry_row)
+    reproduces the printed R:R. It caught a genuine error mid-pass (a stop
+    label box's bottom being read as the stop line) and it correctly refused
+    two frames whose semi-transparent fills and label halos could not be
+    resolved closer than ~10 px. Frames that fail the gate are unreadable,
+    not estimates.
+
+WITHDRAWN OR WEAKENED
+  STOP OVERSHOOT AS A FIXED PIXEL GAP — my hypothesis, dead
+    Measured: +15.5 px, -14.5 px, -1.0 px. The signs do not agree. No fixed
+    visual gap.
+
+  "STOP SITS AT OR JUST PAST THE FAR EDGE OF THE NEAREST STRUCTURE" — weakened
+    v2 said "past". One of the three validated frames has the stop 14.5 px
+    INSIDE the band it is nearest to, not beyond it:
+        BNB 1D    +15.5 px   beyond the wick-band top
+        BTC 1D    -14.5 px   inside the lower band
+        BTC 4h     -1.0 px   on the dashed level
+    Expressed as % of price the slop is 0.71%, 0.83%, 0.03%.
+    WHAT SURVIVES: the stop is placed AT a structural level — a wick band edge,
+    a deeper zone edge, or a plain drawn level — with hand-placement slop of up
+    to about 0.8% of price on EITHER side. Snapping the bot's stop exactly to
+    the level is the best available estimator. The slop looks like human
+    imprecision, not a rule, and should not be modelled.
+    This also retires the "stop 79 units below the lower band" figure I gave
+    for 2024-06-09; the corrected reading is 526 units inside it.
+
+  STOP DISTANCE AS A FRACTION OF ZONE HEIGHT — withdrawn in v2, stays withdrawn
+    0.479 / 0.487 / 0.582 were one arbitrary choice of reference band made
+    three times. The same frames yield 0.042 to 4.145 depending on which band
+    is nominated.
+
+  RISK PER TRADE — do not import. $250 on a $1,000 nominal account is a
+    teaching template, not a live sizing rule.
+
+BLOCKED — ONE DEPENDENCY, THREE QUESTIONS
+  Browser caption harvesting is now definitively dead, not merely flaky:
+      adjacent cues differ ......... FAIL (21 captures, 1 identical string)
+      fresh-reload reproducibility . FAIL (same timestamp, different text
+                                     on a different page load)
+      capture rate ................. 1 distinct cue in ~20 expected = 5%
+  The reproducibility inversion is the dangerous part: the caption element
+  latches one REAL cue per page load and binds it to every timestamp queried,
+  and which cue it latches varies per run. A harvester would produce genuine
+  sentences attached to wrong timestamps — a transcript that reads as clean and
+  is confidently wrong.
+  Q1 SWING WIDTH, Q2 BREAKOUT % BY TIMEFRAME and Q7 CONFLUENCE COUNT all need
+  speech and none of them has moved in five passes. yt-dlp run locally is now
+  the only route. Until that happens these three stay open and no amount of
+  further frame work will touch them.
+
+OPEN, NOT BLOCKED
+  THE OM EXCEPTION. Hypothesis worth testing: he places the entry inside a zone
+  that price has ALREADY traded through, and on the edge only where the zone is
+  untouched. Supporting observation from the pass-2 frames, needs confirming:
+  on the OM chart a capitulation candle had already swept below the zone before
+  price rallied away, whereas the SOL and DOGE zones had not yet been reached at
+  all. If that distinction holds, the edge rule survives with a condition
+  attached rather than a hole in it. Testable by checking, on each frame,
+  whether any candle left of the position tool has already penetrated the zone.

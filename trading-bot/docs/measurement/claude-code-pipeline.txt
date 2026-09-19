@@ -1,0 +1,121 @@
+!!! SUPERSEDED IN PLACES - see 09-CORRECTIONS-2026-09-06.md before using this file.
+!!! Corrected here: C8 the caption blocker, and the unmapped video IDs
+!!! Nothing below is deleted. The corrections file says what changed and why.
+
+Local pipeline job. Everything here runs on my machine from the terminal. No
+browser automation, which is the point: five previous passes fought a live
+YouTube player for frames and captions and lost both fights. Doing it locally
+removes every one of those failure modes.
+
+WHAT THIS IS FOR
+I am reverse-engineering a crypto TA educator's chart-marking method into a
+trading bot rule set. Most of it is settled. Two things are not, and both failed
+in the browser for reasons that do not apply to a local pipeline.
+
+SETUP
+  yt-dlp and ffmpeg. Check whether they are installed and install if not.
+  Some of the videos are PRIVATE and belong to me. Use
+      --cookies-from-browser chrome
+  (or whichever browser I am logged into, ask me if it fails) so those resolve.
+  Work in a scratch directory, not my home directory. Tell me where.
+
+=== TASK 1 — CAPTIONS ===
+Browser caption harvesting is dead. It returns real sentences bound to the wrong
+timestamps and the binding changes per page load, so it produces a transcript
+that reads clean and is confidently wrong. yt-dlp sidesteps it entirely.
+
+  yt-dlp --write-auto-sub --sub-lang en --skip-download --sub-format vtt \
+    7HHqibkPmWk TmheqrigTgk 4qruwPWwXmo Qe659NQE_QA sbablVeGaNQ RolQ9uPpse8
+
+Those are six public videos from the channel @arshmeister21. If any fail, tell
+me which and why rather than substituting others.
+
+Then search the VTTs and answer three questions. Report exact quotes with
+timestamps, and say "not stated" where nothing is found.
+
+  Q1 SWING DEFINITION
+     What qualifies as a swing high or low, specifically how many candles either
+     side must fail to exceed it.
+     Search: swing high, swing low, pivot, candles either side, higher high,
+     lower low, three candles, five candles, confirmed swing
+
+  Q2 MINIMUM BREAKOUT PERCENTAGE BY TIMEFRAME
+     He gives minimums for 15m, 30m, 1H and 1D somewhere. I need 2H, 4H, 8H and
+     12H, or confirmation he never gives them.
+     Search: percent, minimum move, breakout, break out, 2h, 4h, 8h, 12h,
+     four hour, twelve hour, timeframe
+     IMPORTANT: two measurement passes found no percentage on any of those four
+     timeframes. "He never specifies them" is a likely and perfectly good
+     answer. Because this is a negative finding, report the caption coverage:
+     total cue count and any gaps longer than 30 seconds. A sparse transcript
+     cannot support a negative.
+
+  Q7 CONFLUENCE THRESHOLD
+     How many confluences he requires before taking a trade.
+     Search: confluence, confluences, confirmation, three things, line up,
+     stack, A+ setup, high probability
+
+Auto-captions mangle numbers badly. Where a quote contains a figure, flag it as
+needing a frame check rather than treating it as final.
+
+=== TASK 2 — FRAME MEASUREMENT ===
+Pull only the seconds needed, not whole videos:
+
+  yt-dlp --download-sections "*1:09:10-1:09:30" -f "bv*[height<=1080]" \
+    --force-keyframes-at-cuts <videoId>
+
+then ffmpeg to extract the exact frame as PNG, then measure with numpy or PIL.
+This is strictly better than the browser method: no seek staleness, no silent
+quality collapse to 144p, deterministic pixels, and reproducible.
+
+THE QUESTION: entry placement is settled as "the proximal edge of the zone's
+body band", meaning the edge price reaches first. Long into demand from above
+puts entry on the top edge, short into supply from below puts it on the bottom
+edge. Five frames confirm it. One frame breaks it, with the entry 0.173 of the
+way inside the zone instead of on its edge.
+
+HYPOTHESIS TO TEST: he enters at the edge when the zone is untouched, and inside
+it when price has already traded through the zone.
+
+Frames:
+  6u7mxH4xM-4  @ 1:09:19   OMUSDT.P 1h    LONG    the exception, 0.173
+  rr3p4LjMY6U  @ 1:28:33   SOLUSDT.P 4h   LONG    edge entry
+  rr3p4LjMY6U  @ 1:02:28   DOGEUSDT.P 2h  SHORT   edge entry
+  rr3p4LjMY6U  @ 1:03:38   DOGEUSDT.P 2h  SHORT   edge entry
+Two public cross-checks. Find their IDs with
+  yt-dlp --flat-playlist --print "%(id)s %(title)s" \
+    https://www.youtube.com/@arshmeister21/videos
+  "Unity Academy: Confirmation and Confluence"   @ ~19:48   BNB 1D  SHORT
+  "06-09-2024 BITCOIN AND ALTCOIN RECAPS"        @ ~13:41   BTC 1D  LONG
+
+For each frame report:
+  1. Zone box top and bottom in price.
+  2. Whether any candle LEFT of the position tool has penetrated the zone. If
+     so, how deep as a fraction of zone height, and whether wick or body.
+  3. Where current price sits: above, below or inside the zone.
+  4. The entry line's fraction from the zone top, measured independently.
+
+VERDICT: does prior penetration predict edge versus inside entry across all six?
+If the OM zone turns out untouched, or an edge-entry zone turns out already
+penetrated, the hypothesis is dead and the entry rule has a real hole. Say so.
+
+=== MEASUREMENT RULES, LEARNED THE HARD WAY ===
+  - Calibrate price per pixel from the position tool's stop leg, which prints
+    its own price span. Do not calibrate off axis labels: they get pushed apart
+    to avoid overlapping and their positions are not true.
+  - Validate every frame with
+        (entry_row - target_row) / (stop_row - entry_row) == printed R:R
+    A frame failing that gate is unreadable, not an estimate. This gate already
+    caught a stop label box's bottom edge being read as the stop line.
+  - Position tool label boxes have white halos sitting on box edges. Read edges
+    on columns well clear of any label.
+  - The tool's Amount field is account balance on a $1,000 nominal base, not
+    risk. risk = 1000 - Amount(stop leg), reward = Amount(target) - 1000.
+  - Never combine a measurement from one view with a price from another. That
+    single mistake produced both wrong answers in this project so far.
+
+OUTPUT
+Task 1 as three answers with quotes and timestamps, plus the coverage stats.
+Task 2 as a six row table plus a verdict sentence.
+Mark anything you cannot establish as unreadable. These values go into software
+and a wrong number is worse than a gap.

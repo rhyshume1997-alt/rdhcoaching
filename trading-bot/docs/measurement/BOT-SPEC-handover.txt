@@ -1,0 +1,140 @@
+!!! SUPERSEDED IN PLACES - see 09-CORRECTIONS-2026-09-06.md before using this file.
+!!! Corrected here: C5 BNB worked example; C6 R:R distribution; C7 the 50% line
+!!! Nothing below is deleted. The corrections file says what changed and why.
+
+================================================================
+TRADING BOT RULE SET — HANDOVER SPECIFICATION
+Output of five measurement passes against video frames of a crypto
+TA educator's TradingView charts. Everything below is measured from
+chart pixels and printed tool labels, not from anything he said.
+Read the whole document before writing code. Several plausible
+looking rules in here are marked WITHDRAWN and must not be revived.
+================================================================
+
+BEFORE YOU WRITE ANY CODE, ASK ME
+  1. Language and stack.
+  2. Data source: exchange API, CSV history, or something else.
+  3. Backtest only, paper, or live.
+  4. Which instruments and timeframes to target.
+  5. Whether zones are to be detected programmatically or supplied by hand.
+     This matters more than it sounds. Every rule below assumes a zone already
+     exists. Zone DETECTION is not specified by this document.
+
+--- SETTLED RULES ---
+
+1. ZONE CONSTRUCTION
+   A zone box spans candle BODIES, not wicks. Confirmed across every frame in
+   all five passes.
+   Some zones are drawn as two stacked bands: an inner darker BODY band and an
+   outer paler WICK band extending to the wick extremes. Where both exist:
+       - entry geometry uses the BODY band only
+       - the WICK band is used only when locating the stop
+   Measured example (BNB 1D):
+       wick band   242.20 to 248.56   (pale)     [C5: read 249.25 corrected]
+       body band   237.79 to 242.20   (darker, bordered)  [C5: 237.80 to 242.49]
+
+2. ENTRY PLACEMENT                                    confidence: high
+   Entry sits on the PROXIMAL edge of the body band, meaning the edge price
+   reaches first.
+       long into demand from above   -> TOP edge of the body band
+       short into supply from below  -> BOTTOM edge of the body band
+   Five confirmations across two directions, four instruments, 2023 to 2025,
+   two independent measurement methods. Two of them land within 0.5 pixels of
+   the edge.
+   ONE KNOWN EXCEPTION, unexplained at time of writing: a long with the entry
+   0.173 of the way into the zone rather than on its edge. Re-measured and
+   confirmed real. A test is pending on whether prior penetration of the zone
+   explains it (edge entry on a virgin zone, inside entry on one price has
+   already swept). Until that resolves, treat the edge rule as correct but
+   allow an offset parameter defaulting to 0.
+
+3. STOP PLACEMENT                                     confidence: medium
+   The stop is placed AT a structural level, not at a computed distance from
+   the entry. The level is whichever of these is nearest beyond the zone:
+       - the far edge of the zone's wick band
+       - the far edge of a separate deeper zone
+       - a plain drawn horizontal level
+   Implement as: snap the stop to the nearest such level.
+   His own placement carries slop of up to about 0.8% of price, on EITHER side
+   of the level, and in one case the stop sat INSIDE the band it was nearest
+   to. That looks like hand placement, not a rule. Do not model an offset.
+   Qualitative constraint that held on every frame measured: the stop is below
+   the candle bodies and above the deepest capitulation wick. It does not clear
+   the capitulation wick, which is deliberate and repeated.
+
+4. TARGETS                                            confidence: low
+   No fixed rule found. Observed reward-to-risk across eight trades:
+       1.60, 2.06, 2.13, 2.27, 2.61, 2.97, 3.17, 5.00
+       median 2.44, mean 2.73, six of eight fall between 2.0 and 3.2
+   Treat target selection as unspecified. If a default is needed, R:R 2.5 sits
+   at the centre of what he actually does, but this is a description of his
+   behaviour, not a rule he follows.
+
+5. POSITION SIZING                                    NOT DERIVABLE
+   His charts show $250 risk on a $1,000 nominal account, unchanged across
+   eight trades from 2022-11 to 2025-06. That is 25% per trade and it is a
+   teaching template, not a live sizing rule. No frame anywhere shows a real
+   account size or a real percentage.
+   Derive position size from the operator's own risk budget and the stop
+   distance. Do not import 250, do not import 25%.
+
+--- WITHDRAWN. DO NOT REVIVE THESE ---
+
+  "Stop sits roughly 0.5x the zone height below the zone bottom."
+      Came from three samples reading 0.479, 0.487, 0.582. It is an artefact of
+      which band was nominated as "the zone". The same frames yield anywhere
+      from 0.042 to 4.145 depending on that choice, a factor of 99.
+
+  "Risk per trade is a fixed $750."
+      Misinterpretation of the position tool's Amount field. It is $250, and it
+      is a template regardless.
+
+  "The stop clears the structure by a fixed gap."
+      Tested as pixels, as percent of price, as percent of stop distance and as
+      a fraction of zone height. Inconsistent on all four, and the sign is not
+      even stable. Dead.
+
+  "Entry is at the 50% line of the zone."
+      A caption cue suggested this. Measurement shows the 50% line is neither
+      the entry nor the DCA level. It sits near the body band's midpoint and
+      has no established role.
+
+--- OPEN, HANDLE AS PARAMETERS ---
+  These three could not be recovered from chart pixels because he states them
+  aloud rather than drawing them. Do not hard code a guess. Make each a config
+  value and sweep it in backtest. The operator's own data is a better authority
+  here than the source material.
+      SWING_WIDTH            candles either side of a pivot that must not
+                             exceed it. Weak single-frame evidence for 4.
+                             Sweep 2 to 5.
+      MIN_BREAKOUT_PCT       by timeframe. He specifies 15m, 30m, 1H and 1D
+                             somewhere in his material but nothing was found
+                             for 2H, 4H, 8H or 12H across five passes. It is
+                             possible he never specifies them. Sweep.
+      CONFLUENCE_THRESHOLD   count of overlapping marked objects required
+                             before taking a setup. One clean setup showed 5
+                             objects converging. His own threshold is unknown.
+                             Sweep 2 to 5.
+
+--- READING FUTURE CHARTS ---
+  If more frames get measured later, the TradingView position tool decodes as:
+      Amount on the stop leg    = account balance after the loss, on a $1,000
+                                  nominal base. risk   = 1000 - Amount
+      Amount on the target leg  = balance after the win.  reward = Amount - 1000
+      printed %                 = entry-relative
+      printed R:R               = target distance / stop distance
+  The $1,000 base is derived, not assumed: solving for it from three frames in
+  three different years returns exactly 1000.00 each time.
+  Validate any frame reading with
+      (entry_row - target_row) / (stop_row - entry_row)  ==  printed R:R
+  A frame that fails that gate is unreadable, not an estimate.
+
+--- PROVENANCE ---
+  Five passes. Sources: the educator's public YouTube channel (@arshmeister21,
+  182 videos, all live chart analysis) and the operator's own private course
+  recordings. Measurements are getImageData pixel reads of raw video frames
+  with price-per-pixel calibrated from the position tool's printed stop leg.
+  Two figures in earlier drafts were wrong and were corrected: the risk amount
+  and the stop fraction. Both errors came from the same cause, which was
+  combining a measurement taken in one magnified view with a price read in
+  another. Anything measured that way in future should be treated as suspect.

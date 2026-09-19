@@ -1,0 +1,155 @@
+!!! SUPERSEDED IN PLACES - see 09-CORRECTIONS-2026-09-06.md before using this file.
+!!! Corrected here: STALE. Its 'ALREADY ESTABLISHED, do not re-derive' block contains TWO claims this project has since withdrawn: the $750 risk figure and the 0.5x zone-height stop. Do not paste this into a fresh session as written.
+!!! Nothing below is deleted. The corrections file says what changed and why.
+
+Extraction job against a public YouTube channel. READ ONLY — do not subscribe,
+like, comment or change anything. Forcing playback quality to 1080p is fine and
+expected (playback-only, touches nothing on the channel).
+
+THE CHANNEL
+  Arshmeister, @arshmeister21, channel ID UCxK0Sgqs3rZYrm0o6shk_HA
+  Crypto TA educator. Supply and demand zones, order blocks, support/resistance.
+  Auto-generated English captions (ASR) available on his videos.
+  A full inventory pass established that EVERY video on this channel is live
+  chart analysis. Even the titled "lessons" are taught on a live TradingView
+  chart with real candles, often in Replay mode — there is no slide-based or
+  talking-head content anywhere. That matters for method: every verbal claim you
+  find has a chart on screen at that same moment to check it against.
+
+WHY: I am building a rule set for a trading bot. Measuring his charts frame by
+frame has already established some parameters but has stalled on the ones he
+STATES OUT LOUD rather than draws. Those cannot be recovered from pixels. This
+job is transcript-first.
+
+ALREADY ESTABLISHED by measurement — do not re-derive, only confirm or contradict
+  - Zone boxes are drawn to candle BODIES, not wicks. Sometimes a second band
+    extends down to the wick lows.
+  - Stop sits roughly 0.5x the zone height below the zone's bottom edge
+    (measured 0.48, 0.49, 0.58 on three separate trades). Below the bodies, and
+    deliberately NOT below the deepest "capitulation" wick.
+  - Risk per trade appears fixed at $750 on three separate trades.
+  - Observed reward:risk 2.13, 2.97, 3.17, 5.0 — no fixed target rule found.
+  - Entry sits at an EDGE of the zone, not the middle — but the top edge on one
+    trade and the bottom edge on two others. No rule established.
+
+THE OPEN QUESTIONS — this is what I actually need
+  Q1 SWING DEFINITION. What qualifies as a swing high or swing low? Specifically
+     how many candles either side must fail to exceed it. Measurement suggests 4
+     but rests on a single frame.
+  Q2 BREAKOUT SIZE BY TIMEFRAME. He gives minimum % moves for 15m, 30m, 1H and
+     1D but skips 2H, 4H, 8H and 12H. I need those four, or confirmation that he
+     never gives them. Fair warning: two measurement passes found no percentage
+     on any of those four timeframes, so "he never specifies them" is a live
+     possibility and a perfectly good answer.
+  Q3 ENTRY vs DCA. Which line is the first entry and which is the DCA add, and
+     where each sits inside the zone as a fraction from the top edge.
+  Q4 ZONE CONSTRUCTION. Bodies or wicks, and when one box versus two nested.
+  Q5 STOP RULE. How he decides stop distance, and his stated reason for not
+     clearing the capitulation wick.
+  Q6 RISK SIZING. Fixed dollar risk or % of account? Any stated account size,
+     leverage, or max risk per trade.
+  Q7 CONFLUENCE THRESHOLD. How many confluences before he takes a trade.
+     Measurement found 5 overlapping objects on one clean setup — I want his
+     number, not mine.
+
+METHOD — transcript first, frames as confirmation
+  1. Open the transcript. It is NOT in the "..." menu (that has only Download and
+     Report). Click "...more" on the description, then "Show transcript" at the
+     bottom. Or pull the caption track directly.
+  2. Search for the terms listed under each question. Report the exact quote and
+     its timestamp.
+  3. Wherever a quote contains a number, seek to that timestamp and screenshot
+     the chart. Auto-captions mangle figures badly — "point six one eight",
+     dropped digits, "two percent" for 2.2. Since every video here is chart-based
+     this check is always available, so any numeric claim reported without a
+     frame check must be labelled transcript-only and unconfirmed.
+  4. If a video yields nothing, say so in one line and move on. Do not pad.
+
+SEARCH TERMS
+  Q1  swing high, swing low, pivot, candles either side, higher high, lower low,
+      three candles, five candles, confirmed swing
+  Q2  percent, %, minimum move, breakout, break out, one percent, two percent,
+      2h, 4h, 8h, 12h, four hour, twelve hour, timeframe
+  Q3  DCA, dollar cost, add, second entry, first entry, scale in, limit order,
+      top of the zone, bottom of the zone, fifty percent of the zone
+  Q4  body, bodies, wick, wicks, order block, OB, supply zone, demand zone,
+      draw the box, mark the zone
+  Q5  stop, stop loss, invalidation, invalidated, below the wick, below the low,
+      capitulation, wick hunt, stop hunt
+  Q6  risk, risk per trade, position size, account, leverage, one percent risk,
+      how much I risk, R multiple
+  Q7  confluence, confluences, confirmation, three things, line up, stack,
+      A+ setup, high probability
+
+TIER 1 — do these first. Note that five of the six fall in Oct 2023 to Jan 2024,
+which is when he ran a structured teaching arc. Highest rule density on the
+channel.
+  1:08:59  Unity Academy Live Stream: Finding Entries, DCA, TP's and
+           Stop Losses                              2023-12-07   Q3 Q5 — bullseye
+  1:09:45  Unity Stream: How To Identify Ranges and
+           Properly Play Them                       2023-12-12   Q1 Q4
+  1:27:54  Supply and Demand Trading Method - Arsh way  2022-10-19  Q4 Q1 Q3
+             most-viewed video on the channel, 2.5k, and the method piece
+    59:06  Unity Academy: Confirmation and Confluence   2023-10-24  Q7
+  1:02:22  Unity Academy Live Stream: Risk Management   2024-01-23  Q6 Q5
+  1:00:10  Unity Academy Live Stream: Trendlines        2024-01-30  Q1
+
+TIER 2 — only if tier 1 leaves questions open
+    50:15  Unity Academy Confirmation Lesson            2023-10-04  Q7
+  1:12:02  Unity Academy Trading Psychology and Risk
+           Management Stream                            2023-10-04  Q6
+  1:01:18  Unity Academy Live Stream: Finding Trade
+           Set-ups                                      2023-10-10  Q7 Q3
+    16:55  How I Look For Trade Set Ups and Trade Ideas  2022-12-06  Q7 Q1
+    13:37  Scalp Trading Strategy - Break of Trend
+           and Retests                                  2022-10-20  Q1 Q2
+    13:37  How To Play Swing Failure Pattern             2023-02-14  Q1
+     9:21  How To Use Fibonacci Extensions For Price
+           Discovery                                     2023-02-14  Q3
+    22:08  MICRO/MACRO BITCOIN ANALYSIS & HOW TO PLAY
+           A RANGE                                       2023-04-20  Q1 Q4
+  2:25:29  AMA and Live charting with Arshmeister        2025-12-21  all
+             Q&A, so rules get stated in answer to direct questions. SKIP TO
+             ~1:15:00 — it is still on a "STARTING SOON" holding card at 40:00
+             and the real runtime is about 70 minutes.
+
+TIER 3 — OPTIONAL CROSS-CHECK, only if tier 1 and 2 leave Q2 or Q3 open
+  The private course recordings this rule set is being reverse-engineered from
+  appear to date from late July to mid August 2024, read off their chart date
+  axes (BTC ~66.5k, SOL ~172-183, axis labels "Thu 18 Jul '24" through
+  "Wed 14 Aug '24"). These public videos cover the same weeks and the same
+  instruments, so he may be discussing the same setups publicly:
+    2024-07-22  24:30    07-22-2024 BITCOIN AND ALTCOIN RECAPS
+    2024-08-03  43:09    BTC OUTLOOK AND SMALL MARKET UPDATE
+    2024-08-06  53:23    Unity Academy Live Stream
+    2024-08-13  46:51    Unity Academy Live Stream
+    2024-08-20  1:05:51  Unity Academy Live Stream
+    2024-08-30  38:04    08-30-2024 BITCOIN AND ALTCOIN RECAPS
+    2024-09-03  1:04:05  Unity Academy Live Stream
+    2024-09-08  28:10    BITCOIN AND ALTCOIN RECAPS - RELIEF INCOMING?
+  Search these for SOL, DOGE, ORDI, BONK, ZEC and LINK specifically. A rule
+  stated publicly about the same chart in the same week as the private session
+  is the strongest evidence available. The date bracket is an inference from
+  chart content, not a stated fact — treat it as a lead, not a certainty.
+
+OUTPUT
+Plain text, organised by QUESTION not by video, so I can read one answer at a
+time:
+
+  Q3 ENTRY vs DCA
+  ANSWER: <one or two sentences, or "not stated in the material checked">
+  EVIDENCE:
+    "<exact quote>"  — Finding Entries DCA TPs and Stop Losses @ 34:12
+       frame check @ 34:12: confirmed / contradicted / no number to check
+    "<exact quote>"  — Supply and Demand Method @ 1:02:44
+       frame check: transcript-only, unconfirmed
+  CONFIDENCE: stated explicitly / implied / not found
+
+Then a closing section: which of Q1-Q7 are now answered, which remain open, any
+place where what he SAYS contradicts what the measurements found (flag these
+loudly — I want the conflicts, not a tidied-up consensus), and which videos are
+worth a full manual watch because the transcript hinted at something the search
+terms nearly missed.
+
+Do not fill gaps with plausible-sounding numbers. "Not stated" is a useful answer
+and a wrong number is not — these values go straight into software.

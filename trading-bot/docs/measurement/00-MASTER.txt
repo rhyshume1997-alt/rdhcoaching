@@ -1,0 +1,305 @@
+!!! SUPERSEDED IN PLACES - see 09-CORRECTIONS-2026-09-06.md before using this file.
+!!! Corrected here: C5 BNB worked example and Part 4 row; C6 R:R distribution; C7 the 50% line; C8 the caption blocker; C9 the validation gate
+!!! Nothing below is deleted. The corrections file says what changed and why.
+
+================================================================
+MASTER RECORD — ARSHMEISTER METHOD REVERSE-ENGINEERING
+Everything from seven sessions of work, consolidated.
+If you read one file, read this one. The others are detail.
+================================================================
+
+WHAT THIS PROJECT IS
+Rhys is building a trading bot. The rule set is being reverse-engineered from a
+crypto TA educator ("Arshmeister") who demonstrates supply/demand zones, order
+blocks and support/resistance on TradingView, but who states many of his actual
+thresholds aloud rather than drawing them.
+Two source bodies:
+  1. Private course recordings on Rhys's own YouTube channel:
+        S5 = P_85Yf-skeE   S6 = yXwTjkDUcLM   S7 = BnVyBKOck3o
+        S8 = rr3p4LjMY6U   TBOT1 ("RDH TBOT vid 1") = 6u7mxH4xM-4
+     Chart date axes put S5 to S8 at roughly late July to mid August 2024, and
+     TBOT1 later, around Dec 2024 to early 2025. That dating is inferred from
+     chart content, not stated.
+  2. His public channel: Arshmeister, @arshmeister21,
+     channel ID UCxK0Sgqs3rZYrm0o6shk_HA. 3.08k subs. 182 items spanning
+     2022-10-19 to 2025-12-21, about 120 hours. Every single item is live chart
+     analysis; there is no slide-based or talking-head content. One playlist,
+     "Education", 7 videos. Auto-generated English captions exist.
+
+================================================================
+PART 1 — CURRENT TRUTH. THE RULES THAT SURVIVED.
+================================================================
+
+ZONE CONSTRUCTION                                    confidence: high
+  Zone boxes span candle BODIES, not wicks. Held on every frame, all passes.
+  Some zones are drawn as two stacked bands: inner darker BODY band, outer
+  paler WICK band reaching the wick extremes. Where both exist, entry geometry
+  uses the BODY band only; the wick band is used only to locate the stop.
+  Worked example, BNB 1D 2023-10-24:
+      wick band   242.20 to 248.56   (pale)     [C5: read 249.25 corrected]
+      body band   237.79 to 242.20   (darker, bordered)  [C5: 237.80 to 242.49]
+      entry       237.74             (body band bottom edge, 0.5 px)
+
+ENTRY PLACEMENT                                      confidence: high
+  Entry sits on the PROXIMAL edge of the body band, the edge price reaches
+  first. Long into demand from above goes to the TOP edge. Short into supply
+  from below goes to the BOTTOM edge.
+  Five confirmations, two directions, four instruments, 2023 to 2025, two
+  independent measurement methods:
+      2023-10-24  BNB 1D    SHORT   bottom edge, within 0.5 px
+      2024-06-09  BTC 1D    LONG    top edge, within 0.5 px
+      S8 1:02:28  DOGE 2h   SHORT   fraction 1.00
+      S8 1:03:38  DOGE 2h   SHORT   fraction 1.00
+      S8 1:28:33  SOL 4h    LONG    fraction 0.01
+  ONE MEASURED EXCEPTION, real and not an artefact:
+      TBOT1 1:09:19 OM 1h   LONG    fraction 0.173, a sixth inside the zone
+      Re-measured with getImageData, R:R gate passed (2.971 vs printed 2.97),
+      and a full-width row scan found no nested band that would put it on an
+      edge. Rows 544 and 608 only, nothing at the entry row 555.
+  PENDING TEST: does prior penetration of the zone explain it? Hypothesis is
+  edge entry on a virgin zone, inside entry where price has already swept
+  through. Untested at time of writing.
+
+STOP PLACEMENT                                       confidence: medium
+  The stop is placed AT a structural level, not at a computed distance. The
+  level is whichever is nearest beyond the zone: the far edge of the zone's
+  wick band, the far edge of a separate deeper zone, or a plain drawn
+  horizontal level.
+  Measured, with sign showing whether the stop clears that level:
+      2023-10-24  BNB 1D   +15.5 px   +1.78    0.71% of price   beyond it
+      2024-06-09  BTC 1D   -14.5 px   -526.4   0.83%            INSIDE the band
+      2022-11-30  BTC 4h    -1.0 px   -5.60    0.03%            on the line
+  The signs do not agree, so "just past the edge" is wrong. What holds is
+  "placed at the level", with hand-placement slop up to about 0.8% of price on
+  either side. Snap the bot's stop to the level and model no offset.
+  Qualitative constraint that held everywhere: the stop is below the candle
+  bodies and above the deepest capitulation wick. It deliberately does not
+  clear the capitulation wick.
+
+TARGETS                                              confidence: low
+  No fixed rule. Observed reward-to-risk across eight trades:
+      1.60, 2.06, 2.13, 2.27, 2.61, 2.97, 3.17, 5.00
+      median 2.44, mean 2.73, six of eight between 2.0 and 3.2
+  If a default is needed, 2.5 sits at the centre of his behaviour. That is a
+  description, not a rule he follows.
+
+POSITION SIZING                                      NOT DERIVABLE
+  His charts show $250 risk on a $1,000 nominal account, unchanged across eight
+  trades from 2022-11 to 2025-06. That is 25% per trade, so it is a teaching
+  template. No frame anywhere shows a real account size or real percentage.
+  Derive size from Rhys's own risk budget and the stop distance.
+
+================================================================
+PART 2 — WRONG. DO NOT REVIVE THESE.
+================================================================
+Each of these looked solid and was published in an earlier draft. They are
+listed rather than deleted so a fresh session does not rediscover them from the
+same faulty reasoning.
+
+  "Stop sits roughly 0.5x the zone height below the zone bottom."
+      From three samples reading 0.479, 0.487, 0.582. It is an artefact of which
+      band gets nominated as "the zone". The same frames yield 0.042 to 4.145
+      depending on that choice, a factor of 99. Three clustered samples were the
+      same arbitrary choice made three times, not a rule.
+
+  "Risk per trade is a fixed $750."
+      Misreading of the position tool's Amount field. See the decode in Part 5.
+      Real figure is $250, and it is a template regardless.
+
+  "The printed Amount labels were misread digits."
+      They were not. The digits were correct and the model was wrong. The target
+      labels dismissed as misreads decode to rewards matching quantity times
+      target distance to within 0.2%.
+
+  "The stop clears its structure by a fixed gap."
+      Tested as pixels, percent of price, percent of stop distance, and fraction
+      of zone height. Inconsistent on all four, sign not even stable.
+
+  "Entry is at the 50% line of the zone."
+      A caption cue suggested it. The 50% line is neither entry nor DCA. It sits
+      near the body band midpoint, about 5.7% out on a 38.5 px box, and has no
+      established role. Off the critical path.
+
+  "Stop sits 79 units below the lower band on 2024-06-09."
+      Superseded. That reading took a stop label box's bottom edge for the stop
+      line. Corrected, the stop is 526 units INSIDE that band.
+
+================================================================
+PART 3 — OPEN. THREE FILTERS, ALL NEEDING SPEECH.
+================================================================
+None of these could be recovered from chart pixels because he says them rather
+than drawing them. Treat as parameters and sweep them in backtest. Rhys's own
+data is a better authority than the source material anyway.
+
+  SWING_WIDTH            Candles either side of a pivot that must not exceed it.
+                         Weak single-frame evidence for 4. Sweep 2 to 5.
+  MIN_BREAKOUT_PCT       He specifies 15m, 30m, 1H and 1D somewhere. Nothing
+                         found for 2H, 4H, 8H or 12H across five passes. It is
+                         entirely possible he never specifies them. Any negative
+                         finding here needs a COMPLETE transcript, because a
+                         dropped caption cue is indistinguishable from a missing
+                         rule.
+  CONFLUENCE_THRESHOLD   One clean setup showed 5 overlapping objects. His own
+                         threshold is unknown. Sweep 2 to 5.
+
+Also open: the entry exception (see Part 1), pending the penetration test.
+
+================================================================
+PART 4 — RAW MEASUREMENTS. THE IRREPLACEABLE PART.
+================================================================
+These are the actual readings. Everything in Parts 1 to 3 is derived from them.
+
+POSITION TOOLS, full figures
+  TBOT1 4:11   BTCUSDT.P 1h BINANCE
+      entry 94,036.9  stop 92,117.7  target 100,118.5
+      Stop 1,919.2 (2.04%, printed glyph ambiguous) | Target 6,081.6 (6.47%)
+      Qty 0.13 | R:R 3.17 | Amount stop 750, target 1792.2
+  TBOT1 22:59  HYPEUSDT.P 4h BYBIT
+      entry 21.287  stop 20.508  target 25.179
+      Stop 0.779 (3.66%) | Target 3.892 (18.28%) | Qty 320.924 | R:R 5.00
+      Amount stop 750, target 2249.04
+  TBOT1 1:09:19 OMUSDT.P 1h BINANCE
+      entry 5.18166  stop 4.80024  target 6.31311
+      Stop 0.38142 (7.363%) | Target 1.13167 (21.845%) | Qty 655.445 | R:R 2.97
+      Amount stop 750, target 1741.7
+      zone top 5.23382, bottom 4.93664, entry fraction 0.173
+  S8 1:28:33   SOLUSDT.P 4h MEXC
+      entry 170.367  stop 166.656  target 178.257
+      Stop 3.711 (2.18%) | Target 7.890 (4.63%) | Qty 67.367 | R:R 2.13
+      zone 170.39 to 168.03
+  2022-11-30   BTCUSDT 4h        qty 0.708   stop 353.06 (2.12%)  target 1765.31
+  2023-10-24   BNBUSDT 1D        qty 18.657  stop 13.4 (5.64%)    target 30.42
+                 [C5 CORRECTED: target was 28.6, which is the 12.6-scale figure and
+                  implies R:R 2.13. The printed label is 2.27. 13.4 x 2.27 = 30.42.]
+  2024-06-09   BTCUSDT.P 1D      qty 0.056   stop 4483.7 (6.77%)  target 11690.3
+  2025-06-10   ONDOUSDT.P 1W     qty 1025.851 stop 0.2437 (29.51%) target 0.3895
+
+MEASURE TOOL READINGS, by chart timeframe
+  SOL 1h  BINANCE   20.561 (8.10%) 20,561   S5 36:05, measured over a freehand
+                                            illustration, not real candles
+  SOL 1h  MEXC       7.042 (4.48%) 7,042    S5 ~51:25
+  SOL 30m MEXC       0.821 (0.51%) 821      S5 55:51
+  SOL 30m MEXC       0.876 (0.55%) 876      S5 55:54, same drag, later
+  SOL 30m BYBIT      8.01  (4.59%) 801      S8 24:46
+  LINK 1D MEXC      -0.739 (-4.19%) -739    S6 52:38
+  MUMU 4h MEXC       0.00000705 (26.99%)    S6 2:02:44
+  BONK 12h BINANCE  -0.00000060 (-2.58%)    S5 1:30:30, this is the OHLC legend
+                                            bar change, NOT a measure tool
+  NOTHING found on any 2H, 4H, 8H or 12H chart that reads as a threshold.
+
+ZONE EDGE READINGS
+  BONK 12h   yellow box, top at body tops, bottom on a drawn red level just
+             under the body lows. Upper wick outside up to ~90% of box height,
+             typical ~45%. Lower wick outside ~50 to 110%.
+  ZEC 1D     two yellow boxes, both drawn to bodies. Box A upper wick ~25%
+             outside, lower ~60%. Box B upper ~10%, lower ~35%.
+  LINK 1D    "Bullish OB" drawn as two nested boxes. Inner to body lows, outer
+             extended to wick lows. Wick portion ~83% of the inner box height.
+  SOL 4h     S8 1:28:33, one box, top and bottom both on body extremes, with
+             ~0.86x box height of wick above and ~0.96x below left outside.
+
+POSITION SIZING WORKINGS, S6
+  Chart entry lines labelled "25 coins" at 40.11 and "15 Coins" at 35.51
+  Average Cost Calculator (coinguides.org):
+      15 @ $35.51 and 25 @ $40.11  ->  40 contracts at average $38.385
+      later reworked to 7 @ $35.51 and 15 @ $40.11, result line stale at
+      23 contracts, $38.51
+  Windows Calculator: 2.85, then 2.85 x 23 = 65.55
+  ORDI 1D short position tool showed NO numeric labels at all.
+  No account size, leverage or position value appears in any frame, anywhere.
+
+SWING WIDTH, S7, the only frames with countable marked swings
+  30:19  4H  marked swing HIGH   left >=20, right 4 (truncated by live edge)
+  33:48  3D  marked swing LOW    left >=15, right 6 (truncated), heavy overdraw
+  34:30  4H  marked swing HIGH   left 4, right ~21   <- the binding constraint
+  34:30  4H  marked swing LOW    left >=20, right ~8 (truncated)
+  Four of seven requested frames had no candles at all: freehand sketches or
+  line-mode charts.
+
+CONFLUENCE COUNT
+  ONDO 1D, S8 8:04: five objects converging at ~0.90 to 0.92, being the cyan
+  demand zone top edge, two descending trendlines forming a falling wedge, a
+  rising long-term trendline, and a horizontal level. No position tool on
+  screen, so it cannot be confirmed as a trade he took.
+
+CORROBORATION, the only clean three-way agreement found
+  2022-11-30 BTC 4h. Spoken at 0:17: "looking to long it with a two percent
+  stop probably around 16.300". A dashed level drawn at 16,300.7. The position
+  tool's stop on that level within 1 px. Printed stop % 2.12.
+  Speech, drawing and tool all agree. This is what a confirmed rule looks like.
+  NOTE: that is a STOP percentage, not a breakout threshold. Do not let it
+  migrate into the breakout question.
+
+================================================================
+PART 5 — METHOD. HOW TO READ ANY FUTURE FRAME.
+================================================================
+
+THE POSITION TOOL DECODE
+  Amount is the ACCOUNT BALANCE at that leg on a $1,000 nominal account. It is
+  not risk and not P&L.
+      risk   = 1000 - Amount(stop leg)
+      reward = Amount(target leg) - 1000
+  Printed % is entry-relative. Printed R:R is target distance / stop distance.
+  The $1,000 base is DERIVED, not assumed: solving (amtT - B)/(B - amtS) = R:R
+  for B on frames from three different years returns exactly 1000.00 each time.
+
+THE VALIDATION GATE, use on every frame
+      (entry_row - target_row) / (stop_row - entry_row)  ==  printed R:R
+  A frame that fails is unreadable, not an estimate. This gate caught a stop
+  label box's bottom edge being read as the stop line, and correctly refused two
+  frames whose semi-transparent fills could not be resolved closer than ~10 px.
+
+CALIBRATION
+  Derive price-per-pixel from the position tool's stop leg, which prints its own
+  price span. Do NOT calibrate from axis labels: TradingView pushes overlapping
+  labels apart and their rendered positions are not their true prices.
+
+TRAPS THAT COST REAL TIME
+  - Never combine a measurement taken in one magnified view with a price read in
+    another. That single mistake produced both wrong answers in this project.
+  - Position tool label boxes carry white halos sitting on box edges. Read edges
+    on columns well clear of any label.
+  - In a live browser player: seeking while paused often fails to repaint and
+    returns a stale frame. Use seekTo(target-3), play, poll currentTime past the
+    target, then pause.
+  - Playback quality silently collapses to 144p while still reporting "hd720".
+    Force hd1080 before and after each seek and verify videoWidth is 1920.
+  - Browser caption harvesting is DEAD, not flaky. The caption element latches
+    one real cue per page load and binds it to every timestamp queried, and
+    which cue it latches varies per run. Measured: 21 captures returned one
+    identical string; a fresh reload returned different text for the same
+    timestamp; capture rate 5%. It produces genuine sentences attached to wrong
+    timestamps, which reads as a clean transcript and is confidently wrong.
+    Use yt-dlp locally instead.
+  - The channel's Videos tab under-renders in the DOM. Read window.ytInitialData
+    and follow continuations via /youtubei/v1/browse. Tiles are lockupViewModel,
+    not videoRenderer.
+
+================================================================
+PART 6 — WHAT DOES NOT EXIST YET
+================================================================
+No code has been written. There is no bot, no backtest, no repo. What exists is
+this specification and the measurements behind it.
+Zone DETECTION is not specified anywhere in this project. Every rule assumes a
+zone already exists. Detecting zones from raw candles is a separate problem and
+nothing in seven sessions speaks to it.
+
+================================================================
+PART 7 — FILE INDEX
+================================================================
+  00-MASTER.txt                     this file
+  BOT-SPEC-handover.txt             the build brief, paste into a coding session
+  RULES-STATE.txt                   v3, the rule state in detail
+  CORRECTION-risk-figure-v2.txt     the Amount decode and what it corrected
+  chart-readings.txt                pass 1 raw readings, S5/S6/S7
+  chart-readings-pass2.txt          pass 2 raw readings, S6/S8/TBOT1/S5
+  arshmeister-inventory.txt         channel inventory, MY draft. Superseded by
+                                    the version produced with real dates and the
+                                    all-type-A finding. Keep for the notes only.
+  inventory-addendum.txt            corrections to that inventory
+  claude-code-pipeline.txt          local yt-dlp + ffmpeg pipeline prompt
+  browser-task-entry-exception.txt  the penetration test, browser version
+  browser-task-next.txt             earlier browser task, completed
+  next-session-prompt.txt           earlier inventory task, completed
+  arshmeister-extraction-prompt.txt earlier transcript task, blocked on captions
+  CORRECTION-risk-figure.txt        DELETED. Right number, wrong reasoning.

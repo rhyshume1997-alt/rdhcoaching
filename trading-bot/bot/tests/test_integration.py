@@ -427,3 +427,74 @@ def test_cli_split_writes_one_artifact_pair_per_segment(csv_path, tmp_path, caps
     # the out-of-sample run records its warm-up as the split index: that is the audit trail
     oos = json.loads((tmp_path / "run.out_of_sample.json").read_text())
     assert oos["meta"]["warmup_bars"] == 87
+
+
+# ------------------------------------- `scan --pine`: hand the levels to TradingView, place by hand
+#
+# The ask this exists for: the bot finds the levels, the chart shows them, the order goes in
+# manually. Pine cannot trade and neither can this package (SPEC.md §1.9, §12.6).
+
+def test_pine_draws_every_level_of_a_real_plan(series, cfg):
+    from tbot import pipeline
+
+    for i in range(WARMUP, len(series)):
+        record = pipeline.analyse_bar(series.head(i + 1), cfg)
+        if not record.plans:
+            continue
+        plan = record.plans[0]
+        script = cli.render_pine([plan], symbol="TESTUSDT", tf="4H")
+
+        assert script.startswith("//@version=5")
+        assert 'indicator("tbot — TESTUSDT 4H"' in script
+        # every price the trader has to place must actually be on the chart
+        for rung in plan.entries:
+            assert str(rung.price) in script, f"entry rung {rung.index} missing"
+        assert str(plan.stop_price) in script
+        for tp in plan.take_profits:
+            assert str(tp.price) in script, f"TP{tp.index} missing"
+        # and each carries the size the ladder calls for, so it can be placed without the ticket
+        assert "% —" in script and "% out —" in script
+        assert "STOP" in script
+        # the standing disclaimer travels with the artefact
+        assert "NOT an order" in script
+        return
+    pytest.skip("no plan was produced on this fixture")
+
+
+def test_pine_is_syntactically_plausible_and_bounded():
+    """Guards the two things TradingView rejects outright: no version line, or unbounded drawing."""
+    script = cli.render_pine([], symbol="X", tf="1H")
+    assert script.splitlines()[0] == "//@version=5"
+    assert "max_lines_count = 500" in script and "max_labels_count = 500" in script
+    assert "no plans in this window" in script
+    assert "line.new(" in script and "label.new(" in script
+
+
+def test_pine_prices_are_not_rounded():
+    """A rounded level is a different level.
+
+    The synthetic fixture trades at round numbers, so a fixture-driven version of this test cannot
+    bite - a `:.2f` on every price survived it. This builds the plan by hand with prices that have
+    sixteen decimals, which is what the real ladder carries (SOL stop 104.1652313421718825).
+    """
+    from tbot.models import Direction, EntryRung, TakeProfit, TradeClass, TradePlan, Vehicle, dec
+
+    stop = dec("104.1652313421718825")
+    entry = dec("103.15570091027989")
+    tp = dec("96.64036238410985")
+    plan = TradePlan(
+        id="P", setup_id="S", symbol="SOLUSDT", direction=Direction.SHORT,
+        trade_class=TradeClass.SWING, vehicle=Vehicle.LEVERAGE, leverage=dec(25),
+        entries=[EntryRung(index=0, price=entry, size_fraction=dec("0.25"),
+                           kind="entry", level_id="L0")],
+        stop_price=stop,
+        take_profits=[TakeProfit(index=0, price=tp, size_fraction=dec("0.4"), level_id="T0")],
+        qty_total=dec(1), notional_usd=dec(100), risk_budget_pct=dec(4),
+        average_entry=entry, planned_average_entry=entry,
+        rr_to_tp1=dec(2), expected_move_pct=dec(5), invalidation_level_id="L0",
+    )
+    script = cli.render_pine([plan], symbol="SOLUSDT", tf="4H")
+    assert str(stop) in script, "the stop must reach the chart at full precision"
+    assert str(entry) in script
+    assert str(tp) in script
+    assert "104.17" not in script, "a 2dp rounding would place the stop somewhere else entirely"

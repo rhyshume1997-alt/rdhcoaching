@@ -434,31 +434,45 @@ def test_cli_split_writes_one_artifact_pair_per_segment(csv_path, tmp_path, caps
 # The ask this exists for: the bot finds the levels, the chart shows them, the order goes in
 # manually. Pine cannot trade and neither can this package (SPEC.md §1.9, §12.6).
 
-def test_pine_draws_every_level_of_a_real_plan(series, cfg):
+def test_pine_draws_every_level_a_trader_has_to_place():
+    """Every price the ticket asks for must reach the chart.
+
+    This was fixture-driven and began SKIPPING once the placeability guard landed, because every
+    plan the synthetic series produces has its stop inside its own ladder. A skipped test proves
+    nothing, so it is built from a sound plan instead - and the fact that the fixture produces
+    none is recorded in `test_the_synthetic_fixture_only_makes_unplaceable_ladders`.
+    """
+    from tbot.models import Direction, dec
+    plan = _ladder_plan(Direction.SHORT, stop="105.5", prices=["103.25", "104.75"])
+    script = cli.render_pine([plan], symbol="TESTUSDT", tf="4H")
+
+    assert script.startswith("//@version=5")
+    assert 'indicator("tbot — TESTUSDT 4H"' in script
+    for rung in plan.entries:
+        assert str(rung.price) in script, f"entry rung {rung.index} missing"
+    assert str(plan.stop_price) in script
+    for tp in plan.take_profits:
+        assert str(tp.price) in script, f"TP{tp.index} missing"
+    assert "% —" in script and "% out —" in script
+    assert "STOP" in script
+    assert "NOT an order" in script
+    assert "WITHHELD" not in script
+
+
+def test_the_synthetic_fixture_only_makes_unplaceable_ladders(series, cfg):
+    """Recorded, not asserted away: the defect is in the fixture's plans too, not just SOL's."""
     from tbot import pipeline
 
+    seen = placeable = 0
     for i in range(WARMUP, len(series)):
         record = pipeline.analyse_bar(series.head(i + 1), cfg)
-        if not record.plans:
-            continue
-        plan = record.plans[0]
-        script = cli.render_pine([plan], symbol="TESTUSDT", tf="4H")
-
-        assert script.startswith("//@version=5")
-        assert 'indicator("tbot — TESTUSDT 4H"' in script
-        # every price the trader has to place must actually be on the chart
-        for rung in plan.entries:
-            assert str(rung.price) in script, f"entry rung {rung.index} missing"
-        assert str(plan.stop_price) in script
-        for tp in plan.take_profits:
-            assert str(tp.price) in script, f"TP{tp.index} missing"
-        # and each carries the size the ladder calls for, so it can be placed without the ticket
-        assert "% —" in script and "% out —" in script
-        assert "STOP" in script
-        # the standing disclaimer travels with the artefact
-        assert "NOT an order" in script
-        return
-    pytest.skip("no plan was produced on this fixture")
+        for plan in record.plans:
+            seen += 1
+            placeable += cli.unplaceable_reason(plan) is None
+    assert seen, "fixture produced no plans at all"
+    assert placeable == 0, (
+        f"{placeable} of {seen} fixture plans are now placeable — if the Q17 default changed, "
+        f"this test and the one above should be revisited together")
 
 
 def test_pine_is_syntactically_plausible_and_bounded():
@@ -466,7 +480,7 @@ def test_pine_is_syntactically_plausible_and_bounded():
     script = cli.render_pine([], symbol="X", tf="1H")
     assert script.splitlines()[0] == "//@version=5"
     assert "max_lines_count = 500" in script and "max_labels_count = 500" in script
-    assert "no plans in this window" in script
+    assert "nothing drawable in this window" in script
     assert "line.new(" in script and "label.new(" in script
 
 
@@ -498,3 +512,101 @@ def test_pine_prices_are_not_rounded():
     assert str(entry) in script
     assert str(tp) in script
     assert "104.17" not in script, "a 2dp rounding would place the stop somewhere else entirely"
+
+
+# ---------------------------------------- the ticket must not be placeable into a naked reversal
+#
+# Found in the wild an hour after `--pine` shipped: every SOL short put the stop 0.2456 BELOW its
+# own DCA sell (the ATR buffer). Placed by hand that is worse than a dead order - the stop-buy
+# fires, closes the position, and the DCA sell is still resting, so it opens a NEW short at 75% of
+# size with no stop. The Q17 remedy exists but ships off, and output meant for manual placement
+# must not inherit that default.
+
+def _ladder_plan(direction, *, stop, prices):
+    from tbot.models import (Direction, EntryRung, TakeProfit, TradeClass, TradePlan, Vehicle, dec)
+    rungs = [EntryRung(index=i, price=dec(p), size_fraction=dec("0.5"),
+                       kind="entry" if i == 0 else "dca", level_id=f"L{i}")
+             for i, p in enumerate(prices)]
+    return TradePlan(
+        id="P", setup_id="S", symbol="X", direction=direction, trade_class=TradeClass.SWING,
+        vehicle=Vehicle.LEVERAGE, leverage=dec(10), entries=rungs, stop_price=dec(stop),
+        take_profits=[TakeProfit(index=0, price=dec("1"), size_fraction=dec(1), level_id="T")],
+        qty_total=dec(1), notional_usd=dec(100), risk_budget_pct=dec(4),
+        average_entry=dec(prices[0]), planned_average_entry=dec(prices[0]),
+        rr_to_tp1=dec(2), expected_move_pct=dec(5), invalidation_level_id="L0")
+
+
+def test_a_short_whose_stop_sits_under_its_dca_is_named_unplaceable():
+    from tbot.models import Direction
+    plan = _ladder_plan(Direction.SHORT, stop="104.1652313421718825",
+                        prices=["103.15570091027989", "104.4108182323016"])
+    reason = cli.unplaceable_reason(plan)
+    assert reason is not None
+    assert "104.4108182323016" in reason
+    assert "no stop" in reason
+
+
+def test_a_long_whose_stop_sits_over_its_dca_is_named_unplaceable():
+    from tbot.models import Direction
+    plan = _ladder_plan(Direction.LONG, stop="97.5", prices=["100.0", "97.0"])
+    assert cli.unplaceable_reason(plan) is not None
+
+
+def test_a_correctly_ordered_ladder_is_placeable():
+    from tbot.models import Direction
+    assert cli.unplaceable_reason(
+        _ladder_plan(Direction.SHORT, stop="105.0", prices=["103.0", "104.0"])) is None
+    assert cli.unplaceable_reason(
+        _ladder_plan(Direction.LONG, stop="96.0", prices=["100.0", "97.0"])) is None
+
+
+def test_an_unfunded_rung_beyond_the_stop_is_not_a_hazard():
+    """TBOT1-C6 legs are armed but sized to zero: they rest no order, so they cannot reverse you."""
+    from tbot.models import Direction, dec
+    plan = _ladder_plan(Direction.SHORT, stop="104.0",
+                        prices=["103.0", "105.0"])
+    object.__setattr__(plan.entries[1], "size_fraction", dec(0))
+    assert cli.unplaceable_reason(plan) is None
+
+
+def test_pine_withholds_the_hazard_and_says_why():
+    from tbot.models import Direction
+    bad = _ladder_plan(Direction.SHORT, stop="104.1652313421718825",
+                       prices=["103.15570091027989", "104.4108182323016"])
+    script = cli.render_pine([bad], symbol="X", tf="4H")
+    assert "WITHHELD" in script
+    assert "entry_ladder_must_sit_inside_stop=true" in script
+    assert "nothing drawable" in script
+    # the hazard's own prices must NOT be drawn as placeable levels
+    assert "f_level(104.4108182323016," not in script
+    assert "f_level(103.15570091027989," not in script
+
+
+def test_pine_still_draws_a_sound_plan():
+    from tbot.models import Direction
+    ok = _ladder_plan(Direction.SHORT, stop="105.0", prices=["103.0", "104.0"])
+    script = cli.render_pine([ok], symbol="X", tf="4H")
+    assert "WITHHELD" not in script
+    assert "f_level(103.0," in script and "f_level(105.0," in script
+
+
+def test_the_ticket_shouts_before_it_lists_the_levels():
+    from tbot.models import Direction
+    bad = _ladder_plan(Direction.SHORT, stop="104.1652313421718825",
+                       prices=["103.15570091027989", "104.4108182323016"])
+    ticket = cli.render_ticket(bad)
+    assert "DO NOT PLACE AS WRITTEN" in ticket
+    assert ticket.index("DO NOT PLACE") < ticket.index("ENTRIES"), "the warning must come first"
+
+
+def test_a_stop_exactly_on_the_rung_is_still_a_hazard():
+    """Same price, two opposing resting orders: which fills first is the exchange's business.
+
+    A `<` instead of `<=` in the guard passes this ladder as placeable, and without this test that
+    mutation survives the whole suite.
+    """
+    from tbot.models import Direction
+    short = _ladder_plan(Direction.SHORT, stop="104.0", prices=["103.0", "104.0"])
+    assert cli.unplaceable_reason(short) is not None
+    long_ = _ladder_plan(Direction.LONG, stop="97.0", prices=["100.0", "97.0"])
+    assert cli.unplaceable_reason(long_) is not None

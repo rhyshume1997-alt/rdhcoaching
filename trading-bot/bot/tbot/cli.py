@@ -93,6 +93,36 @@ def _provider(args: argparse.Namespace):
 # --------------------------------------------------------------------------- trade tickets
 
 
+def unplaceable_reason(plan: TradePlan) -> str | None:
+    """Is this ticket safe to place by hand?  ``None`` when it is.
+
+    **The stop must invalidate the whole ladder.**  A short whose stop sits BELOW a resting DCA
+    sell, or a long whose stop sits ABOVE a resting DCA buy, cannot be placed as written: the stop
+    triggers first, closes the position, and then the DCA — still resting — opens a brand new
+    position in the same direction with no stop attached.  That is worse than an order that simply
+    never fills.
+
+    This is the Q17 defect (GAPS.md: 26 trades, 0 wins, -958.95).  Its remedy ships behind
+    ``entry_ladder_must_sit_inside_stop``, defaulted off, because it changes backtest results.
+    **Output meant for manual placement cannot inherit that default**, so anything this function
+    names is withheld rather than drawn.  Zero-sized rungs are ignored: they buy nothing and rest
+    no order (the same carve-out ``plan.rungs_the_stop_invalidates`` makes).
+    """
+    funded = [r for r in plan.entries if r.size_fraction > 0]
+    if not funded:
+        return None
+    stop = plan.stop_price
+    short = plan.direction.value == "short"
+    bad = [r for r in funded if (stop <= r.price if short else stop >= r.price)]
+    if not bad:
+        return None
+    worst = max(bad, key=lambda r: r.price) if short else min(bad, key=lambda r: r.price)
+    side = "above" if short else "below"
+    return (f"stop {stop} is not {side} the {worst.kind} rung at {worst.price} — the stop would "
+            f"trigger first, close the position, and leave that rung resting to open a new one "
+            f"with no stop")
+
+
 def render_pine(plans: "list[TradePlan]", *, symbol: str, tf: str) -> str:
     """A Pine v5 overlay drawing each plan's ladder, stop and take-profits.
 
@@ -124,7 +154,15 @@ def render_pine(plans: "list[TradePlan]", *, symbol: str, tf: str) -> str:
         "color = color.new(_col, 85), textcolor = _col, size = size.small)",
         "",
     ]
-    for n, plan in enumerate(plans, 1):
+    withheld: list[str] = []
+    drawable = []
+    for plan in plans:
+        reason = unplaceable_reason(plan)
+        if reason is None:
+            drawable.append(plan)
+        else:
+            withheld.append(f"// WITHHELD  {plan.setup_id}: {reason}")
+    for n, plan in enumerate(drawable, 1):
         side = plan.direction.value.upper()
         out.append(f"// ---- {n}. {side} {plan.symbol} — {plan.trade_class.value}/"
                    f"{plan.vehicle.value}, setup {plan.setup_id}")
@@ -140,8 +178,15 @@ def render_pine(plans: "list[TradePlan]", *, symbol: str, tf: str) -> str:
             out.append(f'f_level({tp.price}, color.green, line.style_dotted, '
                        f'"{n}. TP{tp.index} {pct:.0f}% out — {tp.price}", showTps)')
         out.append("")
-    if not plans:
-        out.append("// no plans in this window — nothing to draw")
+    if withheld:
+        out.append("// " + "-" * 74)
+        out.append("// The following plans were NOT drawn: their stop sits inside their own entry")
+        out.append("// ladder, so they cannot be placed as written (GAPS.md Q17). Re-run with")
+        out.append("//   --set entry_ladder_must_sit_inside_stop=true")
+        out.append("// to get a placeable version of the same setups.")
+        out.extend(withheld)
+    if not drawable:
+        out.append("// nothing drawable in this window")
     return "\n".join(out)
 
 
@@ -159,6 +204,10 @@ def render_ticket(plan: TradePlan, *, setup: Any = None, now_price: Decimal | No
         f"{plan.trade_class.value} / {plan.vehicle.value}"
         + (f" @ {plan.leverage}x" if plan.leverage and plan.leverage != Decimal(1) else ""))
     add(f"  plan {plan.id}   setup {plan.setup_id}")
+    unplaceable = unplaceable_reason(plan)
+    if unplaceable is not None:
+        add("  !! DO NOT PLACE AS WRITTEN — " + unplaceable)
+        add("  !! re-run with --set entry_ladder_must_sit_inside_stop=true (GAPS.md Q17)")
     if setup is not None:
         add(f"  conviction {setup.conviction.value}   confluence {setup.confluence_score} "
             f"({', '.join(sorted(setup.confluence_classes)) or 'none'})   "

@@ -645,3 +645,58 @@ class TestPineOutMessage:
         """The specific regression: any message quoting only the considered count is wrong."""
         msg = cli.pine_out_message("p1.pine", drawn=0, considered=3)
         assert "(3 plan(s))" not in msg, "that phrasing is what misled the reader"
+
+
+# -------------------------------------- the ticket must state what the trade actually risks
+#
+# Found by a third model auditing for this defect class. Every ticket printed "risk budget 4.0%"
+# — the CF-01 CAP — on the one output a human sizes a trade from, while the real loss at stop was
+# $6.55 to $287.81 against a $400 cap. Overstated up to 61x. Sizing is ceiling-bound, not
+# risk-first (GAPS.md Q18), so risk = notional x stop distance and lands under the cap on nearly
+# every plan.
+
+class TestTicketStatesRealRisk:
+
+    @staticmethod
+    def _plan(qty, avg, stop):
+        from tbot.models import (Direction, EntryRung, TakeProfit, TradeClass, TradePlan,
+                                 Vehicle, dec)
+        return TradePlan(
+            id="P", setup_id="S", symbol="X", direction=Direction.SHORT,
+            trade_class=TradeClass.SWING, vehicle=Vehicle.LEVERAGE, leverage=dec(10),
+            entries=[EntryRung(index=0, price=dec(avg), size_fraction=dec(1),
+                               kind="entry", level_id="L0")],
+            stop_price=dec(stop),
+            take_profits=[TakeProfit(index=0, price=dec("1"), size_fraction=dec(1),
+                                     level_id="T")],
+            qty_total=dec(qty), notional_usd=dec(10000), risk_budget_pct=dec(4),
+            average_entry=dec(avg), planned_average_entry=dec(avg),
+            rr_to_tp1=dec(2), expected_move_pct=dec(5), invalidation_level_id="L0")
+
+    def test_the_tight_stop_case_that_was_overstated_61x(self):
+        # the live SOL ticket: 96.0642 qty, avg 104.0970, stop 104.1652 -> $6.55, not $400
+        t = cli.render_ticket(self._plan("96.06421186902226", "104.0970389017961875",
+                                         "104.1652313421718825"))
+        assert "IF STOPPED: lose 6.55 USD" in t
+        assert "0.0655%" in t
+
+    def test_the_cap_is_labelled_as_a_cap_not_as_the_risk(self):
+        t = cli.render_ticket(self._plan("96.06421186902226", "104.0970389017961875",
+                                         "104.1652313421718825"))
+        assert "a CEILING, not this trade's risk" in t
+        assert "risk budget 4.0%" not in t, "the bare phrasing is what read as 'this risks 4%'"
+
+    def test_the_real_number_comes_before_the_cap(self):
+        t = cli.render_ticket(self._plan("100", "100", "104"))
+        assert t.index("IF STOPPED") < t.index("risk cap"), "the cap must not lead"
+
+    def test_a_wide_stop_reports_a_figure_near_the_cap(self):
+        """The cap is not always wrong — it is right when the stop is wide, and that must show."""
+        t = cli.render_ticket(self._plan("106.7204", "93.7028", "96.3948"))
+        assert "IF STOPPED: lose 287.29 USD" in t
+        assert "2.87" in t
+
+    def test_it_does_not_divide_by_a_zero_reference(self):
+        t = cli.render_ticket(self._plan("10", "0", "5"))
+        assert "IF STOPPED" in t
+        assert "% from the planned" not in t

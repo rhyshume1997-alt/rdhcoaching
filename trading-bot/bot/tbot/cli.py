@@ -252,8 +252,22 @@ def render_ticket(plan: TradePlan, *, setup: Any = None, now_price: Decimal | No
         add(f"    TP{tp.index}: {tp.price}   {(tp.size_fraction * Decimal(100)):.1f}% out   "
             f"{tp.level_id or ''} {mark}")
     add("  SIZE AND RISK")
-    add(f"    qty {plan.qty_total}   notional {plan.notional_usd} USD   "
-        f"risk budget {plan.risk_budget_pct}%")
+    add(f"    qty {plan.qty_total}   notional {plan.notional_usd} USD")
+    # ``risk_budget_pct`` is the CF-01 **cap** (SPEC.md:191, "the CF-01 cap actually applied"),
+    # not what this trade risks.  Sizing is ceiling-bound, not risk-first — GAPS.md Q18 — so the
+    # realised loss is ``notional x stop distance`` and lands UNDER the cap on nearly every plan:
+    # measured on SOL 4H it ranges $6.55 to $287.81 against a $400 cap, overstated up to 61x.
+    # On the one output a human sizes a trade from, printing only the cap is the headline
+    # disagreeing with its own numbers, so the actual number leads and the cap is labelled.
+    avg = plan.planned_average_entry
+    loss = plan.qty_total * abs(avg - plan.stop_price)
+    if avg > 0:
+        dist = abs(avg - plan.stop_price) / avg * Decimal(100)
+        add(f"    IF STOPPED: lose {loss:.2f} USD   (stop is {dist:.4f}% from the planned "
+            f"average entry)")
+    else:
+        add(f"    IF STOPPED: lose {loss:.2f} USD")
+    add(f"    risk cap {plan.risk_budget_pct}% of equity — a CEILING, not this trade's risk")
     # F9: both bases are printed, with the one G14 actually gated on named first.
     add(f"    R:R to final TP {plan.rr_to_final_tp}   (to TP1 {plan.rr_to_tp1})   "
         f"expected move {plan.expected_move_pct}%")

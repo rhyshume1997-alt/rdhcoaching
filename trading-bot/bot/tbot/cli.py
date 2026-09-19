@@ -123,6 +123,25 @@ def unplaceable_reason(plan: TradePlan) -> str | None:
             f"with no stop")
 
 
+def pine_out_message(path: str, *, drawn: int, considered: int) -> str:
+    """What `--pine --out` prints to the terminal.
+
+    It must report plans **DRAWN**, not plans considered. Reporting the input count told a reader
+    who never opened the file that they had three setups when the script drew nothing — the
+    withholding notice is inside the file, and `--out` exists precisely so you do not read it.
+    The "Add to chart" instruction is dropped when there is nothing to add.
+    """
+    withheld = considered - drawn
+    if drawn == 0:
+        return (f"NOTHING DRAWN — {withheld} of {considered} plan(s) withheld as unplaceable. "
+                f"Details in {path}; re-run with "
+                f"--set entry_ladder_must_sit_inside_stop=true for a placeable version.")
+    head = f"Pine script written to {path} — {drawn} of {considered} plan(s) drawn"
+    if withheld:
+        head += f", {withheld} withheld as unplaceable (see the file)"
+    return head + ". Paste it into TradingView's Pine Editor and press 'Add to chart'."
+
+
 def render_pine(plans: "list[TradePlan]", *, symbol: str, tf: str) -> str:
     """A Pine v5 overlay drawing each plan's ladder, stop and take-profits.
 
@@ -454,12 +473,15 @@ def cmd_scan(args: argparse.Namespace) -> int:
 
     if getattr(args, "pine", False):
         script = render_pine(found, symbol=series.symbol, tf=series.tf.value)
+        drawn = sum(1 for p in found if unplaceable_reason(p) is None)
         if args.out:
             Path(args.out).write_text(script + "\n", encoding="utf-8")
-            print(f"Pine script written to {args.out} ({len(found)} plan(s)). "
-                  f"Paste it into TradingView's Pine Editor and press 'Add to chart'.")
+            print(pine_out_message(args.out, drawn=drawn, considered=len(found)))
         else:
             print(script)
+            if drawn == 0 and found:
+                print(f"\n# NOTHING DRAWN — all {len(found)} plan(s) withheld as unplaceable.",
+                      file=sys.stderr)
         return 0
 
     print(f"scan  {series.symbol} {series.tf.value}  bars {first}..{len(series) - 1}  "

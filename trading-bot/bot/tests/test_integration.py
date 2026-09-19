@@ -610,3 +610,38 @@ def test_a_stop_exactly_on_the_rung_is_still_a_hazard():
     assert cli.unplaceable_reason(short) is not None
     long_ = _ladder_plan(Direction.LONG, stop="97.0", prices=["100.0", "97.0"])
     assert cli.unplaceable_reason(long_) is not None
+
+
+# ------------------------------------- the terminal line must agree with the file it just wrote
+#
+# `--out` exists so you do NOT read the script. So the one line printed to the terminal is the
+# whole truth for that user, and it reported plans CONSIDERED: "written to p1.pine (3 plan(s)).
+# Paste it ... and press 'Add to chart'" while the file drew nothing and withheld all three.
+# Same shape as every other defect this week - the headline disagreeing with the content, on the
+# path that touches money.
+
+class TestPineOutMessage:
+
+    def test_it_never_says_add_to_chart_when_nothing_was_drawn(self):
+        msg = cli.pine_out_message("p1.pine", drawn=0, considered=3)
+        assert "Add to chart" not in msg
+        assert "NOTHING DRAWN" in msg
+        assert "3 of 3" in msg and "withheld" in msg
+        assert "entry_ladder_must_sit_inside_stop=true" in msg
+
+    def test_it_reports_drawn_not_considered(self):
+        msg = cli.pine_out_message("p1.pine", drawn=2, considered=3)
+        assert "2 of 3 plan(s) drawn" in msg
+        assert "1 withheld" in msg
+        assert "Add to chart" in msg, "two plans ARE drawable, so the instruction belongs"
+
+    def test_a_clean_run_says_so_without_a_withheld_clause(self):
+        msg = cli.pine_out_message("p1.pine", drawn=3, considered=3)
+        assert "3 of 3 plan(s) drawn" in msg
+        assert "withheld" not in msg
+        assert "Add to chart" in msg
+
+    def test_the_count_can_never_be_the_input_count_when_plans_are_withheld(self):
+        """The specific regression: any message quoting only the considered count is wrong."""
+        msg = cli.pine_out_message("p1.pine", drawn=0, considered=3)
+        assert "(3 plan(s))" not in msg, "that phrasing is what misled the reader"
